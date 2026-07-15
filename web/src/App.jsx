@@ -63,6 +63,9 @@ function MainLayout() {
           const reg = await navigator.serviceWorker.register('/sw.js');
           console.log('[PWA SW] Service worker registered successfully: ', reg.scope);
           
+          // Wait for service worker to be fully active/ready
+          const activeReg = await navigator.serviceWorker.ready;
+          
           // Subscribe to push notifications if VAPID key is configured
           const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
           console.log('[PWA Push] Loading VAPID Public Key:', vapidPublicKey);
@@ -70,7 +73,7 @@ function MainLayout() {
             // Request permission
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
-              const subscription = await reg.pushManager.subscribe({
+              const subscription = await activeReg.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
               });
