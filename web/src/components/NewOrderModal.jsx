@@ -121,12 +121,23 @@ export default function NewOrderModal() {
                 ))}
               </div>
 
-              {order.notes && (
-                <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
-                  <span className="text-[10px] font-bold text-amber-500 uppercase block mb-1">Customer Note</span>
-                  <p className="text-xs font-semibold text-slate-700 leading-normal">{order.notes}</p>
-                </div>
-              )}
+              {(() => {
+                if (!order.notes) return null;
+                let displayNote = order.notes;
+                try {
+                  const parsed = JSON.parse(order.notes);
+                  displayNote = parsed.order_comment || parsed.delivery_instructions || parsed.notes || parsed.order_instruction || "";
+                } catch (e) {
+                  // Keep raw
+                }
+                if (!displayNote) return null;
+                return (
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+                    <span className="text-[10px] font-bold text-amber-500 uppercase block mb-1">Customer Note</span>
+                    <p className="text-xs font-semibold text-slate-700 leading-normal">{displayNote}</p>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Right Col: Clockwise Style Preparation Time Clock Dial */}

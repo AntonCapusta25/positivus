@@ -1153,6 +1153,16 @@ export const POSProvider = ({ children }) => {
       itemsListText = '   (Failed to parse order items)';
     }
 
+    let formattedNotes = order.notes || 'None';
+    if (order.notes) {
+      try {
+        const parsed = JSON.parse(order.notes);
+        formattedNotes = parsed.order_comment || parsed.delivery_instructions || parsed.notes || parsed.order_instruction || 'None';
+      } catch (e) {
+        // Keep raw
+      }
+    }
+
     const receiptContent = `
 ========================================
            ${activeMerchant.name.toUpperCase()} RECEIPT
@@ -1174,7 +1184,7 @@ TOTAL:                       €${Number(order.total || 0).toFixed(2)}
 ----------------------------------------
 Payment Method:              ${(order.payment_method || 'Online').toUpperCase()}
 Payment Status:              ${(order.payment_status || 'Pending').toUpperCase()}
-Notes:                       ${order.notes || 'None'}
+Notes:                       ${formattedNotes}
 ========================================
          THANK YOU FOR YOUR ORDER
 ========================================
