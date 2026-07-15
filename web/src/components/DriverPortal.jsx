@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { usePOS } from '../context/POSContext';
 import { supabase } from '../supabaseClient';
 import { Camera, MapPin, Clock, CheckCircle2, Navigation, Shield, ArrowRight, UserCheck, Search, QrCode } from 'lucide-react';
+import { useJsApiLoader, GoogleMap, Marker, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
 
 export default function DriverPortal() {
-  const { orders, updateOrderStatus, availableMerchants, setSettings, assignOrderDriver } = usePOS();
+  const { orders, updateOrderStatus, availableMerchants, settings, setSettings, assignOrderDriver } = usePOS();
   const [driverName, setDriverName] = useState(() => localStorage.getItem('pos_driver_name') || '');
   const [selectedOrderId, setSelectedOrderId] = useState('');
   const [activeOrder, setActiveOrder] = useState(null);
@@ -20,36 +21,14 @@ export default function DriverPortal() {
   const streamRef = useRef(null);
 
   // Map & routing states
-  const [leafletLoaded, setLeafletLoaded] = useState(false);
-  const mapRef = useRef(null);
-  const driverMarkerRef = useRef(null);
-  const customerMarkerRef = useRef(null);
-  const routeLineRef = useRef(null);
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: apiKey,
+  });
+  
+  const [directionsResponse, setDirectionsResponse] = useState(null);
   const [driverCoords, setDriverCoords] = useState([52.370216, 4.895168]); // Default Amsterdam
   const [customerCoords, setCustomerCoords] = useState([52.373216, 4.899168]);
-
-  // Load Leaflet resources dynamically on mount
-  useEffect(() => {
-    // CSS
-    if (!document.getElementById('leaflet-css')) {
-      const link = document.createElement('link');
-      link.id = 'leaflet-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
-
-    // JS
-    if (!document.getElementById('leaflet-js')) {
-      const script = document.createElement('script');
-      script.id = 'leaflet-js';
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = () => setLeafletLoaded(true);
-      document.head.appendChild(script);
-    } else {
-      setLeafletLoaded(true);
-    }
-  }, []);
 
   // Track Driver GPS coordinates using watchPosition
   useEffect(() => {
@@ -107,82 +86,26 @@ export default function DriverPortal() {
     geocodeAddress();
   }, [activeOrder, driverCoords]);
 
-  // Render/Update Leaflet map instance
+  // Fetch Directions when coordinates change
   useEffect(() => {
-    if (!leafletLoaded || !activeOrder) return;
-    const L = window.L;
-    if (!L) return;
-
-    // Initialize Map instance
-    if (!mapRef.current) {
-      const container = document.getElementById('driver-map');
-      if (container) {
-        mapRef.current = L.map('driver-map').setView(driverCoords, 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap'
-        }).addTo(mapRef.current);
+    if (!isLoaded || !apiKey || !activeOrder) return;
+    
+    const directionsService = new window.google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: new window.google.maps.LatLng(driverCoords[0], driverCoords[1]),
+        destination: new window.google.maps.LatLng(customerCoords[0], customerCoords[1]),
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          setDirectionsResponse(result);
+        } else {
+          console.error(`Directions request failed due to ${status}`);
+        }
       }
-    } else {
-      mapRef.current.setView(driverCoords, 14);
-    }
-
-    // Driver (Scooter) Marker Icon
-    if (mapRef.current) {
-      if (!driverMarkerRef.current) {
-        driverMarkerRef.current = L.marker(driverCoords, {
-          icon: L.divIcon({
-            html: `<div class="w-8 h-8 rounded-full bg-orange-500 border-2 border-white flex items-center justify-center text-white text-base shadow-lg shadow-orange-500/40 animate-pulse">🛵</div>`,
-            className: 'bg-transparent',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
-          })
-        }).addTo(mapRef.current).bindPopup("You (Courier)");
-      } else {
-        driverMarkerRef.current.setLatLng(driverCoords);
-      }
-
-      // Customer Marker Icon
-      if (!customerMarkerRef.current) {
-        customerMarkerRef.current = L.marker(customerCoords, {
-          icon: L.divIcon({
-            html: `<div class="w-8 h-8 rounded-full bg-rose-600 border-2 border-white flex items-center justify-center text-white text-base shadow-lg shadow-rose-600/40">📍</div>`,
-            className: 'bg-transparent',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
-          })
-        }).addTo(mapRef.current).bindPopup("Destination");
-      } else {
-        customerMarkerRef.current.setLatLng(customerCoords);
-      }
-
-      // Draw dashed route polyline
-      if (!routeLineRef.current) {
-        routeLineRef.current = L.polyline([driverCoords, customerCoords], {
-          color: '#ff6b00',
-          weight: 4,
-          opacity: 0.8,
-          dashArray: '6, 8'
-        }).addTo(mapRef.current);
-      } else {
-        routeLineRef.current.setLatLngs([driverCoords, customerCoords]);
-      }
-
-      // Fit bounds with padding
-      const bounds = L.latLngBounds([driverCoords, customerCoords]);
-      mapRef.current.fitBounds(bounds, { padding: [30, 30] });
-    }
-
-    return () => {
-      // Clean up map elements on unmount or activeOrder change
-      if (activeOrder === null && mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-        driverMarkerRef.current = null;
-        customerMarkerRef.current = null;
-        routeLineRef.current = null;
-      }
-    };
-  }, [leafletLoaded, activeOrder, driverCoords, customerCoords]);
+    );
+  }, [driverCoords, customerCoords, isLoaded, activeOrder, apiKey]);
 
   // Auto-sync merchant_id for active driver on mount
   useEffect(() => {
@@ -655,16 +578,35 @@ export default function DriverPortal() {
                 <div className="space-y-1.5 pt-1">
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Live Delivery Route Map</span>
                   
-                  {/* The Leaflet Map container */}
                   <div 
-                    id="driver-map" 
                     className="h-48 w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 relative z-0"
                     style={{ minHeight: '192px' }}
                   >
-                    {!leafletLoaded && (
+                    {!isLoaded || !apiKey ? (
                       <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50">
-                        <span className="text-xs text-slate-500 font-bold animate-pulse">Loading routing engine...</span>
+                        <span className="text-xs text-slate-500 font-bold animate-pulse">
+                          {!apiKey ? 'Missing Google Maps API Key (.env)' : 'Loading Maps engine...'}
+                        </span>
                       </div>
+                    ) : (
+                      <GoogleMap
+                        mapContainerStyle={{ width: '100%', height: '100%' }}
+                        center={{ lat: driverCoords[0], lng: driverCoords[1] }}
+                        zoom={14}
+                        options={{
+                          disableDefaultUI: true,
+                          zoomControl: true,
+                        }}
+                      >
+                        {directionsResponse && (
+                          <DirectionsRenderer 
+                            directions={directionsResponse}
+                            options={{ suppressMarkers: true, polylineOptions: { strokeColor: '#ff6b00', strokeWeight: 4 } }}
+                          />
+                        )}
+                        <Marker position={{ lat: driverCoords[0], lng: driverCoords[1] }} label="🛵" />
+                        <Marker position={{ lat: customerCoords[0], lng: customerCoords[1] }} label="📍" />
+                      </GoogleMap>
                     )}
                   </div>
                   

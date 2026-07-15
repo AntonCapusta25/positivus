@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/hyperzod/(.*)",
+      "destination": "https://api.hyperzod.app/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

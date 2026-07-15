@@ -1,10 +1,8 @@
 import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dGRjaWJpdHVtdndzcnhxZWxkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTI5NDUzNSwiZXhwIjoyMDk2ODcwNTM1fQ.JpDFwAdN-kRzhRWSQcfVZVKJjnDfGb1fZ6M52iWP0OA';
-const HYPERZOD_API_KEY = import.meta.env.VITE_HYPERZOD_API_KEY || 'b5LztNPujIndMPYpsRhwuw07beiaFZxQ5L6Di9LEn4JfZHPzPvyFJ1xr7xls-UAzjcgg5g2GVw==';
-const HYPERZOD_TENANT_ID = import.meta.env.VITE_HYPERZOD_TENANT_ID || '8218';
-const HYPERZOD_MERCHANT_ID = import.meta.env.VITE_HYPERZOD_MERCHANT_ID || '6a0f03b4500ed5db150be1a1';
+const HYPERZOD_API_KEY = import.meta.env.VITE_HYPERZOD_API_KEY;
+const HYPERZOD_TENANT_ID = import.meta.env.VITE_HYPERZOD_TENANT_ID;
+const HYPERZOD_MERCHANT_ID = import.meta.env.VITE_HYPERZOD_MERCHANT_ID;
 const HYPERZOD_BASE_URL = import.meta.env.VITE_HYPERZOD_BASE_URL || 'https://api.hyperzod.app';
 
 const POSContext = createContext();
@@ -662,7 +660,21 @@ export const POSProvider = ({ children }) => {
     }
 
     // Propagate status update back to Hyperzod via server-side Supabase Edge Function to avoid client CORS restrictions
-    const matchedOrder = orders.find(o => o.id === orderId || o.order_number === orderId);
+    let matchedOrder = orders.find(o => o.id === orderId || o.order_number === orderId);
+    
+    if (!matchedOrder) {
+      try {
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .maybeSingle();
+        matchedOrder = data;
+      } catch (err) {
+        console.error('Failed to fetch matched order from DB:', err);
+      }
+    }
+
     if (matchedOrder && matchedOrder.order_number) {
       let isSynced = false;
       try {
@@ -1104,11 +1116,13 @@ export const POSProvider = ({ children }) => {
           subtotal: parseFloat(product.price || product.product_pricing?.price_sell || 0),
           total_amount: parseFloat(product.price || product.product_pricing?.price_sell || 0)
         };
-        await fetch('https://qttdcibitumvwsrxqeld.supabase.co/functions/v1/hyperzod-webhook', {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        await fetch(`${supabaseUrl}/functions/v1/hyperzod-webhook`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_KEY}`
+            'Authorization': `Bearer ${supabaseAnonKey}`
           },
           body: JSON.stringify(syncPayload)
         });

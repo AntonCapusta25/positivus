@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { usePOS } from '../context/POSContext';
 import { ShoppingCart, Phone, MapPin, ClipboardList, CheckCircle, Clock, Check, Printer, UserCheck, Navigation, Download, CheckCircle2, ChevronRight, X, QrCode, ChevronLeft } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const parseItems = (items) => {
   if (!items) return [];
@@ -287,12 +288,24 @@ export default function Dashboard() {
                       </a>
                     </div>
                   )}
-                  {selectedOrder.notes && (
-                    <div className="bg-slate-50 p-3.5 rounded-xl text-xs text-slate-600 border border-slate-100 leading-relaxed">
-                      <span className="font-bold text-slate-700 block mb-1">Fulfillment Notes:</span>
-                      {selectedOrder.notes}
-                    </div>
-                  )}
+                  {(() => {
+                    if (!selectedOrder.notes) return null;
+                    let displayNote = selectedOrder.notes;
+                    if (typeof displayNote === 'string' && displayNote.trim().startsWith('{')) {
+                      try {
+                        const parsed = JSON.parse(displayNote);
+                        displayNote = parsed.order_comment || parsed.delivery_instructions || parsed.notes || parsed.order_instruction || "System payload attached (No customer notes)";
+                      } catch (e) {
+                        // ignore
+                      }
+                    }
+                    return (
+                      <div className="bg-slate-50 p-3.5 rounded-xl text-xs text-slate-600 border border-slate-100 leading-relaxed overflow-hidden break-words">
+                        <span className="font-bold text-slate-700 block mb-1">Fulfillment Notes:</span>
+                        {displayNote}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -540,11 +553,9 @@ export default function Dashboard() {
                     const driverUrl = `${host}/driver?order_id=${printPreviewOrder.id}`;
                     return (
                       <div className="space-y-1.5">
-                        <img 
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(driverUrl)}`} 
-                          className="mx-auto w-32 h-32 bg-white p-1 border border-slate-200 rounded-lg shadow-sm" 
-                          alt="Driver Route QR" 
-                        />
+                        <div className="mx-auto w-32 h-32 bg-white p-1 border border-slate-200 rounded-lg shadow-sm flex items-center justify-center">
+                          <QRCodeSVG value={driverUrl} size={120} />
+                        </div>
                         <span className="text-[8px] font-mono text-slate-400 block truncate max-w-full">
                           {driverUrl}
                         </span>
@@ -616,11 +627,9 @@ export default function Dashboard() {
                     Download customer order App
                   </span>
                   <div className="space-y-1">
-                    <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(settings.appStoreLink)}`} 
-                      className="mx-auto w-32 h-32 bg-white p-1 border border-slate-200 rounded-lg shadow-sm" 
-                      alt="Customer App Store QR" 
-                    />
+                    <div className="mx-auto w-32 h-32 bg-white p-1 border border-slate-200 rounded-lg shadow-sm flex items-center justify-center">
+                      <QRCodeSVG value={settings.appStoreLink || 'https://spoonful.com/app'} size={120} />
+                    </div>
                     <div className="flex justify-center space-x-1.5 text-[8px] font-extrabold text-slate-400 uppercase">
                       <span>App Store</span>
                       <span>•</span>

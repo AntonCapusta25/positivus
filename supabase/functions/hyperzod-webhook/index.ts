@@ -145,22 +145,28 @@ serve(async (req) => {
 
     if (existingOrder) {
       console.log(`Order ${orderNumber} already exists (UUID: ${existingOrder.id}). Updating record...`);
+      
+      const updatePayload: any = {
+        status: mappedStatus,
+        notes: JSON.stringify(body) // Store raw payload for debugging!
+      };
+      
+      // Only update fields if they were explicitly provided in the webhook payload
+      if (data.payment_status) updatePayload.payment_status = paymentStatus;
+      if (data.customer_name || data.customer?.name) updatePayload.customer_name = customerName;
+      if (data.customer_phone || data.customer?.phone) updatePayload.customer_phone = customerPhone;
+      if (data.cart_items || data.items) updatePayload.items = items;
+      if (data.subtotal || data.sub_total_amount) updatePayload.subtotal = subtotal;
+      if (data.tax) updatePayload.tax = tax;
+      if (data.delivery_charges || data.delivery_fee) updatePayload.delivery_fee = deliveryFee;
+      if (data.discount || data.discount_amount) updatePayload.discount = discount;
+      if (data.total_amount || data.total) updatePayload.total = total;
+      if (data.delivery_address || data.address) updatePayload.customer_address = customerAddress;
+      if (data.order_type) updatePayload.type = type;
+
       const { data: updatedData, error: updateError } = await supabase
         .from("orders")
-        .update({
-          status: mappedStatus,
-          payment_status: paymentStatus,
-          customer_name: customerName,
-          customer_phone: customerPhone,
-          items: items,
-          subtotal: subtotal,
-          tax: tax,
-          delivery_fee: deliveryFee,
-          discount: discount,
-          total: total,
-          customer_address: customerAddress,
-          notes: JSON.stringify(body) // Store raw payload for debugging!
-        })
+        .update(updatePayload)
         .eq("id", existingOrder.id)
         .select();
 
