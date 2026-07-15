@@ -65,6 +65,7 @@ function MainLayout() {
           
           // Subscribe to push notifications if VAPID key is configured
           const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+          console.log('[PWA Push] Loading VAPID Public Key:', vapidPublicKey);
           if (vapidPublicKey) {
             // Request permission
             const permission = await Notification.requestPermission();
