@@ -1,6 +1,7 @@
 // Deno Edge Function to handle Hyperzod Order Webhooks
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import webpush from "npm:web-push";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -207,6 +208,56 @@ serve(async (req) => {
         throw insertError;
       }
       finalOrderData = insertedData;
+
+      // Dispatch Web Push Notifications for NEW orders
+      if (finalOrderData && finalOrderData.length > 0) {
+        const newOrder = finalOrderData[0];
+        try {
+          const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
+          const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
+
+          if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+            webpush.setVapidDetails(
+              "mailto:info@spoonful-pos.local",
+              VAPID_PUBLIC_KEY,
+              VAPID_PRIVATE_KEY
+            );
+
+            // Get all subscriptions
+            const { data: subs, error: subsError } = await supabase
+              .from("push_subscriptions")
+              .select("*");
+
+            if (!subsError && subs && subs.length > 0) {
+              console.log(`Sending Web Push notifications to ${subs.length} devices...`);
+              const payload = JSON.stringify({
+                title: "New Kitchen Order!",
+                body: `Order #${newOrder.order_number} for €${Number(newOrder.total).toFixed(2)} (${newOrder.type})`,
+                url: "/"
+              });
+
+              const sendPromises = subs.map((sub: any) => {
+                const pushSubscription = {
+                  endpoint: sub.endpoint,
+                  keys: sub.keys
+                };
+                return webpush.sendNotification(pushSubscription, payload)
+                  .catch((err: any) => {
+                    console.error("Web Push failed for endpoint:", sub.endpoint, err);
+                    // Cleanup expired subscriptions (status code 410 Gone or 404 Not Found)
+                    if (err.statusCode === 410 || err.statusCode === 404) {
+                      supabase.from("push_subscriptions").delete().eq("id", sub.id).then();
+                    }
+                  });
+              });
+
+              await Promise.allSettled(sendPromises);
+            }
+          }
+        } catch (pushErr) {
+          console.error("Failed to process Web Push notifications:", pushErr);
+        }
+      }
     }
 
     return new Response(JSON.stringify({ success: true, order: finalOrderData }), {

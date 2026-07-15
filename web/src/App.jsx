@@ -6,7 +6,24 @@ import Analytics from './components/Analytics';
 import Settings from './components/Settings';
 import NewOrderModal from './components/NewOrderModal';
 import { ShoppingBag, Store, BarChart3, Settings as SettingsIcon, AlertCircle, Wifi, WifiOff, Download, Menu, X } from 'lucide-react';
+import { supabase } from './supabaseClient';
 import './App.css';
+
+// Helper to convert VAPID public key
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 function MainLayout() {
   const [currentPage, setCurrentPage] = useState('orders');
@@ -38,20 +55,55 @@ function MainLayout() {
     }
   };
 
-  // Register PWA service worker
+  // Register PWA service worker and subscribe to Push notifications
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      const registerSW = () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((reg) => console.log('[PWA SW] Service worker registered successfully: ', reg.scope))
-          .catch((err) => console.warn('[PWA SW] Service worker registration failed: ', err));
+      const registerSW = async () => {
+        try {
+          const reg = await navigator.serviceWorker.register('/sw.js');
+          console.log('[PWA SW] Service worker registered successfully: ', reg.scope);
+          
+          // Subscribe to push notifications if VAPID key is configured
+          const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+          if (vapidPublicKey) {
+            // Request permission
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+              const subscription = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+              });
+              
+              // Save to Supabase push_subscriptions table
+              const { error } = await supabase
+                .from('push_subscriptions')
+                .upsert(
+                  { endpoint: subscription.endpoint, keys: JSON.parse(JSON.stringify(subscription.keys)) },
+                  { onConflict: 'endpoint' }
+                );
+              
+              if (error) {
+                console.error('[PWA Push] Failed to save subscription to Supabase:', error);
+              } else {
+                console.log('[PWA Push] Successfully subscribed device to notifications');
+              }
+            } else {
+              console.warn('[PWA Push] Notification permission denied');
+            }
+          }
+        } catch (err) {
+          console.warn('[PWA SW] Service worker registration/subscription failed: ', err);
+        }
       };
 
       if (document.readyState === 'complete') {
         registerSW();
       } else {
-        window.addEventListener('load', registerSW);
-        return () => window.removeEventListener('load', registerSW);
+        const loadHandler = () => {
+          registerSW();
+        };
+        window.addEventListener('load', loadHandler);
+        return () => window.removeEventListener('load', loadHandler);
       }
     }
   }, []);
