@@ -3,6 +3,8 @@
   "short_name": "Spoonful POS",
   "description": "Progressive Web Application POS terminal for Spoonful",
   "start_url": "/",
+  "scope": "/",
+  "id": "/",
   "display": "standalone",
   "background_color": "#F8FAFC",
   "theme_color": "#D8581B",
