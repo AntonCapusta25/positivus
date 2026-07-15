@@ -405,10 +405,41 @@ export const POSProvider = ({ children }) => {
   }, [settings.merchantId]);
 
 
+  // Global AudioContext for mobile web browser compatibility (bypasses gesture restrictions)
+  const globalAudioCtxRef = useRef(null);
+
+  useEffect(() => {
+    const initAudioContext = () => {
+      if (!globalAudioCtxRef.current) {
+        globalAudioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const ctx = globalAudioCtxRef.current;
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().then(() => {
+          console.log('[POS Audio] AudioContext unlocked successfully');
+          cleanup();
+        }).catch(err => {
+          console.warn('[POS Audio] Failed to resume AudioContext:', err);
+        });
+      } else if (ctx && ctx.state === 'running') {
+        cleanup();
+      }
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('click', initAudioContext);
+      window.removeEventListener('touchstart', initAudioContext);
+    };
+
+    window.addEventListener('click', initAudioContext);
+    window.addEventListener('touchstart', initAudioContext);
+
+    return cleanup;
+  }, []);
+
   // Looping Siren Alarm alert state
   const [sirenActive, setSirenActive] = useState(false);
   const sirenIntervalRef = useRef(null);
-  const audioCtxRef = useRef(null);
 
   const startSirenAlert = () => {
     if (!settings.soundAlert) return;
@@ -422,7 +453,9 @@ export const POSProvider = ({ children }) => {
   const playDriverChime = () => {
     if (!settings.soundAlert) return;
     try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioCtx = globalAudioCtxRef.current || new (window.AudioContext || window.webkitAudioContext)();
+      if (!globalAudioCtxRef.current) globalAudioCtxRef.current = audioCtx;
+
       const osc = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
       osc.connect(gainNode);
@@ -445,8 +478,9 @@ export const POSProvider = ({ children }) => {
   useEffect(() => {
     if (sirenActive) {
       try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        audioCtxRef.current = audioCtx;
+        const audioCtx = globalAudioCtxRef.current || new (window.AudioContext || window.webkitAudioContext)();
+        if (!globalAudioCtxRef.current) globalAudioCtxRef.current = audioCtx;
+
         let highTone = true;
 
         sirenIntervalRef.current = setInterval(() => {
@@ -479,18 +513,11 @@ export const POSProvider = ({ children }) => {
         clearInterval(sirenIntervalRef.current);
         sirenIntervalRef.current = null;
       }
-      if (audioCtxRef.current) {
-        audioCtxRef.current.close().catch(() => {});
-        audioCtxRef.current = null;
-      }
     }
 
     return () => {
       if (sirenIntervalRef.current) {
         clearInterval(sirenIntervalRef.current);
-      }
-      if (audioCtxRef.current) {
-        audioCtxRef.current.close().catch(() => {});
       }
     };
   }, [sirenActive, settings.soundVolume, settings.soundAlert]);
@@ -590,7 +617,9 @@ export const POSProvider = ({ children }) => {
   // Helper sound function (synthesized browser audio context)
   const playAlertSound = () => {
     try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioCtx = globalAudioCtxRef.current || new (window.AudioContext || window.webkitAudioContext)();
+      if (!globalAudioCtxRef.current) globalAudioCtxRef.current = audioCtx;
+
       const volume = settings.soundVolume / 100;
       
       const playTone = (freq, duration, delay) => {
