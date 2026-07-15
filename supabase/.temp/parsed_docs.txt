@@ -1,0 +1,306 @@
+============================================================
+DOCUMENT: Update Cart (update_cart)
+Title: Update Cart
+Summary: null
+doc.data structure is different: [ 'nodes', 'metadata' ]
+{
+  "nodes": [
+    {
+      "id": "JY4fM2KsjS61OL4eoEm0I",
+      "type": "api-oas-v2",
+      "data": {
+        "method": "POST",
+        "url": "https://api.hyperzod.app/store/v1/cart",
+        "servers": [],
+        "name": "Update Cart",
+        "description": "",
+        "contentType": "application/json",
+        "request": {
+          "pathParameters": [],
+          "headerParameters": [
+            {
+              "kind": "required",
+              "name": "X-API-KEY",
+              "type": "string",
+              "example": "{{X-API-KEY}}",
+              "description": ""
+            },
+            {
+              "kind": "required",
+              "name": "X-TENANT",
+              "type": "string",
+              "example": "{{X-Tenant}}",
+              "description": ""
+            }
+          ],
+          "queryParameters": [],
+          "bodyDataParameters": [
+            {
+              "kind": "optional",
+              "name": "body",
+              "type": "object",
+              "example": "{\"cart_id\":\"65b400d7245b3a1be8071e0a\",\"user_id\":1127,\"cart_items\":[{\"merchant_id\":\"61d6b51b17ab8614a72cd25b\",\"product_id\":\"63fdb8536c8120b08204552f\",\"item_image_url\":null,\"product_name\":\"Chilli Chicken\",\"product_price\":216,\"quantity\":1,\"product_options\":[{\"product_option_id\":\"2e3d9b50-b740-11ed-930c-f30144d1f554\",\"option_name\":\"QUANTITY\",\"selection_type\":\"single\",\"price_total\":60,\"options\":[{\"option_id\":\"2e3d9c80-b740-11ed-81ab-c51ef6b50f29\",\"name\":\"FULL\",\"price\":60,\"is_quantity_enabled\":false}]}]}]}",
+              "description": "",
+              "schema": [
+                {
+                  "name": "cart_id",
+                  "kind": "required",
+                  "type": "string",
+                  "description": "",
+                  "example": ""
+                },
+                {
+                  "name": "user_id",
+                  "kind": "required",
+                  "type": "integer",
+               
+============================================================
+DOCUMENT: Validate Cart (validate_cart)
+Title: Validate Cart
+Summary: null
+doc.data structure is different: [ 'nodes', 'metadata' ]
+{
+  "nodes": [
+    {
+      "id": "gArEJOzZP26TFiYQh3TXh",
+      "type": "api-oas-v2",
+      "data": {
+        "method": "GET",
+        "url": "https://api.hyperzod.app/store/v1/cart/validate",
+        "servers": [],
+        "name": "Validate Cart",
+        "description": "",
+        "contentType": "application/json",
+        "request": {
+          "pathParameters": [],
+          "headerParameters": [
+            {
+              "kind": "required",
+              "name": "X-API-KEY",
+              "type": "string",
+              "example": "{{X-API-KEY}}",
+              "description": ""
+            },
+            {
+              "kind": "required",
+              "name": "X-TENANT",
+              "type": "string",
+              "example": "{{X-Tenant}}",
+              "description": ""
+            }
+          ],
+          "queryParameters": [],
+          "bodyDataParameters": [
+            {
+              "kind": "optional",
+              "name": "body",
+              "type": "object",
+              "example": "{\"user_id\":1127,\"cart_id\":\"65b400d7245b3a1be8071e0a\",\"order_type\":\"delivery\",\"address_id\":\"6595a095bd065d006b03775e\",\"user_location\":[26.8801112,80.95599969999999]}",
+              "description": "",
+              "schema": [
+                {
+                  "name": "user_id",
+                  "kind": "required",
+                  "type": "integer",
+                  "description": "",
+                  "example": 0
+                },
+                {
+                  "name": "cart_id",
+                  "kind": "required",
+                  "type": "string",
+                  "description": "",
+                  "example": ""
+                },
+                {
+                  "name": "order_type",
+                  "kind": "required",
+                  "type": "string",
+                  "description": "",
+                  "example": ""
+                },
+                {
+                  "name": "address_id",
+                  "ki
+============================================================
+DOCUMENT: Create an Order (create_an_order)
+Title: Create an Order
+Summary: null
+doc.data structure is different: [ 'nodes', 'metadata' ]
+{
+  "nodes": [
+    {
+      "id": "HBZkv002PezbU7LWGp2s2",
+      "type": "api-oas-v2",
+      "data": {
+        "method": "POST",
+        "url": "https://api.hyperzod.app/admin/v1/order/create",
+        "servers": [],
+        "name": "Create an Order",
+        "description": "",
+        "contentType": "application/json",
+        "request": {
+          "pathParameters": [],
+          "headerParameters": [
+            {
+              "kind": "required",
+              "name": "X-API-KEY",
+              "type": "string",
+              "example": "{{X-API-KEY}}",
+              "description": ""
+            },
+            {
+              "kind": "required",
+              "name": "X-TENANT",
+              "type": "string",
+              "example": "{{X-TENANT}}",
+              "description": ""
+            }
+          ],
+          "queryParameters": [],
+          "bodyDataParameters": [
+            {
+              "kind": "optional",
+              "name": "body",
+              "type": "object",
+              "example": "{\"user_id\":1127,\"merchant_id\":\"61d6b51b17ab8614a72cd25b\",\"address_id\":\"6595a095bd065d006b03775e\",\"cart_id\":\"65b400d7245b3a1be8071e0a\",\"payment_mode_id\":3,\"order_type\":\"delivery\",\"order_comment\":\"Hello\",\"checksum\":\"db979185b614b493fea6ad664164404f\",\"scheduling_slot\":{\"is_scheduled\":false}}",
+              "description": "",
+              "schema": [
+                {
+                  "name": "user_id",
+                  "kind": "required",
+                  "type": "integer",
+                  "description": "",
+                  "example": 0
+                },
+                {
+                  "name": "merchant_id",
+                  "kind": "required",
+                  "type": "string",
+                  "description": "",
+                  "example": ""
+                },
+                {
+                  "name": "address_id",
+                  "kind": "required",
+                  "type": "string",
+                  "d
+============================================================
+DOCUMENT: Update a merchant (update_a_merchant)
+Title: Update a merchant
+Summary: null
+doc.data structure is different: [ 'nodes', 'metadata' ]
+{
+  "nodes": [
+    {
+      "id": "fV0OyFyH9SCtaErOLq5eP",
+      "type": "api-oas-v2",
+      "data": {
+        "method": "POST",
+        "url": "https://api.hyperzod.app/admin/v1/merchant/update",
+        "servers": [],
+        "name": "Update a merchant",
+        "description": "",
+        "contentType": "application/json",
+        "request": {
+          "pathParameters": [],
+          "headerParameters": [
+            {
+              "kind": "required",
+              "name": "X-API-KEY",
+              "type": "string",
+              "example": "{{X-API-KEY}}",
+              "description": ""
+            },
+            {
+              "kind": "required",
+              "name": "X-TENANT",
+              "type": "string",
+              "example": "{{X-TENANT}}",
+              "description": ""
+            }
+          ],
+          "queryParameters": [],
+          "bodyDataParameters": [
+            {
+              "kind": "optional",
+              "name": "body",
+              "type": "object",
+              "example": "{\"id\":\"659a599746ffe08410015213\",\"slug\":\"test-merchant-7\",\"language_translation\":[{\"locale\":\"en\",\"key\":\"name\",\"value\":\"Test merchant\"}],\"name\":\"Test Merchant\",\"address\":\"4 Saltaire Rd\",\"post_code\":\"BD18 3HN\",\"country_code\":\"GB\",\"country\":\"United Kingdom\",\"state\":\"\",\"city\":\"Shipley\",\"phone\":\"+441632960711\",\"email\":\"ff@gmail.com\",\"merchant_category_ids\":[\"6288bd5b7e5d8df0f10540b2\"],\"accepted_order_types\":[\"delivery\",\"pickup\"],\"status\":1,\"delivery_by\":\"tenant\",\"owner_name\":\"Adeoye Sunday\",\"owner_phone\":\"2348079189198\",\"commission\":{\"type\":\"fixed\",\"value\":10.5,\"calculate_on_status\":1},\"tax_method\":\"inclusive\",\"type\":\"ecommerce\"}",
+              "description": "",
+              "schema": [
+                {
+                  "name": "id",
+                  "kind": "required",
+                  "type": "string",
+                  "description": "",
+             
+============================================================
+DOCUMENT: Fetch Address (fetch_address)
+Title: Fetch Address
+Summary: null
+doc.data structure is different: [ 'nodes', 'metadata' ]
+{
+  "nodes": [
+    {
+      "id": "DSkJUPjydIoT_mZd9AJtQ",
+      "type": "api-oas-v2",
+      "data": {
+        "method": "GET",
+        "url": "https://api.hyperzod.app/admin/v1/address/fetch",
+        "servers": [],
+        "name": "Fetch Address",
+        "description": "",
+        "contentType": "application/json",
+        "request": {
+          "pathParameters": [],
+          "headerParameters": [
+            {
+              "kind": "required",
+              "name": "X-API-KEY",
+              "type": "string",
+              "example": "{{X-API-KEY}}",
+              "description": ""
+            },
+            {
+              "kind": "required",
+              "name": "X-TENANT",
+              "type": "string",
+              "example": "{{X-TENANT}}",
+              "description": ""
+            }
+          ],
+          "queryParameters": [],
+          "bodyDataParameters": [
+            {
+              "kind": "optional",
+              "name": "body",
+              "type": "object",
+              "example": "{\"id\":\"65ae28eea624012d1b0a94c3\"}",
+              "description": "",
+              "schema": [
+                {
+                  "name": "id",
+                  "kind": "required",
+                  "type": "string",
+                  "description": "",
+                  "example": ""
+                }
+              ],
+              "isExpanded": true
+            }
+          ],
+          "formDataParameters": [],
+          "oAuthParameters": []
+        },
+        "responses": [
+          {
+            "statusCode": "200",
+            "description": "",
+            "jsonExample": "",
+            "isExpanded": true,
+            "schema": [
+              {
+                "kind": "optional",
+                "type": "object",
+                "example": "{\"success\":true,\"data\":{\"_id\":\"65ae28eea624012d1b0a94c3\",\"tenant_id\":1003,\"user_id\":1127,\"address_type\":\"home\",\"location_lat_lon\":[26.8801112,80.95599969999999],\"address\":\"Mahanagar, Luckn

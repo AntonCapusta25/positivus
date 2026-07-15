@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Spoonful POS</string>
+    <string name="supabase_not_connected">Supabase: Disconnected</string>
+    <string name="supabase_connected">Supabase: Connected</string>
+    <string name="printer_not_connected">Printer: Offline</string>
+    <string name="printer_connected">Printer: Ready</string>
+    <string name="print_test">Test Print</string>
+    <string name="auto_print">Auto-Print Webhook Orders</string>
+    <string name="sound_alert">Sound Alert for New Orders</string>
+    <string name="no_orders">No orders in queue</string>
+</resources>

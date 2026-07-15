@@ -1,0 +1,68 @@
+/* App custom styles can go here */
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* Custom sizes for PIN circles */
+.w-4\.5 {
+  width: 1.125rem;
+}
+.h-4\.5 {
+  height: 1.125rem;
+}
+
+/* Base styles for select dropdowns to clean up defaults */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1rem;
+}
+
+/* Laser sweep animation for delivery scanner */
+@keyframes scanning {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+.animate-bounce {
+  animation: scanning 2s infinite ease-in-out;
+}
+
+/* Thermal receipt mock graphics */
+.thermal-receipt {
+  font-family: 'Courier New', Courier, monospace;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  color: #1e293b;
+  position: relative;
+  overflow: hidden;
+}
+
+.thermal-receipt::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: repeating-linear-gradient(90deg, transparent, transparent 3px, #cbd5e1 3px, #cbd5e1 6px);
+}
+
+.thermal-receipt::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: repeating-linear-gradient(90deg, transparent, transparent 4px, #cbd5e1 4px, #cbd5e1 8px);
+}

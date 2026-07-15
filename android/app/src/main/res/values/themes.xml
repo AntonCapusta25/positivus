@@ -1,0 +1,26 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.SpoonfulPOS" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">#ff6b00</item>
+        <item name="colorPrimaryVariant">#d94c00</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">#ff9d00</item>
+        <item name="colorSecondaryVariant">#b36b00</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        
+        <!-- Status bar and navigation bar. -->
+        <item name="android:statusBarColor">#F4F5F8</item>
+        <item name="android:navigationBarColor">#F4F5F8</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o">true</item>
+
+        <!-- Backgrounds and surfaces in light mode -->
+        <item name="android:windowBackground">#F4F5F8</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#0F172A</item>
+        <item name="colorError">#FF5252</item>
+        <item name="colorOnError">#FFFFFF</item>
+    </style>
+</resources>

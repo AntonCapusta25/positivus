@@ -1,0 +1,610 @@
+{
+  "storeResult": {
+    "status": 404,
+    "data": {
+      "success": false,
+      "message": "HTTP Request not found",
+      "data": {
+        "messsage": "The route store/v1/address/list could not be found.",
+        "url": "https://api.hyperzod.app/store/v1/address/list?user_id=575692"
+      },
+      "service": "api",
+      "status_code": 404
+    }
+  },
+  "adminResult": {
+    "status": 500,
+    "data": {
+      "message": "Method App\\Http\\Controllers\\Api\\V1\\AddressBookService\\AddressBookServiceController::list does not exist.",
+      "exception": "BadMethodCallException",
+      "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Controller.php",
+      "line": 68,
+      "trace": [
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Controller.php",
+          "line": 54,
+          "function": "__call",
+          "class": "Illuminate\\Routing\\Controller",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/ControllerDispatcher.php",
+          "line": 43,
+          "function": "callAction",
+          "class": "Illuminate\\Routing\\Controller",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/sentry/sentry-laravel/src/Sentry/Laravel/Tracing/Routing/TracingControllerDispatcherTracing.php",
+          "line": 21,
+          "function": "dispatch",
+          "class": "Illuminate\\Routing\\ControllerDispatcher",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/sentry/sentry-laravel/src/Sentry/Laravel/Tracing/Routing/TracingRoutingDispatcher.php",
+          "line": 18,
+          "function": "{closure:Sentry\\Laravel\\Tracing\\Routing\\TracingControllerDispatcherTracing::dispatch():20}",
+          "class": "Sentry\\Laravel\\Tracing\\Routing\\TracingControllerDispatcherTracing",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/sentry/sentry-laravel/src/Sentry/Laravel/Tracing/Routing/TracingControllerDispatcherTracing.php",
+          "line": 20,
+          "function": "wrapRouteDispatch",
+          "class": "Sentry\\Laravel\\Tracing\\Routing\\TracingRoutingDispatcher",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Route.php",
+          "line": 269,
+          "function": "dispatch",
+          "class": "Sentry\\Laravel\\Tracing\\Routing\\TracingControllerDispatcherTracing",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Route.php",
+          "line": 215,
+          "function": "runController",
+          "class": "Illuminate\\Routing\\Route",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Router.php",
+          "line": 822,
+          "function": "run",
+          "class": "Illuminate\\Routing\\Route",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 180,
+          "function": "{closure:Illuminate\\Routing\\Router::runRouteWithinStack():821}",
+          "class": "Illuminate\\Routing\\Router",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/hyperzodtech/hyperzod-service-functions/src/Http/Middleware/AuthPermissionForTenantMiddleware.php",
+          "line": 31,
+          "function": "{closure:Illuminate\\Pipeline\\Pipeline::prepareDestination():178}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Hyperzod\\HyperzodServiceFunctions\\Http\\Middleware\\AuthPermissionForTenantMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/app/Http/Middleware/ValidateZoneIdsRequestMiddleware.php",
+          "line": 24,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "App\\Http\\Middleware\\ValidateZoneIdsRequestMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/app/Http/Middleware/ValidateTenantUserZoneMiddleware.php",
+          "line": 26,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "App\\Http\\Middleware\\ValidateTenantUserZoneMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/app/Http/Middleware/CheckTenantSuspendedMiddleware.php",
+          "line": 55,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "App\\Http\\Middleware\\CheckTenantSuspendedMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/hyperzodtech/hyperzod-service-functions/src/Http/Middleware/ApmSetUserContextMiddleware.php",
+          "line": 25,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Hyperzod\\HyperzodServiceFunctions\\Http\\Middleware\\ApmSetUserContextMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/hyperzodtech/hyperzod-service-functions/src/Http/Middleware/ApmSetTenantIdTagMiddleware.php",
+          "line": 18,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Hyperzod\\HyperzodServiceFunctions\\Http\\Middleware\\ApmSetTenantIdTagMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/hyperzodtech/hyperzod-service-functions/src/Http/Middleware/SetTenantPanelMiddleware.php",
+          "line": 21,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Hyperzod\\HyperzodServiceFunctions\\Http\\Middleware\\SetTenantPanelMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/app/Http/Middleware/IsAdminUserMiddleware.php",
+          "line": 31,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "App\\Http\\Middleware\\IsAdminUserMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/app/Http/Middleware/ValidateMerchantIdMiddleware.php",
+          "line": 37,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "App\\Http\\Middleware\\ValidateMerchantIdMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/hyperzodtech/hyperzod-service-functions/src/Http/Middleware/AuthenticateUserStrictMiddleware.php",
+          "line": 24,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Hyperzod\\HyperzodServiceFunctions\\Http\\Middleware\\AuthenticateUserStrictMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/app/Http/Middleware/SetMerchantIdIfPresentMiddleware.php",
+          "line": 30,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "App\\Http\\Middleware\\SetMerchantIdIfPresentMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/app/Http/Middleware/Route53Middleware.php",
+          "line": 20,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "App\\Http\\Middleware\\Route53Middleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/hyperzodtech/hyperzod-service-functions/src/Http/Middleware/ResolveTenantMiddleware.php",
+          "line": 80,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Hyperzod\\HyperzodServiceFunctions\\Http\\Middleware\\ResolveTenantMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php",
+          "line": 52,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php",
+          "line": 168,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php",
+          "line": 129,
+          "function": "handleRequest",
+          "class": "Illuminate\\Routing\\Middleware\\ThrottleRequests",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php",
+          "line": 90,
+          "function": "handleRequestUsingNamedLimiter",
+          "class": "Illuminate\\Routing\\Middleware\\ThrottleRequests",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Illuminate\\Routing\\Middleware\\ThrottleRequests",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 137,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Router.php",
+          "line": 821,
+          "function": "then",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Router.php",
+          "line": 800,
+          "function": "runRouteWithinStack",
+          "class": "Illuminate\\Routing\\Router",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Router.php",
+          "line": 764,
+          "function": "runRoute",
+          "class": "Illuminate\\Routing\\Router",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Routing/Router.php",
+          "line": 753,
+          "function": "dispatchToRoute",
+          "class": "Illuminate\\Routing\\Router",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php",
+          "line": 200,
+          "function": "dispatch",
+          "class": "Illuminate\\Routing\\Router",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 180,
+          "function": "{closure:Illuminate\\Foundation\\Http\\Kernel::dispatchToRouter():197}",
+          "class": "Illuminate\\Foundation\\Http\\Kernel",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/sentry/sentry-laravel/src/Sentry/Laravel/Http/FlushEventsMiddleware.php",
+          "line": 13,
+          "function": "{closure:Illuminate\\Pipeline\\Pipeline::prepareDestination():178}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Sentry\\Laravel\\Http\\FlushEventsMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/sentry/sentry-laravel/src/Sentry/Laravel/Http/SetRequestIpMiddleware.php",
+          "line": 45,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Sentry\\Laravel\\Http\\SetRequestIpMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/sentry/sentry-laravel/src/Sentry/Laravel/Http/SetRequestMiddleware.php",
+          "line": 31,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Sentry\\Laravel\\Http\\SetRequestMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/hyperzodtech/hyperzod-service-functions/src/Http/Middleware/HasLocale.php",
+          "line": 31,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Hyperzod\\HyperzodServiceFunctions\\Http\\Middleware\\HasLocale",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/hyperzodtech/hyperzod-service-functions/src/Http/Middleware/ApmSentryMiddleware.php",
+          "line": 32,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Hyperzod\\HyperzodServiceFunctions\\Http\\Middleware\\ApmSentryMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/app/Http/Middleware/DetectClientDeviceMiddleware.php",
+          "line": 15,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "App\\Http\\Middleware\\DetectClientDeviceMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php",
+          "line": 21,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php",
+          "line": 31,
+          "function": "handle",
+          "class": "Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php",
+          "line": 21,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php",
+          "line": 51,
+          "function": "handle",
+          "class": "Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Illuminate\\Foundation\\Http\\Middleware\\TrimStrings",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php",
+          "line": 27,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Illuminate\\Http\\Middleware\\ValidatePostSize",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php",
+          "line": 109,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/hyperzodtech/hyperzod-service-functions/src/Http/Middleware/CorsMiddleware.php",
+          "line": 31,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Hyperzod\\HyperzodServiceFunctions\\Http\\Middleware\\CorsMiddleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php",
+          "line": 58,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Illuminate\\Http\\Middleware\\TrustProxies",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/sentry/sentry-laravel/src/Sentry/Laravel/Tracing/Middleware.php",
+          "line": 79,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 219,
+          "function": "handle",
+          "class": "Sentry\\Laravel\\Tracing\\Middleware",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+          "line": 137,
+          "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php",
+          "line": 175,
+          "function": "then",
+          "class": "Illuminate\\Pipeline\\Pipeline",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php",
+          "line": 144,
+          "function": "sendRequestThroughRouter",
+          "class": "Illuminate\\Foundation\\Http\\Kernel",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/octane/src/ApplicationGateway.php",
+          "line": 36,
+          "function": "handle",
+          "class": "Illuminate\\Foundation\\Http\\Kernel",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/octane/src/Worker.php",
+          "line": 84,
+          "function": "handle",
+          "class": "Laravel\\Octane\\ApplicationGateway",
+          "type": "->"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/octane/bin/swoole-server",
+          "line": 122,
+          "function": "handle",
+          "class": "Laravel\\Octane\\Worker",
+          "type": "->"
+        },
+        {
+          "function": "{closure:/home/forge/api.hyperzod.app/vendor/laravel/octane/bin/swoole-server:111}"
+        },
+        {
+          "file": "/home/forge/api.hyperzod.app/vendor/laravel/octane/bin/swoole-server",
+          "line": 172,
+          "function": "start",
+          "class": "Swoole\\Server",
+          "type": "->"
+        }
+      ]
+    }
+  }
+}

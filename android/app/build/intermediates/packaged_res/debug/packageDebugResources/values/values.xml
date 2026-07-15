@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:ns1="http://schemas.android.com/tools">
+    <string name="app_name">Spoonful POS</string>
+    <string name="auto_print">Auto-Print Webhook Orders</string>
+    <string name="no_orders">No orders in queue</string>
+    <string name="print_test">Test Print</string>
+    <string name="printer_connected">Printer: Ready</string>
+    <string name="printer_not_connected">Printer: Offline</string>
+    <string name="sound_alert">Sound Alert for New Orders</string>
+    <string name="supabase_connected">Supabase: Connected</string>
+    <string name="supabase_not_connected">Supabase: Disconnected</string>
+    <style name="Theme.SpoonfulPOS" parent="Theme.MaterialComponents.Light.NoActionBar">
+        
+        <item name="colorPrimary">#ff6b00</item>
+        <item name="colorPrimaryVariant">#d94c00</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        
+        <item name="colorSecondary">#ff9d00</item>
+        <item name="colorSecondaryVariant">#b36b00</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        
+        
+        <item name="android:statusBarColor">#F4F5F8</item>
+        <item name="android:navigationBarColor">#F4F5F8</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" ns1:targetApi="o">true</item>
+
+        
+        <item name="android:windowBackground">#F4F5F8</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#0F172A</item>
+        <item name="colorError">#FF5252</item>
+        <item name="colorOnError">#FFFFFF</item>
+    </style>
+</resources>

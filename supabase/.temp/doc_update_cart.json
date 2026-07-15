@@ -1,0 +1,2854 @@
+{
+  "props": {
+    "pageProps": {
+      "pdfExport": false,
+      "showToC": true,
+      "additionalQuery": "",
+      "docSpaceId": "PREVIEW-TSX59B-ftH01Uoa0aU550",
+      "docId": "PREVIEW-xK_ssjD801ElrUP9Vt_Af",
+      "openApiTryIt": true,
+      "openApiUseOwnBackend": false,
+      "_doc": {
+        "id": "PREVIEW-xK_ssjD801ElrUP9Vt_Af",
+        "name": "Update Cart",
+        "icon": "",
+        "title": "Update Cart",
+        "previewImageURL": "",
+        "summary": null,
+        "urlKey": "update-cart",
+        "description": "",
+        "urlAlias": "",
+        "data": {
+          "nodes": [
+            {
+              "id": "JY4fM2KsjS61OL4eoEm0I",
+              "type": "api-oas-v2",
+              "data": {
+                "method": "POST",
+                "url": "https://api.hyperzod.app/store/v1/cart",
+                "servers": [],
+                "name": "Update Cart",
+                "description": "",
+                "contentType": "application/json",
+                "request": {
+                  "pathParameters": [],
+                  "headerParameters": [
+                    {
+                      "kind": "required",
+                      "name": "X-API-KEY",
+                      "type": "string",
+                      "example": "{{X-API-KEY}}",
+                      "description": ""
+                    },
+                    {
+                      "kind": "required",
+                      "name": "X-TENANT",
+                      "type": "string",
+                      "example": "{{X-Tenant}}",
+                      "description": ""
+                    }
+                  ],
+                  "queryParameters": [],
+                  "bodyDataParameters": [
+                    {
+                      "kind": "optional",
+                      "name": "body",
+                      "type": "object",
+                      "example": "{\"cart_id\":\"65b400d7245b3a1be8071e0a\",\"user_id\":1127,\"cart_items\":[{\"merchant_id\":\"61d6b51b17ab8614a72cd25b\",\"product_id\":\"63fdb8536c8120b08204552f\",\"item_image_url\":null,\"product_name\":\"Chilli Chicken\",\"product_price\":216,\"quantity\":1,\"product_options\":[{\"product_option_id\":\"2e3d9b50-b740-11ed-930c-f30144d1f554\",\"option_name\":\"QUANTITY\",\"selection_type\":\"single\",\"price_total\":60,\"options\":[{\"option_id\":\"2e3d9c80-b740-11ed-81ab-c51ef6b50f29\",\"name\":\"FULL\",\"price\":60,\"is_quantity_enabled\":false}]}]}]}",
+                      "description": "",
+                      "schema": [
+                        {
+                          "name": "cart_id",
+                          "kind": "required",
+                          "type": "string",
+                          "description": "",
+                          "example": ""
+                        },
+                        {
+                          "name": "user_id",
+                          "kind": "required",
+                          "type": "integer",
+                          "description": "",
+                          "example": 0
+                        },
+                        {
+                          "name": "cart_items",
+                          "kind": "required",
+                          "type": "array",
+                          "description": "",
+                          "example": "",
+                          "itemType": "object",
+                          "customType": "object[]",
+                          "schema": [
+                            {
+                              "name": "merchant_id",
+                              "kind": "optional",
+                              "type": "string",
+                              "description": "",
+                              "example": ""
+                            },
+                            {
+                              "name": "product_id",
+                              "kind": "optional",
+                              "type": "string",
+                              "description": "",
+                              "example": ""
+                            },
+                            {
+                              "name": "item_image_url",
+                              "kind": "optional",
+                              "type": "null",
+                              "description": "",
+                              "example": ""
+                            },
+                            {
+                              "name": "product_name",
+                              "kind": "optional",
+                              "type": "string",
+                              "description": "",
+                              "example": ""
+                            },
+                            {
+                              "name": "product_price",
+                              "kind": "optional",
+                              "type": "integer",
+                              "description": "",
+                              "example": 0
+                            },
+                            {
+                              "name": "quantity",
+                              "kind": "optional",
+                              "type": "integer",
+                              "description": "",
+                              "example": 0
+                            },
+                            {
+                              "name": "product_options",
+                              "kind": "optional",
+                              "type": "array",
+                              "description": "",
+                              "example": "",
+                              "itemType": "object",
+                              "customType": "object[]",
+                              "schema": [
+                                {
+                                  "name": "product_option_id",
+                                  "kind": "optional",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "option_name",
+                                  "kind": "optional",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "selection_type",
+                                  "kind": "optional",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "price_total",
+                                  "kind": "optional",
+                                  "type": "integer",
+                                  "description": "",
+                                  "example": 0
+                                },
+                                {
+                                  "name": "options",
+                                  "kind": "optional",
+                                  "type": "array",
+                                  "description": "",
+                                  "example": "",
+                                  "itemType": "object",
+                                  "customType": "object[]",
+                                  "schema": [
+                                    {
+                                      "name": "option_id",
+                                      "kind": "optional",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "name",
+                                      "kind": "optional",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "price",
+                                      "kind": "optional",
+                                      "type": "integer",
+                                      "description": "",
+                                      "example": 0
+                                    },
+                                    {
+                                      "name": "is_quantity_enabled",
+                                      "kind": "optional",
+                                      "type": "boolean",
+                                      "description": "",
+                                      "example": ""
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ],
+                      "isExpanded": true
+                    }
+                  ],
+                  "formDataParameters": [],
+                  "oAuthParameters": []
+                },
+                "responses": [
+                  {
+                    "statusCode": "200",
+                    "description": "",
+                    "jsonExample": "",
+                    "isExpanded": true,
+                    "schema": [
+                      {
+                        "kind": "optional",
+                        "type": "object",
+                        "example": "{\"success\":true,\"data\":{\"_id\":\"65b400d7245b3a1be8071e0a\",\"tenant_id\":1003,\"cart_items\":[{\"merchant_id\":\"61d6b51b17ab8614a72cd25b\",\"product_id\":\"63fdb8536c8120b08204552f\",\"item_image_url\":null,\"product_name\":\"Chilli Chicken\",\"quantity\":1,\"product_price\":216,\"product_options\":[{\"product_option_id\":\"2e3d9b50-b740-11ed-930c-f30144d1f554\",\"option_name\":\"QUANTITY\",\"selection_type\":\"single\",\"price_total\":60,\"options\":[{\"option_id\":\"2e3d9c80-b740-11ed-81ab-c51ef6b50f29\",\"name\":\"FULL\",\"price\":60,\"is_quantity_enabled\":false,\"quantity\":1,\"price_total\":60,\"price_formatted\":\"₹60.00\",\"price_total_formatted\":\"₹60.00\"}],\"price_total_formatted\":\"₹60.00\"}],\"tax_percent\":null,\"discount_percent\":null,\"sub_total_amount\":276,\"product_price_formatted\":\"₹216.00\",\"sub_total_amount_formatted\":\"₹276.00\"}],\"total_items\":1,\"total_amount\":276,\"is_updated\":false,\"checksum\":null,\"checksum_at\":null,\"user_id\":1127,\"updated_at\":\"2024-01-26T19:08:38.358000Z\",\"created_at\":\"2024-01-26T18:58:31.859000Z\",\"raw_calculation\":{\"delivery_fee\":0,\"delivery_tax\":0,\"sub_total_amount\":276,\"tax\":0,\"total_amount\":276},\"sub_total_amount\":276,\"custom_charges\":[],\"delivery_fee\":0,\"delivery_tax\":0,\"is_delivery_fee_applied\":true,\"is_delivery_tax_applied\":true,\"is_tip_applied\":false,\"message\":null,\"tax\":26.29,\"tax_method\":\"inclusive\",\"tip_amount\":0,\"sub_total_cost_amount\":360,\"cart_id\":\"65b400d7245b3a1be8071e0a\",\"total_amount_formatted\":\"₹276.00\",\"sub_total_amount_formatted\":\"₹276.00\",\"discount_amount_formatted\":\"₹0.00\",\"tax_formatted\":\"₹26.29\",\"delivery_fee_formatted\":\"₹0.00\",\"delivery_tax_formatted\":\"₹0.00\",\"currency_setting\":{\"code\":\"INR\",\"symbol_direction\":\"left\",\"symbol_type\":\"symbol_native\",\"symbol\":\"Rs\",\"symbol_native\":\"₹\"},\"tip_amount_formatted\":\"₹0.00\"},\"service\":\"cart\",\"status_code\":200}",
+                        "description": "",
+                        "schema": [
+                          {
+                            "name": "success",
+                            "kind": "required",
+                            "type": "boolean",
+                            "description": "",
+                            "example": ""
+                          },
+                          {
+                            "name": "data",
+                            "kind": "required",
+                            "type": "object",
+                            "description": "",
+                            "example": "",
+                            "schema": [
+                              {
+                                "name": "_id",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "tenant_id",
+                                "kind": "required",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "cart_items",
+                                "kind": "required",
+                                "type": "array",
+                                "description": "",
+                                "example": "",
+                                "itemType": "object",
+                                "customType": "object[]",
+                                "schema": [
+                                  {
+                                    "name": "merchant_id",
+                                    "kind": "optional",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "product_id",
+                                    "kind": "optional",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "item_image_url",
+                                    "kind": "optional",
+                                    "type": "null",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "product_name",
+                                    "kind": "optional",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "quantity",
+                                    "kind": "optional",
+                                    "type": "integer",
+                                    "description": "",
+                                    "example": 0
+                                  },
+                                  {
+                                    "name": "product_price",
+                                    "kind": "optional",
+                                    "type": "integer",
+                                    "description": "",
+                                    "example": 0
+                                  },
+                                  {
+                                    "name": "product_options",
+                                    "kind": "optional",
+                                    "type": "array",
+                                    "description": "",
+                                    "example": "",
+                                    "itemType": "object",
+                                    "customType": "object[]",
+                                    "schema": [
+                                      {
+                                        "name": "product_option_id",
+                                        "kind": "optional",
+                                        "type": "string",
+                                        "description": "",
+                                        "example": ""
+                                      },
+                                      {
+                                        "name": "option_name",
+                                        "kind": "optional",
+                                        "type": "string",
+                                        "description": "",
+                                        "example": ""
+                                      },
+                                      {
+                                        "name": "selection_type",
+                                        "kind": "optional",
+                                        "type": "string",
+                                        "description": "",
+                                        "example": ""
+                                      },
+                                      {
+                                        "name": "price_total",
+                                        "kind": "optional",
+                                        "type": "integer",
+                                        "description": "",
+                                        "example": 0
+                                      },
+                                      {
+                                        "name": "options",
+                                        "kind": "optional",
+                                        "type": "array",
+                                        "description": "",
+                                        "example": "",
+                                        "itemType": "object",
+                                        "customType": "object[]",
+                                        "schema": [
+                                          {
+                                            "name": "option_id",
+                                            "kind": "optional",
+                                            "type": "string",
+                                            "description": "",
+                                            "example": ""
+                                          },
+                                          {
+                                            "name": "name",
+                                            "kind": "optional",
+                                            "type": "string",
+                                            "description": "",
+                                            "example": ""
+                                          },
+                                          {
+                                            "name": "price",
+                                            "kind": "optional",
+                                            "type": "integer",
+                                            "description": "",
+                                            "example": 0
+                                          },
+                                          {
+                                            "name": "is_quantity_enabled",
+                                            "kind": "optional",
+                                            "type": "boolean",
+                                            "description": "",
+                                            "example": ""
+                                          },
+                                          {
+                                            "name": "quantity",
+                                            "kind": "optional",
+                                            "type": "integer",
+                                            "description": "",
+                                            "example": 0
+                                          },
+                                          {
+                                            "name": "price_total",
+                                            "kind": "optional",
+                                            "type": "integer",
+                                            "description": "",
+                                            "example": 0
+                                          },
+                                          {
+                                            "name": "price_formatted",
+                                            "kind": "optional",
+                                            "type": "string",
+                                            "description": "",
+                                            "example": ""
+                                          },
+                                          {
+                                            "name": "price_total_formatted",
+                                            "kind": "optional",
+                                            "type": "string",
+                                            "description": "",
+                                            "example": ""
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "name": "price_total_formatted",
+                                        "kind": "optional",
+                                        "type": "string",
+                                        "description": "",
+                                        "example": ""
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "name": "tax_percent",
+                                    "kind": "optional",
+                                    "type": "null",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "discount_percent",
+                                    "kind": "optional",
+                                    "type": "null",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "sub_total_amount",
+                                    "kind": "optional",
+                                    "type": "integer",
+                                    "description": "",
+                                    "example": 0
+                                  },
+                                  {
+                                    "name": "product_price_formatted",
+                                    "kind": "optional",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "sub_total_amount_formatted",
+                                    "kind": "optional",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "total_items",
+                                "kind": "required",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "total_amount",
+                                "kind": "required",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "is_updated",
+                                "kind": "required",
+                                "type": "boolean",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "checksum",
+                                "kind": "required",
+                                "type": "null",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "checksum_at",
+                                "kind": "required",
+                                "type": "null",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "user_id",
+                                "kind": "required",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "updated_at",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "created_at",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "raw_calculation",
+                                "kind": "required",
+                                "type": "object",
+                                "description": "",
+                                "example": "",
+                                "schema": [
+                                  {
+                                    "name": "delivery_fee",
+                                    "kind": "required",
+                                    "type": "integer",
+                                    "description": "",
+                                    "example": 0
+                                  },
+                                  {
+                                    "name": "delivery_tax",
+                                    "kind": "required",
+                                    "type": "integer",
+                                    "description": "",
+                                    "example": 0
+                                  },
+                                  {
+                                    "name": "sub_total_amount",
+                                    "kind": "required",
+                                    "type": "integer",
+                                    "description": "",
+                                    "example": 0
+                                  },
+                                  {
+                                    "name": "tax",
+                                    "kind": "required",
+                                    "type": "integer",
+                                    "description": "",
+                                    "example": 0
+                                  },
+                                  {
+                                    "name": "total_amount",
+                                    "kind": "required",
+                                    "type": "integer",
+                                    "description": "",
+                                    "example": 0
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "sub_total_amount",
+                                "kind": "required",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "custom_charges",
+                                "kind": "required",
+                                "type": "array",
+                                "description": "",
+                                "example": "",
+                                "itemType": "object",
+                                "customType": "object[]",
+                                "itemExample": "",
+                                "itemDefault": ""
+                              },
+                              {
+                                "name": "delivery_fee",
+                                "kind": "required",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "delivery_tax",
+                                "kind": "required",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "is_delivery_fee_applied",
+                                "kind": "required",
+                                "type": "boolean",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "is_delivery_tax_applied",
+                                "kind": "required",
+                                "type": "boolean",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "is_tip_applied",
+                                "kind": "required",
+                                "type": "boolean",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "message",
+                                "kind": "required",
+                                "type": "null",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "tax",
+                                "kind": "required",
+                                "type": "number",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "tax_method",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "tip_amount",
+                                "kind": "required",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "sub_total_cost_amount",
+                                "kind": "required",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "cart_id",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "total_amount_formatted",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "sub_total_amount_formatted",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "discount_amount_formatted",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "tax_formatted",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "delivery_fee_formatted",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "delivery_tax_formatted",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "currency_setting",
+                                "kind": "required",
+                                "type": "object",
+                                "description": "",
+                                "example": "",
+                                "schema": [
+                                  {
+                                    "name": "code",
+                                    "kind": "required",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "symbol_direction",
+                                    "kind": "required",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "symbol_type",
+                                    "kind": "required",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "symbol",
+                                    "kind": "required",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "symbol_native",
+                                    "kind": "required",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "tip_amount_formatted",
+                                "kind": "required",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              }
+                            ]
+                          },
+                          {
+                            "name": "service",
+                            "kind": "required",
+                            "type": "string",
+                            "description": "",
+                            "example": ""
+                          },
+                          {
+                            "name": "status_code",
+                            "kind": "required",
+                            "type": "integer",
+                            "description": "",
+                            "example": 0
+                          }
+                        ],
+                        "isExpanded": true
+                      }
+                    ]
+                  }
+                ],
+                "hasXCodeSamples": false,
+                "deprecated": false,
+                "examples": {
+                  "languages": [
+                    {
+                      "id": "Vr8YSWMI7RSBVI00anKQs",
+                      "language": "curl",
+                      "label": "cURL",
+                      "code": "curl --request POST \\\n     --url https://api.hyperzod.app/store/v1/cart \\\n     --header 'accept: application/json' \\\n     --header 'content-type: application/json' \\\n     --header 'x-api-key: {{X-API-KEY}}' \\\n     --header 'x-tenant: {{X-Tenant}}' \\\n     --data '{\n     \"cart_id\": \"\",\n     \"user_id\": 0,\n     \"cart_items\": [\n     {}\n     ]\n     }'"
+                    },
+                    {
+                      "id": "MPPvyTMToiCVKZhq0-I6Q",
+                      "language": "javascript",
+                      "label": "javascript",
+                      "code": "var myHeaders = new Headers();\nmyHeaders.append(\"accept\", \"application/json\");\nmyHeaders.append(\"content-type\", \"application/json\");\nmyHeaders.append(\"x-api-key\", \"{{X-API-KEY}}\");\nmyHeaders.append(\"x-tenant\", \"{{X-Tenant}}\");\n\nvar raw = JSON.stringify({\n   \"cart_id\": \"\",\n   \"user_id\": 0,\n   \"cart_items\": [\n      {}\n   ]\n});\n\nvar requestOptions = {\n   method: 'POST',\n   headers: myHeaders,\n   body: raw,\n   redirect: 'follow'\n};\n\nfetch(\"https://api.hyperzod.app/store/v1/cart\", requestOptions)\n   .then(response => response.text())\n   .then(result => console.log(result))\n   .catch(error => console.log('error', error));"
+                    },
+                    {
+                      "id": "mUYPF4mdqlHsbOAYBdNt1",
+                      "language": "ruby",
+                      "label": "Ruby",
+                      "code": "require \"uri\"\nrequire \"json\"\nrequire \"net/http\"\n\nurl = URI(\"https://api.hyperzod.app/store/v1/cart\")\n\nhttps = Net::HTTP.new(url.host, url.port)\nhttps.use_ssl = true\n\nrequest = Net::HTTP::Post.new(url)\nrequest[\"accept\"] = \"application/json\"\nrequest[\"content-type\"] = \"application/json\"\nrequest[\"x-api-key\"] = \"{{X-API-KEY}}\"\nrequest[\"x-tenant\"] = \"{{X-Tenant}}\"\nrequest.body = JSON.dump({\n   \"cart_id\": \"\",\n   \"user_id\": 0,\n   \"cart_items\": [\n      {}\n   ]\n})\n\nresponse = https.request(request)\nputs response.read_body\n"
+                    },
+                    {
+                      "id": "EYidAIxLivjUK2C2D6_0a",
+                      "language": "python",
+                      "label": "Python",
+                      "code": "import requests\nimport json\n\nurl = \"https://api.hyperzod.app/store/v1/cart\"\n\npayload = json.dumps({\n   \"cart_id\": \"\",\n   \"user_id\": 0,\n   \"cart_items\": [\n      {}\n   ]\n})\nheaders = {\n   'accept': 'application/json',\n   'content-type': 'application/json',\n   'x-api-key': '{{X-API-KEY}}',\n   'x-tenant': '{{X-Tenant}}'\n}\n\nresponse = requests.request(\"POST\", url, headers=headers, data=payload)\n\nprint(response.text)\n"
+                    }
+                  ],
+                  "selectedLanguageId": "Vr8YSWMI7RSBVI00anKQs"
+                },
+                "results": {
+                  "languages": [
+                    {
+                      "id": "wd0oV5HXIHz_ZnMBYHuvF",
+                      "language": "200",
+                      "code": "{\n  \"success\": false,\n  \"data\": {\n    \"_id\": \"\",\n    \"tenant_id\": 0,\n    \"cart_items\": [\n      {\n        \"merchant_id\": \"\",\n        \"product_id\": \"\",\n        \"item_image_url\": \"\",\n        \"product_name\": \"\",\n        \"quantity\": 0,\n        \"product_price\": 0,\n        \"product_options\": [\n          {\n            \"product_option_id\": \"\",\n            \"option_name\": \"\",\n            \"selection_type\": \"\",\n            \"price_total\": 0,\n            \"options\": [\n              {\n                \"option_id\": \"\",\n                \"name\": \"\",\n                \"price\": 0,\n                \"is_quantity_enabled\": false,\n                \"quantity\": 0,\n                \"price_total\": 0,\n                \"price_formatted\": \"\",\n                \"price_total_formatted\": \"\"\n              }\n            ],\n            \"price_total_formatted\": \"\"\n          }\n        ],\n        \"tax_percent\": \"\",\n        \"discount_percent\": \"\",\n        \"sub_total_amount\": 0,\n        \"product_price_formatted\": \"\",\n        \"sub_total_amount_formatted\": \"\"\n      }\n    ],\n    \"total_items\": 0,\n    \"total_amount\": 0,\n    \"is_updated\": false,\n    \"checksum\": \"\",\n    \"checksum_at\": \"\",\n    \"user_id\": 0,\n    \"updated_at\": \"\",\n    \"created_at\": \"\",\n    \"raw_calculation\": {\n      \"delivery_fee\": 0,\n      \"delivery_tax\": 0,\n      \"sub_total_amount\": 0,\n      \"tax\": 0,\n      \"total_amount\": 0\n    },\n    \"sub_total_amount\": 0,\n    \"custom_charges\": [\n      {}\n    ],\n    \"delivery_fee\": 0,\n    \"delivery_tax\": 0,\n    \"is_delivery_fee_applied\": false,\n    \"is_delivery_tax_applied\": false,\n    \"is_tip_applied\": false,\n    \"message\": \"\",\n    \"tax\": 0,\n    \"tax_method\": \"\",\n    \"tip_amount\": 0,\n    \"sub_total_cost_amount\": 0,\n    \"cart_id\": \"\",\n    \"total_amount_formatted\": \"\",\n    \"sub_total_amount_formatted\": \"\",\n    \"discount_amount_formatted\": \"\",\n    \"tax_formatted\": \"\",\n    \"delivery_fee_formatted\": \"\",\n    \"delivery_tax_formatted\": \"\",\n    \"currency_setting\": {\n      \"code\": \"\",\n      \"symbol_direction\": \"\",\n      \"symbol_type\": \"\",\n      \"symbol\": \"\",\n      \"symbol_native\": \"\"\n    },\n    \"tip_amount_formatted\": \"\"\n  },\n  \"service\": \"\",\n  \"status_code\": 0\n}"
+                    }
+                  ],
+                  "selectedLanguageId": "wd0oV5HXIHz_ZnMBYHuvF"
+                }
+              },
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ],
+          "metadata": {
+            "type": "api-oas",
+            "version": "v2",
+            "convertedDate": "2025-09-26T06:34:10.055Z"
+          }
+        },
+        "version": 0,
+        "privacy": "shared with team",
+        "shareableToken": "6puz5Mx4qqh7ECWRKPpoX",
+        "tags": [],
+        "docTags": [],
+        "children": [],
+        "hasDraft": false,
+        "createdByUserId": "SuqpXTNKx3f4SjbfE635C",
+        "createdBy": {
+          "id": "",
+          "fullName": "",
+          "firstName": "",
+          "lastName": "",
+          "email": "",
+          "profilePhotoURL": ""
+        },
+        "lastModifiedByUserId": "SuqpXTNKx3f4SjbfE635C",
+        "lastModifiedBy": {
+          "id": "",
+          "fullName": "",
+          "firstName": "",
+          "lastName": "",
+          "email": "",
+          "profilePhotoURL": ""
+        },
+        "contributorsDetails": [
+          {
+            "id": "SuqpXTNKx3f4SjbfE635C",
+            "fullName": "Farhan Rizwan",
+            "email": "",
+            "firstName": "Farhan",
+            "lastName": "Rizwan",
+            "profilePhotoURL": "https://s3.amazonaws.com/archbee-animals/dog.png"
+          }
+        ],
+        "watchers": [],
+        "isArchbeeBrandVisible": true,
+        "customCSS": "",
+        "parentDocId": null,
+        "docSpaceId": "PREVIEW-TSX59B-ftH01Uoa0aU550",
+        "updatedAt": "2025-09-26T06:37:36.332Z",
+        "createdAt": "2025-09-26T06:34:10.059Z",
+        "deletedAt": null,
+        "editable": false,
+        "expanded": true,
+        "reusableContentVariables": [],
+        "reusableContentDocRefs": {},
+        "externalSync": "",
+        "contentFromExternalLink": "",
+        "leftDoc": {
+          "id": "PREVIEW-lfdLXW4VvPaJYu104ddJH",
+          "docDataType": "api-oas",
+          "isCategory": false,
+          "categoryName": "Delete a product",
+          "children": [],
+          "openApiMethod": "POST",
+          "openApiHash": "71495daff85dfb33f6e4e8e7cb53d2c342868809314d861840e9da3efc0221ab",
+          "name": "Delete a product",
+          "urlKey": "delete-a-product",
+          "icon": "",
+          "parentDocId": "PREVIEW-fwficMZEjALFil8erBOno",
+          "conditionalRuleId": "",
+          "expanded": false,
+          "docTags": []
+        },
+        "rightDoc": {
+          "id": "PREVIEW-YcEb3H2x6_TDwvLqBKWj1",
+          "docDataType": "api-oas",
+          "isCategory": false,
+          "categoryName": "Retrieve a Cart",
+          "children": [],
+          "openApiMethod": "GET",
+          "openApiHash": "3215df22c98fa3bd907c3310d1abd6007b06bc01d7a15ef74f580cd64e697d2a",
+          "name": "Retrieve a Cart",
+          "urlKey": "retrieve-a-cart",
+          "icon": "",
+          "parentDocId": "PREVIEW-pLEyw3quDTC2BR0O17Gdo",
+          "conditionalRuleId": "",
+          "expanded": false,
+          "docTags": []
+        }
+      },
+      "_docSpace": {
+        "id": "PREVIEW-TSX59B-ftH01Uoa0aU550",
+        "name": "Hyperzod",
+        "organizationName": "",
+        "icon": "",
+        "type": "team",
+        "publicDocsTree": [
+          {
+            "id": "PREVIEW-IPgLZ0qxFy_y8G0tEbZX6",
+            "children": [],
+            "name": "Introduction",
+            "urlKey": "/",
+            "icon": "",
+            "parentDocId": "",
+            "conditionalRuleId": "",
+            "expanded": true,
+            "docTags": []
+          },
+          {
+            "id": "PREVIEW-TL98Hc7vz_lSnqPXcK8rY",
+            "children": [],
+            "name": "Authentication",
+            "urlKey": "authentication",
+            "icon": "",
+            "parentDocId": "",
+            "conditionalRuleId": "",
+            "expanded": true,
+            "docTags": []
+          },
+          {
+            "id": "PREVIEW-0SQCLa55eYOU8YLhQlRlX",
+            "children": [],
+            "name": "REST API Endpoints",
+            "urlKey": "rest-api-endpoints",
+            "icon": "",
+            "parentDocId": "",
+            "conditionalRuleId": "",
+            "expanded": true,
+            "docTags": []
+          },
+          {
+            "id": "PREVIEW-2Atg0GUzTwgUbABYAChdn",
+            "children": [],
+            "name": "Rate Limits",
+            "urlKey": "rate-limits",
+            "icon": "",
+            "parentDocId": "",
+            "conditionalRuleId": "",
+            "expanded": true,
+            "docTags": []
+          },
+          {
+            "id": "PREVIEW-iwKcd0RQOv6QiI5uqgoVS",
+            "children": [],
+            "name": "Status and Error Codes",
+            "urlKey": "status-and-error-codes",
+            "icon": "",
+            "parentDocId": "",
+            "conditionalRuleId": "",
+            "expanded": true,
+            "docTags": []
+          },
+          {
+            "id": "PREVIEW-HZpfoYENX5N-J1L3aSO-J",
+            "isCategory": true,
+            "isOpenApiMainDir": true,
+            "categoryName": "API Reference",
+            "children": [
+              {
+                "id": "PREVIEW-53VPlJBvl8ZmDPODhzvoa",
+                "isCategory": true,
+                "categoryName": "Admin API/Customer",
+                "children": [
+                  {
+                    "id": "PREVIEW-jD-opR5GlOGxBOdLX_6wq",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "List all customers",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "d02294ec6a937dd6d0d446fadfa82e99a230a6a1f1914221617f164a424a3e82",
+                    "name": "List all customers",
+                    "urlKey": "list-all-customers",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-53VPlJBvl8ZmDPODhzvoa",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-n8xkoB1wPumD9sNiAEpcw",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Create a customer",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "726ba5bc1df18def8367a13345117f5fa72ca22a2379443a7ed36487aad800e5",
+                    "name": "Create a customer",
+                    "urlKey": "create-a-customer",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-53VPlJBvl8ZmDPODhzvoa",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-y6JfiU3Pwjiae-dQuT73V",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Delete a customer",
+                    "children": [],
+                    "openApiMethod": "DELETE",
+                    "openApiHash": "8e0241ffc39b0adc5fd6a8517abe1d4ee7730fbc27646ea8ea7f68df869961f8",
+                    "name": "Delete a customer",
+                    "urlKey": "delete-a-customer",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-53VPlJBvl8ZmDPODhzvoa",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  }
+                ],
+                "name": "Admin API/Customer",
+                "urlKey": "admin-apicustomer",
+                "icon": "",
+                "parentDocId": "PREVIEW-HZpfoYENX5N-J1L3aSO-J",
+                "conditionalRuleId": "",
+                "expanded": false,
+                "docTags": []
+              },
+              {
+                "id": "PREVIEW-r7pQCRlxqeqcku1wSSYRb",
+                "isCategory": true,
+                "categoryName": "Admin API/Merchant",
+                "children": [
+                  {
+                    "id": "PREVIEW-4pbBOT8J6pFZ1Sl6VcuS5",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "List all merchants",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "c2b9a44665518b3eeaf39eec13bfd49d7639eb48b8e16df56a3e82bda2edb83a",
+                    "name": "List all merchants",
+                    "urlKey": "list-all-merchants",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-r7pQCRlxqeqcku1wSSYRb",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-m0a9hfOaR8z9rC5nrVTc6",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Create a merchant",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "61b576f74122e8f17643422e72e2e0f7921774fd6063d41c095cca633ff30d45",
+                    "name": "Create a merchant",
+                    "urlKey": "create-a-merchant",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-r7pQCRlxqeqcku1wSSYRb",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-cO5P1NNydE189mQtPIsSl",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Update a merchant",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "37961d4e612b2b733a4e0796ee08035c838bf3cb304720ef3a483e4130a633b1",
+                    "name": "Update a merchant",
+                    "urlKey": "update-a-merchant",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-r7pQCRlxqeqcku1wSSYRb",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-KPhZyN7aLBWzzEqRq6_r0",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Delete a merchant",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "3fa00bc1cfe78d9ef17be148eac9cb365ba8d1ef3c2deaa39efe08b1eb26c9a4",
+                    "name": "Delete a merchant",
+                    "urlKey": "delete-a-merchant",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-r7pQCRlxqeqcku1wSSYRb",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  }
+                ],
+                "name": "Admin API/Merchant",
+                "urlKey": "admin-apimerchant",
+                "icon": "",
+                "parentDocId": "PREVIEW-HZpfoYENX5N-J1L3aSO-J",
+                "conditionalRuleId": "",
+                "expanded": false,
+                "docTags": []
+              },
+              {
+                "id": "PREVIEW-mt6ySPV-a55pLBxN4h7bs",
+                "isCategory": true,
+                "categoryName": "Admin API/Merchant Category",
+                "children": [
+                  {
+                    "id": "PREVIEW-9Sx1ZjzhNJF8Yi39Dvalf",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "List all merchant categories",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "5b4754fe8466340d0c5b97af27f6b95c0020057198bfff9111f7dfc863140837",
+                    "name": "List all merchant categories",
+                    "urlKey": "list-all-merchant-categories",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-mt6ySPV-a55pLBxN4h7bs",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-0Ja4wdYw4I7nhjrla7UGO",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Create a merchant category",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "0a96880415d33766ce035bf53b8aae121267196587c6d85a36b4d38ae74f9232",
+                    "name": "Create a merchant category",
+                    "urlKey": "create-a-merchant-category",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-mt6ySPV-a55pLBxN4h7bs",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-qabiAz0RiOTUS_iAettkK",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Update a merchant category",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "197ccfb8e66ab666b3eeaa9607fbc6f732707e1a734b54a6d214ab957e0b7d0e",
+                    "name": "Update a merchant category",
+                    "urlKey": "update-a-merchant-category",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-mt6ySPV-a55pLBxN4h7bs",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-1Gf9cap7ofRS0uHRQQbMk",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Delete a merchant category",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "fce20dcc81641bfb13182ff9564054920b19d6ac7c85ea958ff4a707422eb4b8",
+                    "name": "Delete a merchant category",
+                    "urlKey": "delete-a-merchant-category",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-mt6ySPV-a55pLBxN4h7bs",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  }
+                ],
+                "name": "Admin API/Merchant Category",
+                "urlKey": "admin-apimerchant-category",
+                "icon": "",
+                "parentDocId": "PREVIEW-HZpfoYENX5N-J1L3aSO-J",
+                "conditionalRuleId": "",
+                "expanded": false,
+                "docTags": []
+              },
+              {
+                "id": "PREVIEW-hftxApzhGZhF9OBPqJzAi",
+                "isCategory": true,
+                "categoryName": "Admin API/Address Book",
+                "children": [
+                  {
+                    "id": "PREVIEW-osZ5KYwLg5Bs0GbS5wOjT",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Create Address",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "ca4099555a7cd93a1188ffb998c402984ba0ba5bbb48c159387ac0d73168c178",
+                    "name": "Create Address",
+                    "urlKey": "create-address",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-hftxApzhGZhF9OBPqJzAi",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-KG0rKChyrCJA7G9fu3b_S",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Update Address",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "7051b2f46355067ece729a6b565b4effbd33f4ff60531c6bcd3e75cef0192110",
+                    "name": "Update Address",
+                    "urlKey": "update-address",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-hftxApzhGZhF9OBPqJzAi",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-jz1N_H9B8YfTljOQQk3fU",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Fetch Address",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "c34e5322feb49aa953f1bb41a634268f5bd03c76b789c8c7fe05c27fac1403ab",
+                    "name": "Fetch Address",
+                    "urlKey": "fetch-address",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-hftxApzhGZhF9OBPqJzAi",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-4Zo8r_efKh--Yb5UqyJSG",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Delete Address",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "b6c5fbf323954c51cd3c00643c0986b5d69bbfe3e220c7aafe7d7e8c2c9e7f61",
+                    "name": "Delete Address",
+                    "urlKey": "delete-address",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-hftxApzhGZhF9OBPqJzAi",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  }
+                ],
+                "name": "Admin API/Address Book",
+                "urlKey": "admin-apiaddress-book",
+                "icon": "",
+                "parentDocId": "PREVIEW-HZpfoYENX5N-J1L3aSO-J",
+                "conditionalRuleId": "",
+                "expanded": false,
+                "docTags": []
+              },
+              {
+                "id": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                "isCategory": true,
+                "categoryName": "Admin API/Order",
+                "children": [
+                  {
+                    "id": "PREVIEW-sWc9Fu9lKhKcpfgKZPXUx",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Retrieve an Order",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "9cf3e619afa5535e9c4f7a91071acc8a9476a58df9b44a3364ebd5ea294d1320",
+                    "name": "Retrieve an Order",
+                    "urlKey": "retrieve-an-order",
+                    "icon": "",
+                    "parentDocId": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-C0-Qx9TbWU7QiuU1PDxCN",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Retrieve Order Stats",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "5ad97f45f607349364ec0d10d9b4a7648824f7666b6ca17fdef113280eac2402",
+                    "name": "Retrieve Order Stats",
+                    "urlKey": "retrieve-order-stats",
+                    "icon": "",
+                    "parentDocId": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-vD3JwcKU3vewmnJqhg4pt",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "List Order Status",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "d1d68bba40559fd31e37c048fa4edaf9864a8be2cac15d85ecb1db9613b832fc",
+                    "name": "List Order Status",
+                    "urlKey": "list-order-status",
+                    "icon": "",
+                    "parentDocId": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-QTyB-HCSAlDNi24wprTG7",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Retrieve Order Scheduling Slots",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "50b227d1f4d8c71aadbee1a0c97ca435e5a8ebf830ea6b0cde9b714b4de8a8a2",
+                    "name": "Retrieve Order Scheduling Slots",
+                    "urlKey": "retrieve-order-scheduling-slots",
+                    "icon": "",
+                    "parentDocId": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-9ka5javifQ0-gmmWuhhh-",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "List Order Commissions",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "12345294934520594f418c35de4768e31306c848fd67acb0a64d0f36f5d2b6bc",
+                    "name": "List Order Commissions",
+                    "urlKey": "list-order-commissions",
+                    "icon": "",
+                    "parentDocId": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-jvGMncaJgUffXZAiP-JrL",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Create an Order",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "216567303ec77b74112df17177aa0de13caea27497d8b0fc7465d4af6cc0d1c3",
+                    "name": "Create an Order",
+                    "urlKey": "create-an-order",
+                    "icon": "",
+                    "parentDocId": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-YrCGQpnkzPj9BRqyD7tqz",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Create an Order Notes",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "c8e09c604a83830483c05fd2cfde5035ae7b5e4d6f360fbd35f68b7362737cd6",
+                    "name": "Create an Order Notes",
+                    "urlKey": "create-an-order-notes",
+                    "icon": "",
+                    "parentDocId": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-oRjr4Ra9jokUbOODNApn9",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Update Order Status",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "d45ac42dea9b7bf2261ed3c81585a74e02e481721c830135459628441e08f970",
+                    "name": "Update Order Status",
+                    "urlKey": "update-order-status",
+                    "icon": "",
+                    "parentDocId": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-OrHsa256mQFS3lktJgihe",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "List All Scheduled Orders",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "589799cb6b17c47bf3d364711f180d2aab9746e6d6a6e54230cce665b7f37212",
+                    "name": "List All Scheduled Orders",
+                    "urlKey": "list-all-scheduled-orders",
+                    "icon": "",
+                    "parentDocId": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-KDJ690JUWLldCtw-_Tvic",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "List All Orders",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "9324d372a5716b1217c421f2875fb06bc75f0252db0dbf0301168fc2f0bd72f8",
+                    "name": "List All Orders",
+                    "urlKey": "list-all-orders",
+                    "icon": "",
+                    "parentDocId": "PREVIEW---WnLYAbX4AU6lA__uBip",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  }
+                ],
+                "name": "Admin API/Order",
+                "urlKey": "admin-apiorder",
+                "icon": "",
+                "parentDocId": "PREVIEW-HZpfoYENX5N-J1L3aSO-J",
+                "conditionalRuleId": "",
+                "expanded": false,
+                "docTags": []
+              },
+              {
+                "id": "PREVIEW-WuMCCoKEwQ-16AEmlGjbh",
+                "isCategory": true,
+                "categoryName": "Merchant API/Product Category",
+                "children": [
+                  {
+                    "id": "PREVIEW-pgmdT8W6mKye0Px5WC5NV",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "List all Product Categories",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "2bd97c00fb0bd3f3cf13efddd669c005be732c05fbbf9e85257d28b5688fa53e",
+                    "name": "List all Product Categories",
+                    "urlKey": "list-all-product-categories",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-WuMCCoKEwQ-16AEmlGjbh",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-KCE6wskRSRmZUBGrwK6b4",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Create Product Category",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "d5c13a8a3d0804699700d355ed6a47155af1a8a07cde1bf0e989d298aa0bce5b",
+                    "name": "Create Product Category",
+                    "urlKey": "create-product-category",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-WuMCCoKEwQ-16AEmlGjbh",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-JQ5hMcuUbjjxFMefX858u",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Retrieve a Product Category",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "a6924aa11fa65cc3dcdd95556e57f145f5ce1ee7cb1621f676bf2c8cb2a4ad1f",
+                    "name": "Retrieve a Product Category",
+                    "urlKey": "retrieve-a-product-category",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-WuMCCoKEwQ-16AEmlGjbh",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-LD2cj4TsTkTJqF_w2c7CY",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Update Product Category",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "f107a3b4dd8eaff7c67f9adba763811f18aa0b166aa3aeca249edd95f5a232c9",
+                    "name": "Update Product Category",
+                    "urlKey": "update-product-category",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-WuMCCoKEwQ-16AEmlGjbh",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-SVz3RrjDBtkusDuJ4QkYP",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Delete Product Category",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "50cd664afc3295930ccdf2782cc654a80834b7fdaa714fea06c5f05dadaa7b33",
+                    "name": "Delete Product Category",
+                    "urlKey": "delete-product-category",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-WuMCCoKEwQ-16AEmlGjbh",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  }
+                ],
+                "name": "Merchant API/Product Category",
+                "urlKey": "merchant-apiproduct-category",
+                "icon": "",
+                "parentDocId": "PREVIEW-HZpfoYENX5N-J1L3aSO-J",
+                "conditionalRuleId": "",
+                "expanded": false,
+                "docTags": []
+              },
+              {
+                "id": "PREVIEW-_5rpD2vo0UYc7SnnksaSo",
+                "isCategory": true,
+                "categoryName": "Merchant API/Product Labels",
+                "children": [
+                  {
+                    "id": "PREVIEW-vogztZSTAP4SN1hzhDPfZ",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "List All Product Labels",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "281a03d3bbbf207d161638eea8c5ca33b477d167b5b5feafe8821138e5c35d84",
+                    "name": "List All Product Labels",
+                    "urlKey": "list-all-product-labels",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-_5rpD2vo0UYc7SnnksaSo",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-x7XuWpAwpBT60Y4iG1yiP",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Create Product Label",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "7214e412b71125ce0195a0060859f88f9ca3e87a5e07eb3ef91fa987def62d67",
+                    "name": "Create Product Label",
+                    "urlKey": "create-product-label",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-_5rpD2vo0UYc7SnnksaSo",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-MgJxhn35hDnURsHquxlg8",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Retrieve a Product Label",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "9c5ea4dc6ad48caa855e12512f5ecd94c0339b14410ec1e24dbaeb7f04ef2008",
+                    "name": "Retrieve a Product Label",
+                    "urlKey": "retrieve-a-product-label",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-_5rpD2vo0UYc7SnnksaSo",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-oTgu4mt1AKd1aNLjvxXb3",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Update Product Label",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "f049b38b0b0bbafa33958b3433d753fc4100f3d299400a3386d08c6b01f322d7",
+                    "name": "Update Product Label",
+                    "urlKey": "update-product-label",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-_5rpD2vo0UYc7SnnksaSo",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-F5-j1wjKz58x3AsDiYo2U",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Delete Product Label",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "87632a9da8b88169920c67fac0ac45a67fc0b8ba113499f77d03357010d7bd0e",
+                    "name": "Delete Product Label",
+                    "urlKey": "delete-product-label",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-_5rpD2vo0UYc7SnnksaSo",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  }
+                ],
+                "name": "Merchant API/Product Labels",
+                "urlKey": "merchant-apiproduct-labels",
+                "icon": "",
+                "parentDocId": "PREVIEW-HZpfoYENX5N-J1L3aSO-J",
+                "conditionalRuleId": "",
+                "expanded": false,
+                "docTags": []
+              },
+              {
+                "id": "PREVIEW-fwficMZEjALFil8erBOno",
+                "isCategory": true,
+                "categoryName": "Merchant API/Product",
+                "children": [
+                  {
+                    "id": "PREVIEW-GNe3ocH78iV2b9SRTvjQ_",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "List all products",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "70ed24affffa36c13be9015d20c5c2afc29a95fa3fc45ba5df9931bfa31aacfe",
+                    "name": "List all products",
+                    "urlKey": "list-all-products",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-fwficMZEjALFil8erBOno",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-oRVkZPysXV51nZpI0O1YK",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Create a product",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "0f900ffa7067b4ca9402b19a575a97764fe6c10947d1dbc9f43204e92173e7cd",
+                    "name": "Create a product",
+                    "urlKey": "create-a-product",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-fwficMZEjALFil8erBOno",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-9L_XY-i6ynVYz25hmynxQ",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Update a product",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "92bc38e6838933b6dcdef86546862bf0691540bd94eae295066d6ca7c49819da",
+                    "name": "Update a product",
+                    "urlKey": "update-a-product",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-fwficMZEjALFil8erBOno",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-pTZC-McWO7Rr2uAhvZZLY",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Bulk Update Product Inventory",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "424b777da53a590f41d4d6d31fb7ca8a0d8bd4231642b7150a21964c7b7a1ad9",
+                    "name": "Bulk Update Product Inventory",
+                    "urlKey": "bulk-update-product-inventory",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-fwficMZEjALFil8erBOno",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-lfdLXW4VvPaJYu104ddJH",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Delete a product",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "71495daff85dfb33f6e4e8e7cb53d2c342868809314d861840e9da3efc0221ab",
+                    "name": "Delete a product",
+                    "urlKey": "delete-a-product",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-fwficMZEjALFil8erBOno",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  }
+                ],
+                "name": "Merchant API/Product",
+                "urlKey": "merchant-apiproduct",
+                "icon": "",
+                "parentDocId": "PREVIEW-HZpfoYENX5N-J1L3aSO-J",
+                "conditionalRuleId": "",
+                "expanded": false,
+                "docTags": []
+              },
+              {
+                "id": "PREVIEW-pLEyw3quDTC2BR0O17Gdo",
+                "isCategory": true,
+                "categoryName": "Store API/Cart",
+                "children": [
+                  {
+                    "id": "PREVIEW-xK_ssjD801ElrUP9Vt_Af",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Update Cart",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "e25672c966a0522e560cf3451f2293df8dc2ffbc07e4d4102fbff30c0a3f85f7",
+                    "name": "Update Cart",
+                    "urlKey": "update-cart",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-pLEyw3quDTC2BR0O17Gdo",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-YcEb3H2x6_TDwvLqBKWj1",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Retrieve a Cart",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "3215df22c98fa3bd907c3310d1abd6007b06bc01d7a15ef74f580cd64e697d2a",
+                    "name": "Retrieve a Cart",
+                    "urlKey": "retrieve-a-cart",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-pLEyw3quDTC2BR0O17Gdo",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-cgZk9gWPqoik1nIfeGbvp",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Delete Cart",
+                    "children": [],
+                    "openApiMethod": "DELETE",
+                    "openApiHash": "fa21ac2a7fa03c98deaffc46a4b6f1eb34a020fe83123ea2bc519a9c20ccc6bf",
+                    "name": "Delete Cart",
+                    "urlKey": "delete-cart",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-pLEyw3quDTC2BR0O17Gdo",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-UzQ9tcHn9tB_PuR79CIXp",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Validate Cart",
+                    "children": [],
+                    "openApiMethod": "GET",
+                    "openApiHash": "0537a0d5956732441fe48be6726f8bce38c14fc9ca99e6562b13a0d67207951e",
+                    "name": "Validate Cart",
+                    "urlKey": "validate-cart",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-pLEyw3quDTC2BR0O17Gdo",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  },
+                  {
+                    "id": "PREVIEW-y7wi8U7MZ5VIdTSCqJA5K",
+                    "docDataType": "api-oas",
+                    "isCategory": false,
+                    "categoryName": "Remove Item",
+                    "children": [],
+                    "openApiMethod": "POST",
+                    "openApiHash": "d58ab316063f462fb80bb661511c99eb870b309835f684e279d9f6e6d6c6e41a",
+                    "name": "Remove Item",
+                    "urlKey": "remove-item",
+                    "icon": "",
+                    "parentDocId": "PREVIEW-pLEyw3quDTC2BR0O17Gdo",
+                    "conditionalRuleId": "",
+                    "expanded": false,
+                    "docTags": []
+                  }
+                ],
+                "name": "Store API/Cart",
+                "urlKey": "store-apicart",
+                "icon": "",
+                "parentDocId": "PREVIEW-HZpfoYENX5N-J1L3aSO-J",
+                "conditionalRuleId": "",
+                "expanded": false,
+                "docTags": []
+              }
+            ],
+            "openApiPrevFiles": [
+              "https://archbee-doc-uploads.s3.amazonaws.com/A6k4A417O1V2DGm4H5kN0/bBGM0lJYbsaQKkZKCMccO-20250926-063409.json"
+            ],
+            "name": "API Reference",
+            "urlKey": "api-reference",
+            "icon": "",
+            "parentDocId": "",
+            "conditionalRuleId": "",
+            "expanded": true,
+            "docTags": []
+          }
+        ],
+        "hostingTitle": "",
+        "logoRedirectURL": "",
+        "hasPrimaryColorLinks": true,
+        "hostingColor": "#2166ae",
+        "darkHostingColor": "#2166ae",
+        "secondaryColor": "#e0eefc",
+        "darkSecondaryColor": "#14467a",
+        "isIndexable": true,
+        "template": "stripe",
+        "contentLayout": "two-column",
+        "hostname": "",
+        "hostnamePath": "",
+        "proxyDomain": "",
+        "publicLogoURL": "",
+        "darkPublicLogoURL": "",
+        "publicTheme": "light",
+        "faviconURL": "",
+        "spaceLinks": [],
+        "versionLinks": [
+          {
+            "docSpaceId": "TSX59B-ftH01Uoa0aU550",
+            "label": "V1",
+            "language": "en",
+            "forkedFrom": ""
+          }
+        ],
+        "externalLinks": [],
+        "landingPageType": "first-doc",
+        "landingTemplate": "",
+        "landingPageHeaderText": "",
+        "landingPageSubheaderText": "",
+        "landingHeroBgLightURL": "",
+        "landingHeroBgDarkURL": "",
+        "footerTemplate": "",
+        "headerIncludes": "",
+        "jwtRedirectURL": "",
+        "googleAnalyticsId": "",
+        "intercomId": "",
+        "isArchbeeBrandVisible": true,
+        "archbeeBrandPosition": "doc-tree",
+        "i18nLanguage": "en",
+        "showReadTime": true,
+        "showLastUpdate": true,
+        "showThemeSwitcher": true,
+        "showContributors": true,
+        "showDocFeedback": true,
+        "showEditInGitApp": true,
+        "showDocNavigationButtons": true,
+        "revisions": [],
+        "customJS": "",
+        "customCSS": "",
+        "customFont": null,
+        "custom404": "",
+        "createdAt": "2023-09-26T07:51:12.300Z",
+        "showPdfBookLink": false,
+        "pdfBookLink": "",
+        "llmsTxtLink": "",
+        "llmsFullTxtLink": "",
+        "sitemapXmlLink": "",
+        "protectionTypes": [
+          "None"
+        ],
+        "isAuthenticated": true,
+        "tagsCache": [],
+        "isQAndAEnabled": false,
+        "isQAndAPublicEnabled": false,
+        "isQAndAAIEnabled": false,
+        "isQAndAApprovalEnabled": false,
+        "isLlmEnabled": false,
+        "isLlmInternal": true,
+        "isLlmExternal": true,
+        "authPageLayout": "one-column",
+        "authPagePosition": "left",
+        "authBgImageURL": "",
+        "authDarkBgImageURL": "",
+        "gitAppRepoId": "",
+        "gitAppRepo": null,
+        "isGithubEnabled": false,
+        "isBitbucketEnabled": false,
+        "isGitlabEnabled": false,
+        "doc": {
+          "id": "PREVIEW-xK_ssjD801ElrUP9Vt_Af",
+          "name": "Update Cart",
+          "icon": "",
+          "title": "Update Cart",
+          "previewImageURL": "",
+          "summary": null,
+          "urlKey": "update-cart",
+          "description": "",
+          "urlAlias": "",
+          "data": {
+            "nodes": [
+              {
+                "id": "JY4fM2KsjS61OL4eoEm0I",
+                "type": "api-oas-v2",
+                "data": {
+                  "method": "POST",
+                  "url": "https://api.hyperzod.app/store/v1/cart",
+                  "servers": [],
+                  "name": "Update Cart",
+                  "description": "",
+                  "contentType": "application/json",
+                  "request": {
+                    "pathParameters": [],
+                    "headerParameters": [
+                      {
+                        "kind": "required",
+                        "name": "X-API-KEY",
+                        "type": "string",
+                        "example": "{{X-API-KEY}}",
+                        "description": ""
+                      },
+                      {
+                        "kind": "required",
+                        "name": "X-TENANT",
+                        "type": "string",
+                        "example": "{{X-Tenant}}",
+                        "description": ""
+                      }
+                    ],
+                    "queryParameters": [],
+                    "bodyDataParameters": [
+                      {
+                        "kind": "optional",
+                        "name": "body",
+                        "type": "object",
+                        "example": "{\"cart_id\":\"65b400d7245b3a1be8071e0a\",\"user_id\":1127,\"cart_items\":[{\"merchant_id\":\"61d6b51b17ab8614a72cd25b\",\"product_id\":\"63fdb8536c8120b08204552f\",\"item_image_url\":null,\"product_name\":\"Chilli Chicken\",\"product_price\":216,\"quantity\":1,\"product_options\":[{\"product_option_id\":\"2e3d9b50-b740-11ed-930c-f30144d1f554\",\"option_name\":\"QUANTITY\",\"selection_type\":\"single\",\"price_total\":60,\"options\":[{\"option_id\":\"2e3d9c80-b740-11ed-81ab-c51ef6b50f29\",\"name\":\"FULL\",\"price\":60,\"is_quantity_enabled\":false}]}]}]}",
+                        "description": "",
+                        "schema": [
+                          {
+                            "name": "cart_id",
+                            "kind": "required",
+                            "type": "string",
+                            "description": "",
+                            "example": ""
+                          },
+                          {
+                            "name": "user_id",
+                            "kind": "required",
+                            "type": "integer",
+                            "description": "",
+                            "example": 0
+                          },
+                          {
+                            "name": "cart_items",
+                            "kind": "required",
+                            "type": "array",
+                            "description": "",
+                            "example": "",
+                            "itemType": "object",
+                            "customType": "object[]",
+                            "schema": [
+                              {
+                                "name": "merchant_id",
+                                "kind": "optional",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "product_id",
+                                "kind": "optional",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "item_image_url",
+                                "kind": "optional",
+                                "type": "null",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "product_name",
+                                "kind": "optional",
+                                "type": "string",
+                                "description": "",
+                                "example": ""
+                              },
+                              {
+                                "name": "product_price",
+                                "kind": "optional",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "quantity",
+                                "kind": "optional",
+                                "type": "integer",
+                                "description": "",
+                                "example": 0
+                              },
+                              {
+                                "name": "product_options",
+                                "kind": "optional",
+                                "type": "array",
+                                "description": "",
+                                "example": "",
+                                "itemType": "object",
+                                "customType": "object[]",
+                                "schema": [
+                                  {
+                                    "name": "product_option_id",
+                                    "kind": "optional",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "option_name",
+                                    "kind": "optional",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "selection_type",
+                                    "kind": "optional",
+                                    "type": "string",
+                                    "description": "",
+                                    "example": ""
+                                  },
+                                  {
+                                    "name": "price_total",
+                                    "kind": "optional",
+                                    "type": "integer",
+                                    "description": "",
+                                    "example": 0
+                                  },
+                                  {
+                                    "name": "options",
+                                    "kind": "optional",
+                                    "type": "array",
+                                    "description": "",
+                                    "example": "",
+                                    "itemType": "object",
+                                    "customType": "object[]",
+                                    "schema": [
+                                      {
+                                        "name": "option_id",
+                                        "kind": "optional",
+                                        "type": "string",
+                                        "description": "",
+                                        "example": ""
+                                      },
+                                      {
+                                        "name": "name",
+                                        "kind": "optional",
+                                        "type": "string",
+                                        "description": "",
+                                        "example": ""
+                                      },
+                                      {
+                                        "name": "price",
+                                        "kind": "optional",
+                                        "type": "integer",
+                                        "description": "",
+                                        "example": 0
+                                      },
+                                      {
+                                        "name": "is_quantity_enabled",
+                                        "kind": "optional",
+                                        "type": "boolean",
+                                        "description": "",
+                                        "example": ""
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ],
+                        "isExpanded": true
+                      }
+                    ],
+                    "formDataParameters": [],
+                    "oAuthParameters": []
+                  },
+                  "responses": [
+                    {
+                      "statusCode": "200",
+                      "description": "",
+                      "jsonExample": "",
+                      "isExpanded": true,
+                      "schema": [
+                        {
+                          "kind": "optional",
+                          "type": "object",
+                          "example": "{\"success\":true,\"data\":{\"_id\":\"65b400d7245b3a1be8071e0a\",\"tenant_id\":1003,\"cart_items\":[{\"merchant_id\":\"61d6b51b17ab8614a72cd25b\",\"product_id\":\"63fdb8536c8120b08204552f\",\"item_image_url\":null,\"product_name\":\"Chilli Chicken\",\"quantity\":1,\"product_price\":216,\"product_options\":[{\"product_option_id\":\"2e3d9b50-b740-11ed-930c-f30144d1f554\",\"option_name\":\"QUANTITY\",\"selection_type\":\"single\",\"price_total\":60,\"options\":[{\"option_id\":\"2e3d9c80-b740-11ed-81ab-c51ef6b50f29\",\"name\":\"FULL\",\"price\":60,\"is_quantity_enabled\":false,\"quantity\":1,\"price_total\":60,\"price_formatted\":\"₹60.00\",\"price_total_formatted\":\"₹60.00\"}],\"price_total_formatted\":\"₹60.00\"}],\"tax_percent\":null,\"discount_percent\":null,\"sub_total_amount\":276,\"product_price_formatted\":\"₹216.00\",\"sub_total_amount_formatted\":\"₹276.00\"}],\"total_items\":1,\"total_amount\":276,\"is_updated\":false,\"checksum\":null,\"checksum_at\":null,\"user_id\":1127,\"updated_at\":\"2024-01-26T19:08:38.358000Z\",\"created_at\":\"2024-01-26T18:58:31.859000Z\",\"raw_calculation\":{\"delivery_fee\":0,\"delivery_tax\":0,\"sub_total_amount\":276,\"tax\":0,\"total_amount\":276},\"sub_total_amount\":276,\"custom_charges\":[],\"delivery_fee\":0,\"delivery_tax\":0,\"is_delivery_fee_applied\":true,\"is_delivery_tax_applied\":true,\"is_tip_applied\":false,\"message\":null,\"tax\":26.29,\"tax_method\":\"inclusive\",\"tip_amount\":0,\"sub_total_cost_amount\":360,\"cart_id\":\"65b400d7245b3a1be8071e0a\",\"total_amount_formatted\":\"₹276.00\",\"sub_total_amount_formatted\":\"₹276.00\",\"discount_amount_formatted\":\"₹0.00\",\"tax_formatted\":\"₹26.29\",\"delivery_fee_formatted\":\"₹0.00\",\"delivery_tax_formatted\":\"₹0.00\",\"currency_setting\":{\"code\":\"INR\",\"symbol_direction\":\"left\",\"symbol_type\":\"symbol_native\",\"symbol\":\"Rs\",\"symbol_native\":\"₹\"},\"tip_amount_formatted\":\"₹0.00\"},\"service\":\"cart\",\"status_code\":200}",
+                          "description": "",
+                          "schema": [
+                            {
+                              "name": "success",
+                              "kind": "required",
+                              "type": "boolean",
+                              "description": "",
+                              "example": ""
+                            },
+                            {
+                              "name": "data",
+                              "kind": "required",
+                              "type": "object",
+                              "description": "",
+                              "example": "",
+                              "schema": [
+                                {
+                                  "name": "_id",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "tenant_id",
+                                  "kind": "required",
+                                  "type": "integer",
+                                  "description": "",
+                                  "example": 0
+                                },
+                                {
+                                  "name": "cart_items",
+                                  "kind": "required",
+                                  "type": "array",
+                                  "description": "",
+                                  "example": "",
+                                  "itemType": "object",
+                                  "customType": "object[]",
+                                  "schema": [
+                                    {
+                                      "name": "merchant_id",
+                                      "kind": "optional",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "product_id",
+                                      "kind": "optional",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "item_image_url",
+                                      "kind": "optional",
+                                      "type": "null",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "product_name",
+                                      "kind": "optional",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "quantity",
+                                      "kind": "optional",
+                                      "type": "integer",
+                                      "description": "",
+                                      "example": 0
+                                    },
+                                    {
+                                      "name": "product_price",
+                                      "kind": "optional",
+                                      "type": "integer",
+                                      "description": "",
+                                      "example": 0
+                                    },
+                                    {
+                                      "name": "product_options",
+                                      "kind": "optional",
+                                      "type": "array",
+                                      "description": "",
+                                      "example": "",
+                                      "itemType": "object",
+                                      "customType": "object[]",
+                                      "schema": [
+                                        {
+                                          "name": "product_option_id",
+                                          "kind": "optional",
+                                          "type": "string",
+                                          "description": "",
+                                          "example": ""
+                                        },
+                                        {
+                                          "name": "option_name",
+                                          "kind": "optional",
+                                          "type": "string",
+                                          "description": "",
+                                          "example": ""
+                                        },
+                                        {
+                                          "name": "selection_type",
+                                          "kind": "optional",
+                                          "type": "string",
+                                          "description": "",
+                                          "example": ""
+                                        },
+                                        {
+                                          "name": "price_total",
+                                          "kind": "optional",
+                                          "type": "integer",
+                                          "description": "",
+                                          "example": 0
+                                        },
+                                        {
+                                          "name": "options",
+                                          "kind": "optional",
+                                          "type": "array",
+                                          "description": "",
+                                          "example": "",
+                                          "itemType": "object",
+                                          "customType": "object[]",
+                                          "schema": [
+                                            {
+                                              "name": "option_id",
+                                              "kind": "optional",
+                                              "type": "string",
+                                              "description": "",
+                                              "example": ""
+                                            },
+                                            {
+                                              "name": "name",
+                                              "kind": "optional",
+                                              "type": "string",
+                                              "description": "",
+                                              "example": ""
+                                            },
+                                            {
+                                              "name": "price",
+                                              "kind": "optional",
+                                              "type": "integer",
+                                              "description": "",
+                                              "example": 0
+                                            },
+                                            {
+                                              "name": "is_quantity_enabled",
+                                              "kind": "optional",
+                                              "type": "boolean",
+                                              "description": "",
+                                              "example": ""
+                                            },
+                                            {
+                                              "name": "quantity",
+                                              "kind": "optional",
+                                              "type": "integer",
+                                              "description": "",
+                                              "example": 0
+                                            },
+                                            {
+                                              "name": "price_total",
+                                              "kind": "optional",
+                                              "type": "integer",
+                                              "description": "",
+                                              "example": 0
+                                            },
+                                            {
+                                              "name": "price_formatted",
+                                              "kind": "optional",
+                                              "type": "string",
+                                              "description": "",
+                                              "example": ""
+                                            },
+                                            {
+                                              "name": "price_total_formatted",
+                                              "kind": "optional",
+                                              "type": "string",
+                                              "description": "",
+                                              "example": ""
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "price_total_formatted",
+                                          "kind": "optional",
+                                          "type": "string",
+                                          "description": "",
+                                          "example": ""
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "tax_percent",
+                                      "kind": "optional",
+                                      "type": "null",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "discount_percent",
+                                      "kind": "optional",
+                                      "type": "null",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "sub_total_amount",
+                                      "kind": "optional",
+                                      "type": "integer",
+                                      "description": "",
+                                      "example": 0
+                                    },
+                                    {
+                                      "name": "product_price_formatted",
+                                      "kind": "optional",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "sub_total_amount_formatted",
+                                      "kind": "optional",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "total_items",
+                                  "kind": "required",
+                                  "type": "integer",
+                                  "description": "",
+                                  "example": 0
+                                },
+                                {
+                                  "name": "total_amount",
+                                  "kind": "required",
+                                  "type": "integer",
+                                  "description": "",
+                                  "example": 0
+                                },
+                                {
+                                  "name": "is_updated",
+                                  "kind": "required",
+                                  "type": "boolean",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "checksum",
+                                  "kind": "required",
+                                  "type": "null",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "checksum_at",
+                                  "kind": "required",
+                                  "type": "null",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "user_id",
+                                  "kind": "required",
+                                  "type": "integer",
+                                  "description": "",
+                                  "example": 0
+                                },
+                                {
+                                  "name": "updated_at",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "created_at",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "raw_calculation",
+                                  "kind": "required",
+                                  "type": "object",
+                                  "description": "",
+                                  "example": "",
+                                  "schema": [
+                                    {
+                                      "name": "delivery_fee",
+                                      "kind": "required",
+                                      "type": "integer",
+                                      "description": "",
+                                      "example": 0
+                                    },
+                                    {
+                                      "name": "delivery_tax",
+                                      "kind": "required",
+                                      "type": "integer",
+                                      "description": "",
+                                      "example": 0
+                                    },
+                                    {
+                                      "name": "sub_total_amount",
+                                      "kind": "required",
+                                      "type": "integer",
+                                      "description": "",
+                                      "example": 0
+                                    },
+                                    {
+                                      "name": "tax",
+                                      "kind": "required",
+                                      "type": "integer",
+                                      "description": "",
+                                      "example": 0
+                                    },
+                                    {
+                                      "name": "total_amount",
+                                      "kind": "required",
+                                      "type": "integer",
+                                      "description": "",
+                                      "example": 0
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "sub_total_amount",
+                                  "kind": "required",
+                                  "type": "integer",
+                                  "description": "",
+                                  "example": 0
+                                },
+                                {
+                                  "name": "custom_charges",
+                                  "kind": "required",
+                                  "type": "array",
+                                  "description": "",
+                                  "example": "",
+                                  "itemType": "object",
+                                  "customType": "object[]",
+                                  "itemExample": "",
+                                  "itemDefault": ""
+                                },
+                                {
+                                  "name": "delivery_fee",
+                                  "kind": "required",
+                                  "type": "integer",
+                                  "description": "",
+                                  "example": 0
+                                },
+                                {
+                                  "name": "delivery_tax",
+                                  "kind": "required",
+                                  "type": "integer",
+                                  "description": "",
+                                  "example": 0
+                                },
+                                {
+                                  "name": "is_delivery_fee_applied",
+                                  "kind": "required",
+                                  "type": "boolean",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "is_delivery_tax_applied",
+                                  "kind": "required",
+                                  "type": "boolean",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "is_tip_applied",
+                                  "kind": "required",
+                                  "type": "boolean",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "message",
+                                  "kind": "required",
+                                  "type": "null",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "tax",
+                                  "kind": "required",
+                                  "type": "number",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "tax_method",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "tip_amount",
+                                  "kind": "required",
+                                  "type": "integer",
+                                  "description": "",
+                                  "example": 0
+                                },
+                                {
+                                  "name": "sub_total_cost_amount",
+                                  "kind": "required",
+                                  "type": "integer",
+                                  "description": "",
+                                  "example": 0
+                                },
+                                {
+                                  "name": "cart_id",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "total_amount_formatted",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "sub_total_amount_formatted",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "discount_amount_formatted",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "tax_formatted",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "delivery_fee_formatted",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "delivery_tax_formatted",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                },
+                                {
+                                  "name": "currency_setting",
+                                  "kind": "required",
+                                  "type": "object",
+                                  "description": "",
+                                  "example": "",
+                                  "schema": [
+                                    {
+                                      "name": "code",
+                                      "kind": "required",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "symbol_direction",
+                                      "kind": "required",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "symbol_type",
+                                      "kind": "required",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "symbol",
+                                      "kind": "required",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    },
+                                    {
+                                      "name": "symbol_native",
+                                      "kind": "required",
+                                      "type": "string",
+                                      "description": "",
+                                      "example": ""
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "tip_amount_formatted",
+                                  "kind": "required",
+                                  "type": "string",
+                                  "description": "",
+                                  "example": ""
+                                }
+                              ]
+                            },
+                            {
+                              "name": "service",
+                              "kind": "required",
+                              "type": "string",
+                              "description": "",
+                              "example": ""
+                            },
+                            {
+                              "name": "status_code",
+                              "kind": "required",
+                              "type": "integer",
+                              "description": "",
+                              "example": 0
+                            }
+                          ],
+                          "isExpanded": true
+                        }
+                      ]
+                    }
+                  ],
+                  "hasXCodeSamples": false,
+                  "deprecated": false,
+                  "examples": {
+                    "languages": [
+                      {
+                        "id": "Vr8YSWMI7RSBVI00anKQs",
+                        "language": "curl",
+                        "label": "cURL",
+                        "code": "curl --request POST \\\n     --url https://api.hyperzod.app/store/v1/cart \\\n     --header 'accept: application/json' \\\n     --header 'content-type: application/json' \\\n     --header 'x-api-key: {{X-API-KEY}}' \\\n     --header 'x-tenant: {{X-Tenant}}' \\\n     --data '{\n     \"cart_id\": \"\",\n     \"user_id\": 0,\n     \"cart_items\": [\n     {}\n     ]\n     }'"
+                      },
+                      {
+                        "id": "MPPvyTMToiCVKZhq0-I6Q",
+                        "language": "javascript",
+                        "label": "javascript",
+                        "code": "var myHeaders = new Headers();\nmyHeaders.append(\"accept\", \"application/json\");\nmyHeaders.append(\"content-type\", \"application/json\");\nmyHeaders.append(\"x-api-key\", \"{{X-API-KEY}}\");\nmyHeaders.append(\"x-tenant\", \"{{X-Tenant}}\");\n\nvar raw = JSON.stringify({\n   \"cart_id\": \"\",\n   \"user_id\": 0,\n   \"cart_items\": [\n      {}\n   ]\n});\n\nvar requestOptions = {\n   method: 'POST',\n   headers: myHeaders,\n   body: raw,\n   redirect: 'follow'\n};\n\nfetch(\"https://api.hyperzod.app/store/v1/cart\", requestOptions)\n   .then(response => response.text())\n   .then(result => console.log(result))\n   .catch(error => console.log('error', error));"
+                      },
+                      {
+                        "id": "mUYPF4mdqlHsbOAYBdNt1",
+                        "language": "ruby",
+                        "label": "Ruby",
+                        "code": "require \"uri\"\nrequire \"json\"\nrequire \"net/http\"\n\nurl = URI(\"https://api.hyperzod.app/store/v1/cart\")\n\nhttps = Net::HTTP.new(url.host, url.port)\nhttps.use_ssl = true\n\nrequest = Net::HTTP::Post.new(url)\nrequest[\"accept\"] = \"application/json\"\nrequest[\"content-type\"] = \"application/json\"\nrequest[\"x-api-key\"] = \"{{X-API-KEY}}\"\nrequest[\"x-tenant\"] = \"{{X-Tenant}}\"\nrequest.body = JSON.dump({\n   \"cart_id\": \"\",\n   \"user_id\": 0,\n   \"cart_items\": [\n      {}\n   ]\n})\n\nresponse = https.request(request)\nputs response.read_body\n"
+                      },
+                      {
+                        "id": "EYidAIxLivjUK2C2D6_0a",
+                        "language": "python",
+                        "label": "Python",
+                        "code": "import requests\nimport json\n\nurl = \"https://api.hyperzod.app/store/v1/cart\"\n\npayload = json.dumps({\n   \"cart_id\": \"\",\n   \"user_id\": 0,\n   \"cart_items\": [\n      {}\n   ]\n})\nheaders = {\n   'accept': 'application/json',\n   'content-type': 'application/json',\n   'x-api-key': '{{X-API-KEY}}',\n   'x-tenant': '{{X-Tenant}}'\n}\n\nresponse = requests.request(\"POST\", url, headers=headers, data=payload)\n\nprint(response.text)\n"
+                      }
+                    ],
+                    "selectedLanguageId": "Vr8YSWMI7RSBVI00anKQs"
+                  },
+                  "results": {
+                    "languages": [
+                      {
+                        "id": "wd0oV5HXIHz_ZnMBYHuvF",
+                        "language": "200",
+                        "code": "{\n  \"success\": false,\n  \"data\": {\n    \"_id\": \"\",\n    \"tenant_id\": 0,\n    \"cart_items\": [\n      {\n        \"merchant_id\": \"\",\n        \"product_id\": \"\",\n        \"item_image_url\": \"\",\n        \"product_name\": \"\",\n        \"quantity\": 0,\n        \"product_price\": 0,\n        \"product_options\": [\n          {\n            \"product_option_id\": \"\",\n            \"option_name\": \"\",\n            \"selection_type\": \"\",\n            \"price_total\": 0,\n            \"options\": [\n              {\n                \"option_id\": \"\",\n                \"name\": \"\",\n                \"price\": 0,\n                \"is_quantity_enabled\": false,\n                \"quantity\": 0,\n                \"price_total\": 0,\n                \"price_formatted\": \"\",\n                \"price_total_formatted\": \"\"\n              }\n            ],\n            \"price_total_formatted\": \"\"\n          }\n        ],\n        \"tax_percent\": \"\",\n        \"discount_percent\": \"\",\n        \"sub_total_amount\": 0,\n        \"product_price_formatted\": \"\",\n        \"sub_total_amount_formatted\": \"\"\n      }\n    ],\n    \"total_items\": 0,\n    \"total_amount\": 0,\n    \"is_updated\": false,\n    \"checksum\": \"\",\n    \"checksum_at\": \"\",\n    \"user_id\": 0,\n    \"updated_at\": \"\",\n    \"created_at\": \"\",\n    \"raw_calculation\": {\n      \"delivery_fee\": 0,\n      \"delivery_tax\": 0,\n      \"sub_total_amount\": 0,\n      \"tax\": 0,\n      \"total_amount\": 0\n    },\n    \"sub_total_amount\": 0,\n    \"custom_charges\": [\n      {}\n    ],\n    \"delivery_fee\": 0,\n    \"delivery_tax\": 0,\n    \"is_delivery_fee_applied\": false,\n    \"is_delivery_tax_applied\": false,\n    \"is_tip_applied\": false,\n    \"message\": \"\",\n    \"tax\": 0,\n    \"tax_method\": \"\",\n    \"tip_amount\": 0,\n    \"sub_total_cost_amount\": 0,\n    \"cart_id\": \"\",\n    \"total_amount_formatted\": \"\",\n    \"sub_total_amount_formatted\": \"\",\n    \"discount_amount_formatted\": \"\",\n    \"tax_formatted\": \"\",\n    \"delivery_fee_formatted\": \"\",\n    \"delivery_tax_formatted\": \"\",\n    \"currency_setting\": {\n      \"code\": \"\",\n      \"symbol_direction\": \"\",\n      \"symbol_type\": \"\",\n      \"symbol\": \"\",\n      \"symbol_native\": \"\"\n    },\n    \"tip_amount_formatted\": \"\"\n  },\n  \"service\": \"\",\n  \"status_code\": 0\n}"
+                      }
+                    ],
+                    "selectedLanguageId": "wd0oV5HXIHz_ZnMBYHuvF"
+                  }
+                },
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              }
+            ],
+            "metadata": {
+              "type": "api-oas",
+              "version": "v2",
+              "convertedDate": "2025-09-26T06:34:10.055Z"
+            }
+          },
+          "version": 0,
+          "privacy": "shared with team",
+          "shareableToken": "6puz5Mx4qqh7ECWRKPpoX",
+          "tags": [],
+          "docTags": [],
+          "children": [],
+          "hasDraft": false,
+          "createdByUserId": "SuqpXTNKx3f4SjbfE635C",
+          "createdBy": {
+            "id": "",
+            "fullName": "",
+            "firstName": "",
+            "lastName": "",
+            "email": "",
+            "profilePhotoURL": ""
+          },
+          "lastModifiedByUserId": "SuqpXTNKx3f4SjbfE635C",
+          "lastModifiedBy": {
+            "id": "",
+            "fullName": "",
+            "firstName": "",
+            "lastName": "",
+            "email": "",
+            "profilePhotoURL": ""
+          },
+          "contributorsDetails": [
+            {
+              "id": "SuqpXTNKx3f4SjbfE635C",
+              "fullName": "Farhan Rizwan",
+              "email": "",
+              "firstName": "Farhan",
+              "lastName": "Rizwan",
+              "profilePhotoURL": "https://s3.amazonaws.com/archbee-animals/dog.png"
+            }
+          ],
+          "watchers": [],
+          "isArchbeeBrandVisible": true,
+          "customCSS": "",
+          "parentDocId": null,
+          "docSpaceId": "PREVIEW-TSX59B-ftH01Uoa0aU550",
+          "updatedAt": "2025-09-26T06:37:36.332Z",
+          "createdAt": "2025-09-26T06:34:10.059Z",
+          "deletedAt": null,
+          "editable": false,
+          "expanded": true,
+          "reusableContentVariables": [],
+          "reusableContentDocRefs": {},
+          "externalSync": "",
+          "contentFromExternalLink": "",
+          "leftDoc": {
+            "id": "PREVIEW-lfdLXW4VvPaJYu104ddJH",
+            "docDataType": "api-oas",
+            "isCategory": false,
+            "categoryName": "Delete a product",
+            "children": [],
+            "openApiMethod": "POST",
+            "openApiHash": "71495daff85dfb33f6e4e8e7cb53d2c342868809314d861840e9da3efc0221ab",
+            "name": "Delete a product",
+            "urlKey": "delete-a-product",
+            "icon": "",
+            "parentDocId": "PREVIEW-fwficMZEjALFil8erBOno",
+            "conditionalRuleId": "",
+            "expanded": false,
+            "docTags": []
+          },
+          "rightDoc": {
+            "id": "PREVIEW-YcEb3H2x6_TDwvLqBKWj1",
+            "docDataType": "api-oas",
+            "isCategory": false,
+            "categoryName": "Retrieve a Cart",
+            "children": [],
+            "openApiMethod": "GET",
+            "openApiHash": "3215df22c98fa3bd907c3310d1abd6007b06bc01d7a15ef74f580cd64e697d2a",
+            "name": "Retrieve a Cart",
+            "urlKey": "retrieve-a-cart",
+            "icon": "",
+            "parentDocId": "PREVIEW-pLEyw3quDTC2BR0O17Gdo",
+            "conditionalRuleId": "",
+            "expanded": false,
+            "docTags": []
+          }
+        },
+        "lastPublishedToPreview": "2025-09-26T08:26:07.933Z",
+        "lastPublishedToProduction": null,
+        "customQAndAModalDescription": "",
+        "customEndingSignature": "",
+        "customForgotPasswordMessage": "",
+        "customNewAccountMessage": "",
+        "customEmailSenderName": "",
+        "autoPublishInterval": null,
+        "autoPublishLastRun": null,
+        "autoPublishEnabled": false,
+        "isPublicSubscribeEnabled": false,
+        "isCategoryPageDataEnabled": false,
+        "portalId": "WFP3g_YvCmnKmtLwKR84c",
+        "cacheDirectiveOverride": null,
+        "showFullTitleInLeftNavDocsTree": false,
+        "isPublicBackgroundEnabled": false,
+        "isOpenSourceSuggestionsEnabled": false,
+        "isDocumentActionsEnabled": true,
+        "isRssFeedEnabled": false,
+        "rssFeedLink": null,
+        "syncAiTranslation": false
+      },
+      "isHosted": false,
+      "isSharedDocsDomain": false,
+      "isMobile": false,
+      "reloadAuth": false,
+      "isBot": true,
+      "isWidget": false,
+      "docs": []
+    },
+    "runtimeAppConfig": {
+      "RUNTIME_ENV": "live",
+      "RUNTIME_ENV_ID": "app.archbee.com",
+      "RUNTIME_APP_DOMAIN": "app.archbee.com",
+      "RUNTIME_API_DOMAIN": "api.archbee.com",
+      "RUNTIME_SENTRY_DSN": "https://85f7c86c49c24f5694f3eb6f528234a1@o89939.ingest.us.sentry.io/1415353"
+    }
+  },
+  "page": "/public/[[...slug]]",
+  "query": {
+    "slug": [
+      "PREVIEW-TSX59B-ftH01Uoa0aU550",
+      "PREVIEW-xK_ssjD801ElrUP9Vt_Af"
+    ]
+  },
+  "buildId": "sbfUL0KOhyHzTGD3OtGKR",
+  "assetPrefix": "https://cdn.archbee.com/fa805fc5e144b9c141e496ec0639c49f02ed237e",
+  "isFallback": false,
+  "isExperimentalCompile": false,
+  "dynamicIds": [
+    540617,
+    294994
+  ],
+  "gip": true,
+  "appGip": true,
+  "scriptLoader": []
+}

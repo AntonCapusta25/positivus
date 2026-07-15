@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.spoonful.pos.app-mergeDebugResources-2:/values-w320dp-land-v13/values-w320dp-land-v13.xml",
+            "map": [
+                {
+                    "source": "/Users/alexandrfilippov/.gradle/caches/9.5.1/transforms/ad66c9e55b953edf3394973f65426be3/transformed/material-1.11.0/res/values-w320dp-land-v13/values-w320dp-land-v13.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,110",
+                        "endColumns": "54,61",
+                        "endOffsets": "105,167"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "Spoonful Orderpad POS",
+  "short_name": "Spoonful POS",
+  "description": "Progressive Web Application POS terminal for Spoonful",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#D8581B",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/logo-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
