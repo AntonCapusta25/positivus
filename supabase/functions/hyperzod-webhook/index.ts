@@ -218,7 +218,7 @@ serve(async (req) => {
 
           if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
             webpush.setVapidDetails(
-              "mailto:info@spoonful-pos.local",
+              "mailto:bangalexf@gmail.com",
               VAPID_PUBLIC_KEY,
               VAPID_PRIVATE_KEY
             );
