@@ -74,11 +74,13 @@ function MainLayout() {
                 applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
               });
               
+              const subJson = subscription.toJSON();
+              
               // Save to Supabase push_subscriptions table
               const { error } = await supabase
                 .from('push_subscriptions')
                 .upsert(
-                  { endpoint: subscription.endpoint, keys: JSON.parse(JSON.stringify(subscription.keys)) },
+                  { endpoint: subJson.endpoint, keys: subJson.keys },
                   { onConflict: 'endpoint' }
                 );
               
