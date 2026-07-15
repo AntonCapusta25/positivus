@@ -908,6 +908,25 @@ export const POSProvider = ({ children }) => {
   };
 
   const acceptOrder = async (orderId, prepTime) => {
+    // Check if the order was already accepted or completed on another device
+    try {
+      const { data: dbOrder, error: dbError } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('id', orderId)
+        .maybeSingle();
+
+      if (dbError) throw dbError;
+
+      if (dbOrder && dbOrder.status !== 'incoming') {
+        alert(`This order has already been processed by another device/driver (Current Status: ${dbOrder.status.toUpperCase()}).`);
+        setActiveIncomingOrder(null);
+        return;
+      }
+    } catch (err) {
+      console.warn("Pre-acceptance status check failed:", err);
+    }
+
     // 1. Update local orders state
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'preparing', preparation_time: prepTime } : o));
 
