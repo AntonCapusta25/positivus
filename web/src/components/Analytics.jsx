@@ -4,9 +4,10 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell, PieChart, Pie, Legend
 } from 'recharts';
-import { DollarSign, ShoppingBag, TrendingUp, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { DollarSign, ShoppingBag, TrendingUp, AlertTriangle, ArrowUpRight, CreditCard } from 'lucide-react';
 
 const COLORS = ['#D8581B', '#3B82F6', '#10B981', '#F59E0B'];
+const PAYMENT_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#D8581B'];
 
 export default function Analytics() {
   const { orders, menuItems } = usePOS();
@@ -79,6 +80,33 @@ export default function Analytics() {
       { name: 'Pickup', value: types.pickup },
       { name: 'Dine-In', value: types.dine_in }
     ].filter(t => t.value > 0);
+  }, [orders]);
+
+  const paymentMethodData = useMemo(() => {
+    const methods = {};
+    orders.forEach(o => {
+      let rawMethod = o.payment_method || 'online';
+      // Normalize method names for cleaner display
+      let method = rawMethod.trim().toLowerCase();
+      if (method === 'cod') method = 'Cash on Delivery (COD)';
+      else if (method === 'ideal') method = 'iDEAL';
+      else if (method === 'klarna') method = 'Klarna';
+      else if (method === 'stripe') method = 'Stripe / Card';
+      else if (method === 'online') method = 'Online / Card';
+      else if (method === 'cash') method = 'Cash';
+      else if (method === 'card') method = 'Card';
+      else method = method.toUpperCase(); // fallback
+      
+      methods[method] = (methods[method] || 0) + 1;
+    });
+
+    const total = Object.values(methods).reduce((a, b) => a + b, 0);
+    if (total === 0) return [];
+
+    return Object.entries(methods).map(([name, value]) => ({
+      name,
+      value
+    })).sort((a, b) => b.value - a.value);
   }, [orders]);
 
   const categorySalesData = useMemo(() => {
@@ -261,30 +289,88 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Categories Bar Chart */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-        <h4 className="font-bold text-slate-800 mb-4">Top Selling Categories</h4>
-        <div className="h-64 flex items-center justify-center">
-          {categorySalesData.length === 0 ? (
-            <div className="text-center text-slate-400 space-y-1">
-              <ShoppingBag size={28} className="mx-auto text-slate-300" />
-              <p className="text-xs font-semibold">No category sales recorded yet</p>
+      {/* Categories Sales & Payment Methods Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Categories Bar Chart */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm lg:col-span-2">
+          <h4 className="font-bold text-slate-800 mb-4">Top Selling Categories</h4>
+          <div className="h-64 flex items-center justify-center">
+            {categorySalesData.length === 0 ? (
+              <div className="text-center text-slate-400 space-y-1">
+                <ShoppingBag size={28} className="mx-auto text-slate-300" />
+                <p className="text-xs font-semibold">No category sales recorded yet</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={categorySalesData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip formatter={(value) => [value, 'Items Sold']} />
+                  <Bar dataKey="value" fill="#D8581B" radius={[8, 8, 0, 0]}>
+                    {categorySalesData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* Payment Methods Distribution */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+          <h4 className="font-bold text-slate-800 mb-4">Payment Distribution</h4>
+          <div className="h-64 flex flex-col justify-between">
+            <div className="h-48 relative flex items-center justify-center">
+              {paymentMethodData.length === 0 ? (
+                <div className="text-center text-slate-400 space-y-1">
+                  <CreditCard size={28} className="mx-auto text-slate-300" />
+                  <p className="text-xs font-semibold">No payments recorded yet</p>
+                </div>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={paymentMethodData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {paymentMethodData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [value, 'Orders']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                    <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider">Methods</span>
+                    <span className="text-2xl font-bold text-slate-700">
+                      {paymentMethodData.length}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categorySalesData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip formatter={(value) => [value, 'Items Sold']} />
-                <Bar dataKey="value" fill="#D8581B" radius={[8, 8, 0, 0]}>
-                  {categorySalesData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+            {paymentMethodData.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] font-bold text-slate-500">
+                {paymentMethodData.slice(0, 4).map((entry, index) => (
+                  <div key={entry.name} className="flex items-center space-x-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PAYMENT_COLORS[index % PAYMENT_COLORS.length] }} />
+                    <span className="truncate max-w-[85px]">{entry.name} ({entry.value})</span>
+                  </div>
+                ))}
+                {paymentMethodData.length > 4 && (
+                  <div className="text-slate-400 font-bold">+{paymentMethodData.length - 4} more</div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
