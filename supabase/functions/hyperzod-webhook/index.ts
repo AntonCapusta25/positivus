@@ -6,6 +6,72 @@ import webpush from "npm:web-push";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+async function sendPushNotifications(newOrder: any, supabase: any) {
+  try {
+    const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
+    const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
+
+    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+      console.warn("Web Push VAPID keys are not configured in the environment.");
+      return;
+    }
+
+    if (!newOrder.merchant_id) {
+      console.warn("Order has no merchant_id. Skipping push notifications.");
+      return;
+    }
+
+    webpush.setVapidDetails(
+      "mailto:bangalexf@gmail.com",
+      VAPID_PUBLIC_KEY,
+      VAPID_PRIVATE_KEY
+    );
+
+    // Filter by this order's specific merchant_id for multi-tenant isolation
+    const { data: subs, error: subsError } = await supabase
+      .from("push_subscriptions")
+      .select("*")
+      .eq("merchant_id", newOrder.merchant_id);
+
+    if (subsError) {
+      console.error("Failed to query push subscriptions:", subsError);
+      return;
+    }
+
+    if (!subs || subs.length === 0) {
+      console.log(`No active push subscriptions found for merchant: ${newOrder.merchant_id}`);
+      return;
+    }
+
+    console.log(`Sending Web Push notifications to ${subs.length} devices for merchant ${newOrder.merchant_id}...`);
+    const payload = JSON.stringify({
+      title: "New Kitchen Order!",
+      body: `Order #${newOrder.order_number} for €${Number(newOrder.total).toFixed(2)} (${newOrder.type})`,
+      url: "/"
+    });
+
+    const sendPromises = subs.map((sub: any) => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: sub.keys
+      };
+      return webpush.sendNotification(pushSubscription, payload)
+        .catch((err: any) => {
+          console.error("Web Push failed for endpoint:", sub.endpoint, err);
+          // Cleanup expired subscriptions (status code 410 Gone or 404 Not Found)
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            supabase.from("push_subscriptions").delete().eq("id", sub.id).then();
+          }
+        });
+    });
+
+    await Promise.allSettled(sendPromises);
+    console.log(`Finished sending Web Push notifications for order #${newOrder.order_number}`);
+  } catch (pushErr) {
+    console.error("Failed to process Web Push notifications:", pushErr);
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -212,50 +278,14 @@ serve(async (req) => {
       // Dispatch Web Push Notifications for NEW orders
       if (finalOrderData && finalOrderData.length > 0) {
         const newOrder = finalOrderData[0];
-        try {
-          const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
-          const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
-
-          if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-            webpush.setVapidDetails(
-              "mailto:bangalexf@gmail.com",
-              VAPID_PUBLIC_KEY,
-              VAPID_PRIVATE_KEY
-            );
-
-            // Get all subscriptions
-            const { data: subs, error: subsError } = await supabase
-              .from("push_subscriptions")
-              .select("*");
-
-            if (!subsError && subs && subs.length > 0) {
-              console.log(`Sending Web Push notifications to ${subs.length} devices...`);
-              const payload = JSON.stringify({
-                title: "New Kitchen Order!",
-                body: `Order #${newOrder.order_number} for €${Number(newOrder.total).toFixed(2)} (${newOrder.type})`,
-                url: "/"
-              });
-
-              const sendPromises = subs.map((sub: any) => {
-                const pushSubscription = {
-                  endpoint: sub.endpoint,
-                  keys: sub.keys
-                };
-                return webpush.sendNotification(pushSubscription, payload)
-                  .catch((err: any) => {
-                    console.error("Web Push failed for endpoint:", sub.endpoint, err);
-                    // Cleanup expired subscriptions (status code 410 Gone or 404 Not Found)
-                    if (err.statusCode === 410 || err.statusCode === 404) {
-                      supabase.from("push_subscriptions").delete().eq("id", sub.id).then();
-                    }
-                  });
-              });
-
-              await Promise.allSettled(sendPromises);
-            }
-          }
-        } catch (pushErr) {
-          console.error("Failed to process Web Push notifications:", pushErr);
+        const pushPromise = sendPushNotifications(newOrder, supabase);
+        
+        // @ts-ignore: EdgeRuntime is available in Deno Deploy
+        if (typeof EdgeRuntime !== 'undefined') {
+          // @ts-ignore
+          EdgeRuntime.waitUntil(pushPromise);
+        } else {
+          pushPromise.catch((err) => console.error("Background push error:", err));
         }
       }
     }

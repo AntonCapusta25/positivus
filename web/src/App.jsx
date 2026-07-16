@@ -84,14 +84,18 @@ function MainLayout() {
               const { error } = await supabase
                 .from('push_subscriptions')
                 .upsert(
-                  { endpoint: subJson.endpoint, keys: subJson.keys },
+                  { 
+                    endpoint: subJson.endpoint, 
+                    keys: subJson.keys,
+                    merchant_id: settings.merchantId
+                  },
                   { onConflict: 'endpoint' }
                 );
               
               if (error) {
                 console.error('[PWA Push] Failed to save subscription to Supabase:', error);
               } else {
-                console.log('[PWA Push] Successfully subscribed device to notifications');
+                console.log('[PWA Push] Successfully subscribed device to notifications for merchant:', settings.merchantId);
               }
             } else {
               console.warn('[PWA Push] Notification permission denied');
@@ -112,7 +116,7 @@ function MainLayout() {
         return () => window.removeEventListener('load', loadHandler);
       }
     }
-  }, []);
+  }, [settings.merchantId]);
 
   // Compute active order count for notification badge in sidebar
   const activeOrdersCount = orders.filter(o => {
