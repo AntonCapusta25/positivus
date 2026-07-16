@@ -1235,8 +1235,15 @@ export const POSProvider = ({ children }) => {
       const host = typeof window !== 'undefined' ? window.location.origin : 'https://spoonful-pos.vercel.app';
       const driverUrl = `${host}/driver?order_id=${order.id}`;
       deliveryQRSection = `----------------------------------------
-DRIVER CLAIM & ROUTE GPS LINK:
-${driverUrl}
+Bezorging Claim QR Code:
+  [█▀▀▀█ ▄ █▄▀█▀ █▀▀▀█]
+  [█ ██ █ █ ▀█▀  █ ██ █]
+  [█▄▄▄█ ▀ ▀▀▀▀▀ █▄▄▄█]
+  [▄▄ ▄▄▄▄ █  ▀  ▄  ▄ ▄]
+  [█▄ ▀█ ▄█▄ ▀▄█▄▀▀▀  ▀]
+  [█▀ ▄▀▀ ▀▄█ ▀  █  ▀ █]
+  [█▄▄█▄▄▄  ▀▄ █▄▄ █ ▄▀]
+Link: ${driverUrl}
 `;
     }
 

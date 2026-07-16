@@ -237,12 +237,15 @@ class SunmiPrinterHelper(private val context: Context) {
             service.printText("$merchantName Online\n", printCallback)
             service.printText("================================\n", printCallback)
             
-            service.setAlignment(1, printCallback) // Center align QR and Bestel text
-            service.printText("Bestel via onze eigen webshop\n", printCallback)
-            
-            // Commenting out QR code to verify if it is causing crashes
-            // val shopUrl = if (isRajCurry) "https://rajcurryhouse.nl" else "https://spoonful.nl"
-            // service.printQRCode(shopUrl, 4, 1, printCallback)
+            if (order.type.lowercase(Locale.getDefault()) == "delivery") {
+                service.printText("Bezorging Claim QR Code\n", printCallback)
+                val driverUrl = "https://positivus-two-iota.vercel.app/driver?order_id=${order.id}"
+                service.printQRCode(driverUrl, 6, 1, printCallback)
+            } else {
+                service.printText("Bestel via onze eigen webshop\n", printCallback)
+                val shopUrl = if (isRajCurry) "https://rajcurryhouse.nl" else "https://spoonful.nl"
+                service.printQRCode(shopUrl, 6, 1, printCallback)
+            }
             
             // Feed paper
             service.lineWrap(4, printCallback)
