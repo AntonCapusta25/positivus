@@ -653,20 +653,36 @@ export const POSProvider = ({ children }) => {
     }
   };
 
-  // Assign driver details to order
+  // Assign driver details to order (with race condition protection)
   const assignOrderDriver = async (orderId, driverName, deliveryDuration) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, driver_name: driverName, delivery_duration: deliveryDuration } : o));
-
     try {
-      const { error } = await supabase
+      // Atomic check-and-set: update only if driver_name is null or empty
+      const { data, error } = await supabase
         .from('orders')
         .update({ 
           driver_name: driverName, 
           delivery_duration: deliveryDuration 
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .or('driver_name.is.null,driver_name.eq.""')
+        .select();
 
       if (error) throw error;
+
+      // If no rows matched, it means someone else already claimed it
+      if (!data || data.length === 0) {
+        const { data: ord } = await supabase
+          .from('orders')
+          .select('driver_name')
+          .eq('id', orderId)
+          .maybeSingle();
+        
+        const currentDriver = ord?.driver_name || "another driver";
+        throw new Error(`This order has already been claimed by ${currentDriver}.`);
+      }
+
+      // Database write succeeded, now update local React state
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, driver_name: driverName, delivery_duration: deliveryDuration } : o));
       return { success: true };
     } catch (err) {
       console.error('Update driver details in Supabase failed:', err);
@@ -675,8 +691,6 @@ export const POSProvider = ({ children }) => {
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-
     try {
       const { error } = await supabase
         .from('orders')
@@ -684,8 +698,13 @@ export const POSProvider = ({ children }) => {
         .eq('id', orderId);
 
       if (error) throw error;
+
+      // Database write succeeded, now update local React state
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
     } catch (err) {
       console.error('Update status in Supabase failed:', err);
+      alert('Failed to update status: ' + err.message);
+      return;
     }
 
     // Propagate status update back to Hyperzod via server-side Supabase Edge Function to avoid client CORS restrictions

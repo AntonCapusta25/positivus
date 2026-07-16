@@ -2,7 +2,7 @@
 -- Create orders table
 CREATE TABLE IF NOT EXISTS public.orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_number VARCHAR(50) NOT NULL,
+    order_number VARCHAR(50) UNIQUE NOT NULL,
     customer_name VARCHAR(100),
     customer_phone VARCHAR(50),
     merchant_id VARCHAR(100) NOT NULL DEFAULT 'restaurant_1',

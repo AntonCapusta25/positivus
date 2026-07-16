@@ -196,96 +196,136 @@ serve(async (req) => {
       }
     }
 
-    // Check if order already exists in Supabase
-    const { data: existingOrder, error: selectError } = await supabase
-      .from("orders")
-      .select("id")
-      .eq("order_number", orderNumber)
-      .maybeSingle();
-
-    if (selectError) {
-      console.error("Database select error:", selectError);
-      throw selectError;
-    }
-
+    // Determine event action
+    const eventName = body.event || 'order.created';
     let finalOrderData = null;
 
-    if (existingOrder) {
-      console.log(`Order ${orderNumber} already exists (UUID: ${existingOrder.id}). Updating record...`);
-      
-      const updatePayload: any = {
-        status: mappedStatus,
-        notes: JSON.stringify(body) // Store raw payload for debugging!
-      };
-      
-      // Only update fields if they were explicitly provided in the webhook payload
-      if (data.payment_status) updatePayload.payment_status = paymentStatus;
-      if (data.customer_name || data.customer?.name) updatePayload.customer_name = customerName;
-      if (data.customer_phone || data.customer?.phone) updatePayload.customer_phone = customerPhone;
-      if (data.cart_items || data.items) updatePayload.items = items;
-      if (data.subtotal || data.sub_total_amount) updatePayload.subtotal = subtotal;
-      if (data.tax) updatePayload.tax = tax;
-      if (data.delivery_charges || data.delivery_fee) updatePayload.delivery_fee = deliveryFee;
-      if (data.discount || data.discount_amount) updatePayload.discount = discount;
-      if (data.total_amount || data.total) updatePayload.total = total;
-      if (data.delivery_address || data.address) updatePayload.customer_address = customerAddress;
-      if (data.order_type) updatePayload.type = type;
+    const insertPayload = {
+      order_number: orderNumber,
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      merchant_id: merchantId,
+      items: items,
+      subtotal: subtotal,
+      tax: tax,
+      delivery_fee: deliveryFee,
+      discount: discount,
+      total: total,
+      status: mappedStatus,
+      type: type,
+      payment_method: paymentMethod,
+      payment_status: paymentStatus,
+      notes: JSON.stringify(body), // Store raw payload for debugging!
+      printed: false,
+      customer_address: customerAddress
+    };
 
+    const updatePayload: any = {
+      status: mappedStatus,
+      notes: JSON.stringify(body),
+      updated_at: new Date().toISOString()
+    };
+    
+    // Only update fields if they were explicitly provided in the webhook payload
+    if (data.payment_status) updatePayload.payment_status = paymentStatus;
+    if (data.customer_name || data.customer?.name) updatePayload.customer_name = customerName;
+    if (data.customer_phone || data.customer?.phone) updatePayload.customer_phone = customerPhone;
+    if (data.cart_items || data.items) updatePayload.items = items;
+    if (data.subtotal || data.sub_total_amount) updatePayload.subtotal = subtotal;
+    if (data.tax) updatePayload.tax = tax;
+    if (data.delivery_charges || data.delivery_fee) updatePayload.delivery_fee = deliveryFee;
+    if (data.discount || data.discount_amount) updatePayload.discount = discount;
+    if (data.total_amount || data.total) updatePayload.total = total;
+    if (data.delivery_address || data.address) updatePayload.customer_address = customerAddress;
+    if (data.order_type) updatePayload.type = type;
+
+    if (eventName === 'order.updated' || eventName === 'order.status_updated') {
+      console.log(`Update event received for Order ${orderNumber}. Executing update...`);
       const { data: updatedData, error: updateError } = await supabase
         .from("orders")
         .update(updatePayload)
-        .eq("id", existingOrder.id)
+        .eq("order_number", orderNumber)
         .select();
 
       if (updateError) {
         console.error("Database update error:", updateError);
         throw updateError;
       }
-      finalOrderData = updatedData;
+
+      if (updatedData && updatedData.length > 0) {
+        finalOrderData = updatedData;
+      } else {
+        // Order does not exist yet. Fallback to insert (optimistic insert)
+        console.log(`Order ${orderNumber} not found during update. Inserting new record...`);
+        const { data: insertedData, error: insertError } = await supabase
+          .from("orders")
+          .insert([insertPayload])
+          .select();
+
+        if (insertError) {
+          // If insert failed due to unique key conflict, another request inserted it concurrently. Retry update!
+          if (insertError.code === "23505") {
+            console.log(`Conflict: Order ${orderNumber} was inserted concurrently. Retrying update...`);
+            const { data: retryUpdate, error: retryError } = await supabase
+              .from("orders")
+              .update(updatePayload)
+              .eq("order_number", orderNumber)
+              .select();
+            if (retryError) throw retryError;
+            finalOrderData = retryUpdate;
+          } else {
+            console.error("Failed fallback insert:", insertError);
+            throw insertError;
+          }
+        } else {
+          finalOrderData = insertedData;
+          // Dispatch notifications for this new order
+          if (finalOrderData && finalOrderData.length > 0) {
+            const newOrder = finalOrderData[0];
+            const pushPromise = sendPushNotifications(newOrder, supabase);
+            if (typeof EdgeRuntime !== 'undefined') {
+              // @ts-ignore
+              EdgeRuntime.waitUntil(pushPromise);
+            } else {
+              pushPromise.catch((err) => console.error("Background push error:", err));
+            }
+          }
+        }
+      }
     } else {
-      console.log(`Order ${orderNumber} is new. Inserting record...`);
+      console.log(`Creation event received for Order ${orderNumber}. Executing insert...`);
       const { data: insertedData, error: insertError } = await supabase
         .from("orders")
-        .insert([
-          {
-            order_number: orderNumber,
-            customer_name: customerName,
-            customer_phone: customerPhone,
-            merchant_id: merchantId,
-            items: items,
-            subtotal: subtotal,
-            tax: tax,
-            delivery_fee: deliveryFee,
-            discount: discount,
-            total: total,
-            status: mappedStatus,
-            type: type,
-            payment_method: paymentMethod,
-            payment_status: paymentStatus,
-            notes: JSON.stringify(body), // Store raw payload for debugging!
-            printed: false,
-            customer_address: customerAddress
-          }
-        ])
+        .insert([insertPayload])
         .select();
 
       if (insertError) {
-        console.error("Database insert error:", insertError);
-        throw insertError;
-      }
-      finalOrderData = insertedData;
-
-      // Dispatch Web Push Notifications for NEW orders
-      if (finalOrderData && finalOrderData.length > 0) {
-        const newOrder = finalOrderData[0];
-        const pushPromise = sendPushNotifications(newOrder, supabase);
-        
-        // @ts-ignore: EdgeRuntime is available in Deno Deploy
-        if (typeof EdgeRuntime !== 'undefined') {
-          // @ts-ignore
-          EdgeRuntime.waitUntil(pushPromise);
+        // If insert failed because the order already exists (unique conflict), fallback to update!
+        if (insertError.code === "23505") {
+          console.log(`Conflict: Order ${orderNumber} already exists. Executing update fallback...`);
+          const { data: updatedData, error: updateError } = await supabase
+            .from("orders")
+            .update(updatePayload)
+            .eq("order_number", orderNumber)
+            .select();
+          if (updateError) throw updateError;
+          finalOrderData = updatedData;
         } else {
-          pushPromise.catch((err) => console.error("Background push error:", err));
+          console.error("Database insert error:", insertError);
+          throw insertError;
+        }
+      } else {
+        finalOrderData = insertedData;
+        // Dispatch notifications for this new order
+        if (finalOrderData && finalOrderData.length > 0) {
+          const newOrder = finalOrderData[0];
+          const pushPromise = sendPushNotifications(newOrder, supabase);
+          if (typeof EdgeRuntime !== 'undefined') {
+            // @ts-ignore
+            EdgeRuntime.waitUntil(pushPromise);
+          } else {
+            pushPromise.catch((err) => console.error("Background push error:", err));
+          }
         }
       }
     }
