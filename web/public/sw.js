@@ -8,6 +8,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
@@ -15,11 +16,36 @@ self.addEventListener('install', (e) => {
   );
 });
 
+self.addEventListener('activate', (e) => {
+  e.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('fetch', (e) => {
+  // Skip caching for non-GET requests (e.g. Supabase POST/PATCH mutations)
+  if (e.request.method !== 'GET') {
+    return;
+  }
+
+  // Skip caching for external APIs, Supabase domain, and Deno edge functions
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      return cachedResponse || fetch(e.request);
-    })
+    fetch(e.request)
+      .then((response) => {
+        // Put response copy in cache for offline support
+        if (response.status === 200) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, copy));
+        }
+        return response;
+      })
+      .catch(() => {
+        // Fallback to cache when offline
+        return caches.match(e.request);
+      })
   );
 });
 

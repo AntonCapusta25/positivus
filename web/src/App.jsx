@@ -58,7 +58,19 @@ function MainLayout() {
 
   // Register PWA service worker and subscribe to Push notifications
   useEffect(() => {
+    let controllerChangeCleanup = () => {};
+
     if ('serviceWorker' in navigator) {
+      const handleControllerChange = () => {
+        console.log('[PWA SW] Service worker controller changed. Reloading page for updates...');
+        window.location.reload();
+      };
+      
+      navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+      controllerChangeCleanup = () => {
+        navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      };
+
       const registerSW = async () => {
         try {
           const reg = await navigator.serviceWorker.register('/sw.js');
@@ -109,12 +121,18 @@ function MainLayout() {
 
       if (document.readyState === 'complete') {
         registerSW();
+        return () => {
+          controllerChangeCleanup();
+        };
       } else {
         const loadHandler = () => {
           registerSW();
         };
         window.addEventListener('load', loadHandler);
-        return () => window.removeEventListener('load', loadHandler);
+        return () => {
+          window.removeEventListener('load', loadHandler);
+          controllerChangeCleanup();
+        };
       }
     }
   }, [settings.merchantId]);
