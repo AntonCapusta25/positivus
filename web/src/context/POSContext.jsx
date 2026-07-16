@@ -1230,6 +1230,16 @@ export const POSProvider = ({ children }) => {
       }
     }
 
+    let deliveryQRSection = '';
+    if ((order.type || '').toLowerCase() === 'delivery') {
+      const host = typeof window !== 'undefined' ? window.location.origin : 'https://spoonful-pos.vercel.app';
+      const driverUrl = `${host}/driver?order_id=${order.id}`;
+      deliveryQRSection = `----------------------------------------
+DRIVER CLAIM & ROUTE GPS LINK:
+${driverUrl}
+`;
+    }
+
     const receiptContent = `
 ========================================
            ${activeMerchant.name.toUpperCase()} RECEIPT
@@ -1252,7 +1262,7 @@ TOTAL:                       €${Number(order.total || 0).toFixed(2)}
 Payment Method:              ${(order.payment_method || 'Online').toUpperCase()}
 Payment Status:              ${(order.payment_status || 'Pending').toUpperCase()}
 Notes:                       ${formattedNotes}
-========================================
+${deliveryQRSection}========================================
          THANK YOU FOR YOUR ORDER
 ========================================
 `;
