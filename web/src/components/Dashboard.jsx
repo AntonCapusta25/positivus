@@ -362,6 +362,27 @@ export default function Dashboard() {
                       />
                     </div>
                   </div>
+
+                  {/* Driver App QR Code for scanning directly off screen */}
+                  <div className="flex flex-col items-center justify-center pt-4 border-t border-slate-800 space-y-2">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block text-center">
+                      Scan to Claim (Driver App)
+                    </span>
+                    {(() => {
+                      const host = window.location.origin;
+                      const driverUrl = `${host}/driver?order_id=${selectedOrder.id}`;
+                      return (
+                        <div className="flex flex-col items-center space-y-1.5">
+                          <div className="bg-white p-2 rounded-xl flex items-center justify-center shadow-inner">
+                            <QRCodeSVG value={driverUrl} size={100} />
+                          </div>
+                          <span className="text-[8px] font-mono text-slate-500 block truncate max-w-[200px] text-center">
+                            {driverUrl}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               )}
 
