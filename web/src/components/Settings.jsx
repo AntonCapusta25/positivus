@@ -3,30 +3,8 @@ import { usePOS } from '../context/POSContext';
 import { Volume2, Printer, Sliders, Play, Save, RotateCcw, Zap } from 'lucide-react';
 
 export default function Settings() {
-  const { settings, setSettings, triggerTestPrint, playAlertSound, availableMerchants, createTestOrder, logoutMerchant, drivers, createDriver, deleteDriver } = usePOS();
+  const { settings, setSettings, triggerTestPrint, playAlertSound, availableMerchants, createTestOrder, logoutMerchant } = usePOS();
   const [isPlacingTestOrder, setIsPlacingTestOrder] = React.useState(false);
-
-  // Add driver form states
-  const [newDriverName, setNewDriverName] = React.useState('');
-  const [newDriverPin, setNewDriverPin] = React.useState('1234');
-  const [newDriverPhone, setNewDriverPhone] = React.useState('');
-  const [driverError, setDriverError] = React.useState('');
-  const [isAddingDriver, setIsAddingDriver] = React.useState(false);
-
-  const handleAddDriver = async (e) => {
-    e.preventDefault();
-    setDriverError('');
-    setIsAddingDriver(true);
-    const res = await createDriver(newDriverName, newDriverPin, newDriverPhone);
-    setIsAddingDriver(false);
-    if (res.success) {
-      setNewDriverName('');
-      setNewDriverPin('1234');
-      setNewDriverPhone('');
-    } else {
-      setDriverError(res.error);
-    }
-  };
 
   const handleCreateTestOrder = async () => {
     setIsPlacingTestOrder(true);
@@ -370,120 +348,7 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Bottom Panel: Delivery Drivers Management */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div>
-            <h3 className="font-bold text-slate-800 flex items-center space-x-2 text-base">
-              <span>👥 Courier Accounts & Credentials</span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">Manage delivery driver profiles, passcode PINs, and contact information</p>
-          </div>
-          <span className="bg-slate-100 text-slate-600 font-bold px-2.5 py-1 rounded-full text-xs">
-            {drivers.length} Drivers Active
-          </span>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Create Driver Form */}
-          <form onSubmit={handleAddDriver} className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-150/85">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Add New Courier</span>
-            
-            {driverError && (
-              <div className="p-2 bg-rose-50 text-rose-600 text-xs font-bold rounded-lg">{driverError}</div>
-            )}
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Driver Name</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. John Doe"
-                value={newDriverName}
-                onChange={(e) => setNewDriverName(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand-orange text-slate-700 font-semibold"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">PIN passcode (4 digits)</label>
-              <input
-                type="text"
-                required
-                maxLength="4"
-                value={newDriverPin}
-                onChange={(e) => setNewDriverPin(e.target.value.replace(/\D/g, ''))}
-                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand-orange text-slate-700 font-semibold"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Phone Number</label>
-              <input
-                type="tel"
-                placeholder="e.g. +31612345678"
-                value={newDriverPhone}
-                onChange={(e) => setNewDriverPhone(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand-orange text-slate-700 font-semibold"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isAddingDriver}
-              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-250 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
-            >
-              {isAddingDriver ? 'Adding Courier...' : 'Add Driver Account'}
-            </button>
-          </form>
-
-          {/* Drivers list */}
-          <div className="lg:col-span-2 overflow-x-auto border border-slate-100 rounded-2xl">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-55 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="p-3">Courier Name</th>
-                  <th className="p-3">Login PIN</th>
-                  <th className="p-3">Phone number</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {drivers.map(d => (
-                  <tr key={d.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-3 font-extrabold text-slate-800 flex items-center space-x-1.5">
-                      <span>🛵</span>
-                      <span>{d.name}</span>
-                    </td>
-                    <td className="p-3 font-mono font-bold text-brand-orange">{d.passcode}</td>
-                    <td className="p-3 font-semibold text-slate-500">{d.phone || 'None'}</td>
-                    <td className="p-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (window.confirm(`Are you sure you want to delete driver account for ${d.name}?`)) {
-                            deleteDriver(d.id);
-                          }
-                        }}
-                        className="text-rose-500 hover:text-rose-600 font-bold hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {drivers.length === 0 && (
-                  <tr>
-                    <td colSpan="4" className="p-6 text-center text-slate-400 font-medium">
-                      No courier profiles configured yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
 
       {/* Footer controls */}
       <div className="flex items-center justify-between pt-4 border-t border-slate-100">
