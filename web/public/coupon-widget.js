@@ -136,13 +136,39 @@
     }
   }
 
-  // Polling check to ensure it injects even after SPA/Vue routing transitions
+  function isCartEmpty() {
+    const text = (document.body.innerText || "").toLowerCase();
+    return text.includes("once you add items") || 
+           text.includes("cart is empty") || 
+           text.includes("winkelwagen is leeg") ||
+           text.includes("winkelwagen leeg");
+  }
+
+  // Polling check to ensure it injects and toggles dynamically as cart updates
   function checkAndToggleWidget() {
-    const isCheckoutDom = document.getElementById('checkout') !== null;
-    const isCheckoutUrl = window.location.pathname.includes('checkout');
+    const hasCartCard = document.getElementById('CartCard') !== null;
+    const hasCheckout = document.getElementById('checkout') !== null;
+    const isCartOrCheckoutPage = hasCartCard || hasCheckout || window.location.pathname.includes('checkout') || window.location.pathname.includes('cart');
     
-    if (isCheckoutDom || isCheckoutUrl) {
-      initPremiumWidget();
+    if (isCartOrCheckoutPage) {
+      if (isCartEmpty()) {
+        const widget = document.getElementById('pro-actions-widget');
+        if (widget) {
+          widget.style.display = 'none';
+        }
+      } else {
+        const widget = document.getElementById('pro-actions-widget');
+        if (widget) {
+          widget.style.display = 'block';
+        } else {
+          initPremiumWidget();
+        }
+      }
+    } else {
+      const widget = document.getElementById('pro-actions-widget');
+      if (widget) {
+        widget.style.display = 'none';
+      }
     }
   }
 
