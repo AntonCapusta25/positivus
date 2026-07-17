@@ -162,60 +162,35 @@ async function processOrderCoupons(orderNumber: string, customerEmail: string, p
     // 5. Clean up temporary selections
     await supabase.from("selected_coupons").delete().eq("email", cleanEmail);
 
-    // 6. Send email notification
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
-    const expiryFormatted = new Date(expiresAt).toLocaleDateString("en-US", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-    const htmlBody = `
-      <div style="font-family: 'Inter', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #f0f0f0; border-radius: 16px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <h2 style="color: #111111; font-weight: 800; font-size: 24px; margin: 0;">Spoonful POS VIP Rewards ✨</h2>
-        </div>
-        <p style="color: #444444; font-size: 15px; line-height: 1.5; margin-top: 0;">
-          Hi there! Thank you for your payment and order <strong>#${orderNumber}</strong>.
-        </p>
-        <p style="color: #444444; font-size: 15px; line-height: 1.5;">
-          You have successfully unlocked the following VIP coupons:
-        </p>
-        <div style="background-color: #f8fafc; padding: 16px; border-radius: 12px; margin: 20px 0; border: 1px solid #e2e8f0;">
-          <ul style="margin: 0; padding-left: 20px; color: #1e293b; font-weight: 600; font-size: 15px; line-height: 1.8;">
-            ${emailCoupons.map(c => `<li>${c}</li>`).join("")}
-          </ul>
-        </div>
-        <p style="color: #b45309; background-color: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; line-height: 1.4; margin: 20px 0;">
-          ⚠️ <strong>How to Redeem:</strong> Please visit us at our facility and present this email. Our cashier / team member will activate your rewards on the checkout dashboard!
-        </p>
-        <p style="color: #ef4444; font-size: 13px; font-weight: 700; margin-bottom: 24px;">
-          * Expiration Date: These coupons are valid for 14 days and will expire on ${expiryFormatted}.
-        </p>
-        <div style="border-top: 1px solid #f0f0f0; padding-top: 20px; text-align: center; color: #888888; font-size: 12px;">
-          Thank you for choosing Spoonful. We look forward to serving you!
-        </div>
-      </div>
-    `;
-
-    if (RESEND_API_KEY) {
-      console.log(`Sending VIP coupon email via Resend to: ${cleanEmail}...`);
-      const emailRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          from: "Spoonful VIP <onboarding@resend.dev>",
-          to: [cleanEmail],
-          subject: `Your Spoonful VIP Coupons are Unlocked! (Order #${orderNumber})`,
-          html: htmlBody
-        })
-      });
-      if (emailRes.ok) {
-        console.log("VIP coupons email sent successfully!");
-      } else {
-        console.error("Resend API returned error status:", emailRes.status, await emailRes.text());
+    // 6. Trigger external decoupled edge function for SendGrid email dispatch
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    if (SUPABASE_URL) {
+      console.log(`Triggering decoupled send-coupon-email edge function for: ${cleanEmail}`);
+      try {
+        const emailRes = await fetch(`${SUPABASE_URL}/functions/v1/send-coupon-email`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            orderNumber: orderNumber,
+            customerEmail: cleanEmail,
+            couponTitles: emailCoupons
+          })
+        });
+        if (emailRes.ok) {
+          console.log("VIP coupons email edge function triggered successfully!");
+        } else {
+          console.error("Coupons email edge function returned error:", emailRes.status, await emailRes.text());
+        }
+      } catch (emailErr) {
+        console.error("Failed to trigger coupons email edge function:", emailErr);
       }
     } else {
-      console.log("RESEND_API_KEY not set. Mock email output:\n", htmlBody);
+      console.warn("SUPABASE_URL not configured. Skipping email edge function call.");
     }
   } catch (err) {
     console.error("Error processing order coupons:", err);
