@@ -72,6 +72,156 @@ async function sendPushNotifications(newOrder: any, supabase: any) {
   }
 }
 
+async function processOrderCoupons(orderNumber: string, customerEmail: string, paymentStatus: string, supabase: any) {
+  if (paymentStatus !== 'paid' || !customerEmail) return;
+
+  try {
+    // 1. Prevent duplicate coupon issues for the same order_number
+    const { data: existing } = await supabase
+      .from("issued_coupons")
+      .select("id")
+      .eq("order_number", orderNumber)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      console.log(`Coupons already issued for order ${orderNumber}. Skipping.`);
+      return;
+    }
+
+    // 2. Fetch customer selections
+    const cleanEmail = customerEmail.toLowerCase().trim();
+    const { data: selectionRecord, error: selError } = await supabase
+      .from("selected_coupons")
+      .select("*")
+      .eq("email", cleanEmail)
+      .single();
+
+    if (selError || !selectionRecord) {
+      console.log(`No pending coupons found for customer email: ${cleanEmail}`);
+      return;
+    }
+
+    const couponIds = selectionRecord.coupon_ids || [];
+    if (!Array.isArray(couponIds) || couponIds.length === 0) {
+      console.log(`Pending coupon IDs list is empty for: ${cleanEmail}`);
+      return;
+    }
+
+    // 3. Enforce maximum active coupons cap (max 200 coupons limit in database)
+    const { count, error: countError } = await supabase
+      .from("issued_coupons")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active");
+
+    if (countError) throw countError;
+    
+    const currentActiveCount = count || 0;
+    if (currentActiveCount >= 200) {
+      console.warn(`Coupon issue aborted: active coupons limit (200) reached. Current: ${currentActiveCount}`);
+      return;
+    }
+
+    // Map of template details for standard coupons
+    const COUPON_METADATA: any = {
+      coupon_1: { title: "Free Priority Delivery", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80" },
+      coupon_2: { title: "10% Off Next Order", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" },
+      coupon_3: { title: "Free Mango Lassi", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80" },
+      coupon_4: { title: "Chef's Secret Sauce", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1589301760014-d929f39ce9b1?w=400&q=80" }
+    };
+
+    // 4. Generate & Insert Coupon Records
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(); // 14 days limit
+    
+    // We only issue up to what the cap permits
+    const maxInsertCount = Math.min(couponIds.length, 200 - currentActiveCount);
+    const toInsert = [];
+    const emailCoupons = [];
+
+    for (let i = 0; i < maxInsertCount; i++) {
+      const code = couponIds[i];
+      const meta = COUPON_METADATA[code] || { title: "VIP Promo Offer", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" };
+      toInsert.push({
+        order_number: orderNumber,
+        customer_email: cleanEmail,
+        coupon_code: code,
+        title: meta.title,
+        discount_label: meta.discount_label,
+        image_url: meta.image_url,
+        expires_at: expiresAt,
+        status: "active"
+      });
+      emailCoupons.push(meta.title);
+    }
+
+    if (toInsert.length > 0) {
+      const { error: insError } = await supabase.from("issued_coupons").insert(toInsert);
+      if (insError) throw insError;
+      console.log(`Successfully issued ${toInsert.length} coupons to: ${cleanEmail}`);
+    }
+
+    // 5. Clean up temporary selections
+    await supabase.from("selected_coupons").delete().eq("email", cleanEmail);
+
+    // 6. Send email notification
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
+    const expiryFormatted = new Date(expiresAt).toLocaleDateString("en-US", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    const htmlBody = `
+      <div style="font-family: 'Inter', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #f0f0f0; border-radius: 16px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h2 style="color: #111111; font-weight: 800; font-size: 24px; margin: 0;">Spoonful POS VIP Rewards ✨</h2>
+        </div>
+        <p style="color: #444444; font-size: 15px; line-height: 1.5; margin-top: 0;">
+          Hi there! Thank you for your payment and order <strong>#${orderNumber}</strong>.
+        </p>
+        <p style="color: #444444; font-size: 15px; line-height: 1.5;">
+          You have successfully unlocked the following VIP coupons:
+        </p>
+        <div style="background-color: #f8fafc; padding: 16px; border-radius: 12px; margin: 20px 0; border: 1px solid #e2e8f0;">
+          <ul style="margin: 0; padding-left: 20px; color: #1e293b; font-weight: 600; font-size: 15px; line-height: 1.8;">
+            ${emailCoupons.map(c => `<li>${c}</li>`).join("")}
+          </ul>
+        </div>
+        <p style="color: #b45309; background-color: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; line-height: 1.4; margin: 20px 0;">
+          ⚠️ <strong>How to Redeem:</strong> Please visit us at our facility and present this email. Our cashier / team member will activate your rewards on the checkout dashboard!
+        </p>
+        <p style="color: #ef4444; font-size: 13px; font-weight: 700; margin-bottom: 24px;">
+          * Expiration Date: These coupons are valid for 14 days and will expire on ${expiryFormatted}.
+        </p>
+        <div style="border-top: 1px solid #f0f0f0; padding-top: 20px; text-align: center; color: #888888; font-size: 12px;">
+          Thank you for choosing Spoonful. We look forward to serving you!
+        </div>
+      </div>
+    `;
+
+    if (RESEND_API_KEY) {
+      console.log(`Sending VIP coupon email via Resend to: ${cleanEmail}...`);
+      const emailRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${RESEND_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          from: "Spoonful VIP <onboarding@resend.dev>",
+          to: [cleanEmail],
+          subject: `Your Spoonful VIP Coupons are Unlocked! (Order #${orderNumber})`,
+          html: htmlBody
+        })
+      });
+      if (emailRes.ok) {
+        console.log("VIP coupons email sent successfully!");
+      } else {
+        console.error("Resend API returned error status:", emailRes.status, await emailRes.text());
+      }
+    } else {
+      console.log("RESEND_API_KEY not set. Mock email output:\n", htmlBody);
+    }
+  } catch (err) {
+    console.error("Error processing order coupons:", err);
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -327,6 +477,18 @@ serve(async (req) => {
             pushPromise.catch((err) => console.error("Background push error:", err));
           }
         }
+      }
+    }
+
+    // Process VIP Coupons selection
+    const customerEmail = data.customer_email || data.customer?.email || "";
+    if (finalOrderData && finalOrderData.length > 0) {
+      const couponPromise = processOrderCoupons(orderNumber, customerEmail, paymentStatus, supabase);
+      if (typeof EdgeRuntime !== 'undefined') {
+        // @ts-ignore
+        EdgeRuntime.waitUntil(couponPromise);
+      } else {
+        couponPromise.catch((err) => console.error("Background coupons error:", err));
       }
     }
 

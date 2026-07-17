@@ -5,8 +5,9 @@ import MenuManagement from './components/MenuManagement';
 import Analytics from './components/Analytics';
 import Settings from './components/Settings';
 import Drivers from './components/Drivers';
+import Coupons from './components/Coupons';
 import NewOrderModal from './components/NewOrderModal';
-import { ShoppingBag, Store, BarChart3, Settings as SettingsIcon, AlertCircle, Wifi, WifiOff, Download, Menu, X, Bike } from 'lucide-react';
+import { ShoppingBag, Store, BarChart3, Settings as SettingsIcon, AlertCircle, Wifi, WifiOff, Download, Menu, X, Bike, Ticket } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import './App.css';
 
@@ -149,6 +150,7 @@ function MainLayout() {
     { id: 'orders', icon: ShoppingBag, label: 'Active Orders', badge: activeOrdersCount },
     { id: 'menu', icon: Store, label: 'Storefront Menu' },
     { id: 'drivers', icon: Bike, label: 'Couriers' },
+    { id: 'coupons', icon: Ticket, label: 'VIP Coupons' },
     { id: 'analytics', icon: BarChart3, label: 'Analytics' },
     { id: 'settings', icon: SettingsIcon, label: 'Settings' },
   ];
@@ -343,6 +345,7 @@ function MainLayout() {
           <div className="h-full overflow-y-auto">
             {currentPage === 'menu' && <MenuManagement />}
             {currentPage === 'drivers' && <Drivers />}
+            {currentPage === 'coupons' && <Coupons />}
             {currentPage === 'analytics' && <Analytics />}
             {currentPage === 'settings' && <Settings />}
           </div>

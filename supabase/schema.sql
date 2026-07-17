@@ -141,3 +141,52 @@ BEGIN
     END IF;
 END $$;
 
+
+-- Create selected_coupons table for temporary guest selections
+CREATE TABLE IF NOT EXISTS public.selected_coupons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    coupon_ids JSONB NOT NULL, -- Array of selected coupon codes, e.g. ["coupon_1", "coupon_3"]
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE public.selected_coupons ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow read/write access for all clients" ON public.selected_coupons;
+CREATE POLICY "Allow read/write access for all clients" ON public.selected_coupons FOR ALL USING (true) WITH CHECK (true);
+
+
+-- Create issued_coupons table for paid customer coupons
+CREATE TABLE IF NOT EXISTS public.issued_coupons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_number VARCHAR(100),
+    customer_email VARCHAR(255) NOT NULL,
+    coupon_code VARCHAR(100) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    discount_label VARCHAR(100) NOT NULL DEFAULT 'Select',
+    image_url TEXT,
+    expires_at TIMESTAMPTZ NOT NULL, -- 14 days from purchase
+    status VARCHAR(50) NOT NULL DEFAULT 'active', -- active, redeemed
+    redeemed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE public.issued_coupons ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow read/write access for all clients" ON public.issued_coupons;
+CREATE POLICY "Allow read/write access for all clients" ON public.issued_coupons FOR ALL USING (true) WITH CHECK (true);
+
+-- Enable Supabase Realtime for issued_coupons
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_rel pr
+        JOIN pg_class c ON pr.prrelid = c.oid
+        JOIN pg_publication p ON pr.prpubid = p.oid
+        WHERE p.pubname = 'supabase_realtime' AND c.relname = 'issued_coupons'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.issued_coupons;
+    END IF;
+END $$;
+
+
