@@ -57,6 +57,14 @@ const initialMenuItems = [
 ];
 
 export const POSProvider = ({ children }) => {
+  const [userRole, setUserRole] = useState(() => {
+    return localStorage.getItem('pos_user_role') || 'admin';
+  });
+
+  const [superadminName, setSuperadminName] = useState(() => {
+    return localStorage.getItem('pos_superadmin_name') || null;
+  });
+
   const [orders, setOrders] = useState([]);
   const [supabaseConnected, setSupabaseConnected] = useState(false);
   const [restaurantOpen, setRestaurantOpen] = useState(true);
@@ -559,14 +567,6 @@ export const POSProvider = ({ children }) => {
   // PIN Authentication State
   const [authenticatedMerchantId, setAuthenticatedMerchantId] = useState(() => {
     return localStorage.getItem('pos_authenticated_merchant') || null;
-  });
-
-  const [userRole, setUserRole] = useState(() => {
-    return localStorage.getItem('pos_user_role') || 'admin';
-  });
-
-  const [superadminName, setSuperadminName] = useState(() => {
-    return localStorage.getItem('pos_superadmin_name') || null;
   });
 
   const loginMerchant = (merchantId, pin) => {
