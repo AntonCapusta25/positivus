@@ -6,6 +6,12 @@ const HYPERZOD_MERCHANT_ID = import.meta.env.VITE_HYPERZOD_MERCHANT_ID;
 const HYPERZOD_BASE_URL = import.meta.env.VITE_HYPERZOD_BASE_URL || 'https://api.hyperzod.app';
 
 export function getDriverUrl(orderId) {
+  const customDriverUrl = import.meta.env.VITE_DRIVER_APP_URL;
+  if (customDriverUrl) {
+    // Strip trailing slash if present
+    const cleanUrl = customDriverUrl.replace(/\/$/, '');
+    return `${cleanUrl}/?order_id=${orderId}`;
+  }
   if (typeof window === 'undefined') {
     return `https://spoonful-pos.vercel.app/driver?order_id=${orderId}`;
   }

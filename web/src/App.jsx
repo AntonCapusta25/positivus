@@ -501,7 +501,7 @@ function AppContent() {
   const { authenticatedMerchantId, activeDriverOffer, setActiveDriverOffer, assignOrderDriver } = usePOS();
   const hostname = window.location.hostname.toLowerCase();
   const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
-  const isDriver = hostname.startsWith('driver.') || hostname.startsWith('courier.') || hostname.startsWith('delivery.') || path === '/driver' || path === '/drivers';
+  const isDriver = import.meta.env.VITE_APP_MODE === 'driver' || hostname.startsWith('driver.') || hostname.startsWith('courier.') || hostname.startsWith('delivery.') || path === '/driver' || path === '/drivers';
 
   const handleClaimOffer = async (order) => {
     const loggedDriver = localStorage.getItem('pos_driver_name') || 'John Doe';
