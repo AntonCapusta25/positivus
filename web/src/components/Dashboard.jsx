@@ -205,9 +205,20 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Right printer state indicators */}
-                  <div className="flex flex-col items-end space-y-1">
+                  {/* Right printer state indicators & Quick Print */}
+                  <div className="flex flex-col items-end space-y-2 shrink-0">
                     <div className={`w-2.5 h-2.5 rounded-full ${order.printed ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePrint(order);
+                      }}
+                      title="Quick Print Receipt"
+                      className="p-1.5 border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition-all shadow-sm"
+                    >
+                      <Printer size={14} />
+                    </button>
                   </div>
                 </div>
               );
@@ -498,8 +509,8 @@ export default function Dashboard() {
 
       {/* Side-by-Side Thermal Receipt Print Preview Modal */}
       {printPreviewOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-center p-4 md:p-8 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl flex flex-col shadow-2xl animate-fade-in my-auto">
             
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between shrink-0">
@@ -515,8 +526,8 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* Modal Scrollable Body */}
-            <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-950/50">
+            {/* Modal Body */}
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-950/50">
               
               {/* COPY 1: KITCHEN & DELIVERY RECEIPT */}
               <div className="thermal-receipt p-6 rounded-xl space-y-4 text-slate-850">
@@ -671,11 +682,10 @@ export default function Dashboard() {
               <button
                 onClick={() => {
                   triggerTestPrint(printPreviewOrder);
-                  setPrintPreviewOrder(null);
                 }}
                 className="py-2 px-5 bg-brand-orange hover:bg-opacity-95 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-brand-orange/15"
               >
-                Confirm Print Receipt
+                Print / Reprint Receipt
               </button>
             </div>
 
