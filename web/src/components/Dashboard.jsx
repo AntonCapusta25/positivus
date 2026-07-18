@@ -509,8 +509,8 @@ export default function Dashboard() {
 
       {/* Side-by-Side Thermal Receipt Print Preview Modal */}
       {printPreviewOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-center p-4 md:p-8 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl flex flex-col shadow-2xl animate-fade-in my-auto">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-center items-start p-4 md:p-8 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl flex flex-col shadow-2xl animate-fade-in my-4 md:my-8 h-fit">
             
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between shrink-0">
