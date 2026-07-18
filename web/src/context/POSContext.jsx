@@ -374,17 +374,17 @@ export const POSProvider = ({ children }) => {
 
     const fetchDrivers = async () => {
       try {
-        const { data, error } = await supabase
-          .from('drivers')
-          .select('*')
-          .eq('merchant_id', activeMerchantId)
-          .order('name', { ascending: true });
+        let query = supabase.from('drivers').select('*');
+        if (userRole !== 'superadmin') {
+          query = query.eq('merchant_id', activeMerchantId);
+        }
+        const { data, error } = await query.order('name', { ascending: true });
         
         if (error) {
           console.warn("Could not load drivers from Supabase, using local defaults:", error.message);
           return;
         }
-        if (data && data.length > 0) {
+        if (data) {
           setDrivers(data);
           localStorage.setItem('pos_drivers', JSON.stringify(data));
         }
@@ -395,11 +395,16 @@ export const POSProvider = ({ children }) => {
 
     fetchDrivers();
 
+    const channelName = userRole === 'superadmin' ? 'realtime:pos_drivers_all' : 'realtime:pos_drivers_' + activeMerchantId;
+    const changeFilter = userRole === 'superadmin'
+      ? { event: '*', schema: 'public', table: 'drivers' }
+      : { event: '*', schema: 'public', table: 'drivers', filter: `merchant_id=eq.${activeMerchantId}` };
+
     const driversChannel = supabase
-      .channel('realtime:pos_drivers_' + activeMerchantId)
+      .channel(channelName)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'drivers', filter: `merchant_id=eq.${activeMerchantId}` },
+        changeFilter,
         (payload) => {
           if (payload.eventType === 'INSERT') {
             const newD = payload.new;
@@ -431,7 +436,7 @@ export const POSProvider = ({ children }) => {
     return () => {
       supabase.removeChannel(driversChannel);
     };
-  }, [settings.merchantId]);
+  }, [settings.merchantId, userRole]);
 
 
   // Global AudioContext for mobile web browser compatibility (bypasses gesture restrictions)
@@ -556,22 +561,50 @@ export const POSProvider = ({ children }) => {
     return localStorage.getItem('pos_authenticated_merchant') || null;
   });
 
+  const [userRole, setUserRole] = useState(() => {
+    return localStorage.getItem('pos_user_role') || 'admin';
+  });
+
+  const [superadminName, setSuperadminName] = useState(() => {
+    return localStorage.getItem('pos_superadmin_name') || null;
+  });
+
   const loginMerchant = (merchantId, pin) => {
-    // Auth check logic:
-    // Default fallback: PIN '1234' matches Spoonful ('restaurant_1' or Hyperzod ID)
-    // For any other merchant, also allow PIN '1234' or last 4 digits of merchant ID
-    const isSpoonful = merchantId === 'restaurant_1' || merchantId === '6a0f03b4500ed5db150be1a1';
     const cleanPin = pin.trim();
 
+    // Check if logging in as Superadmin
+    if (merchantId === 'superadmin_autoflow' || merchantId === 'superadmin_raj' || merchantId === 'AutoFlow' || merchantId === 'Raj') {
+      const name = (merchantId === 'superadmin_autoflow' || merchantId === 'AutoFlow') ? 'AutoFlow' : 'Raj';
+      if (cleanPin === '1234' || cleanPin === '9999') {
+        setUserRole('superadmin');
+        setSuperadminName(name);
+        localStorage.setItem('pos_user_role', 'superadmin');
+        localStorage.setItem('pos_superadmin_name', name);
+
+        // Pick default logged in merchant (first one) or fallback
+        const defaultId = availableMerchants[0]?.id || 'restaurant_1';
+        setAuthenticatedMerchantId(defaultId);
+        localStorage.setItem('pos_authenticated_merchant', defaultId);
+        setSettings(prev => ({ ...prev, merchantId: defaultId }));
+        return { success: true };
+      }
+      return { success: false, error: 'Incorrect Superadmin PIN passcode. Please try again.' };
+    }
+
+    // Standard Merchant login check
+    const isSpoonful = merchantId === 'restaurant_1' || merchantId === '6a0f03b4500ed5db150be1a1';
     const last4 = merchantId.slice(-4);
     const validPins = ['1234'];
     if (last4) validPins.push(last4);
 
     if (cleanPin === '1234' || (isSpoonful && cleanPin === '1234') || validPins.includes(cleanPin)) {
+      setUserRole('admin');
+      setSuperadminName(null);
+      localStorage.setItem('pos_user_role', 'admin');
+      localStorage.removeItem('pos_superadmin_name');
+
       setAuthenticatedMerchantId(merchantId);
       localStorage.setItem('pos_authenticated_merchant', merchantId);
-      
-      // Update active merchant ID settings so context syncs correct catalog/orders
       setSettings(prev => ({ ...prev, merchantId }));
       return { success: true };
     }
@@ -581,7 +614,11 @@ export const POSProvider = ({ children }) => {
 
   const logoutMerchant = () => {
     setAuthenticatedMerchantId(null);
+    setUserRole('admin');
+    setSuperadminName(null);
     localStorage.removeItem('pos_authenticated_merchant');
+    localStorage.removeItem('pos_user_role');
+    localStorage.removeItem('pos_superadmin_name');
   };
 
   const createDriver = async (name, passcode, phone) => {
@@ -1336,7 +1373,11 @@ ${deliveryQRSection}========================================
       deleteDriver,
       sirenActive,
       startSirenAlert,
-      stopSirenAlert
+      stopSirenAlert,
+      userRole,
+      setUserRole,
+      superadminName,
+      setSuperadminName
     }}>
       {children}
     </POSContext.Provider>

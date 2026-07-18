@@ -30,7 +30,7 @@ function urlBase64ToUint8Array(base64String) {
 function MainLayout() {
   const [currentPage, setCurrentPage] = useState('orders');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const { orders, supabaseConnected, restaurantOpen, settings, setSettings, availableMerchants, logoutMerchant } = usePOS();
+  const { orders, supabaseConnected, restaurantOpen, settings, setSettings, availableMerchants, logoutMerchant, userRole, superadminName } = usePOS();
   const [pwaInstallPrompt, setPwaInstallPrompt] = useState(null);
 
   // Listen to PWA installability prompt trigger
@@ -243,6 +243,9 @@ function MainLayout() {
                   {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFUL'}
                 </h1>
                 <span className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Kitchen Orderpad</span>
+                {userRole === 'superadmin' && (
+                  <span className="text-[9px] text-yellow-400 font-bold block animate-pulse">👑 {superadminName}</span>
+                )}
               </div>
             </div>
 
@@ -263,17 +266,29 @@ function MainLayout() {
 
           {/* Active Store Display — desktop only */}
           <div className="hidden md:flex px-6 py-3.5 border-b border-slate-800/80 bg-slate-950/20 items-center justify-between">
-            <div>
+            <div className="flex-1 min-w-0 pr-2">
               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-0.5">
                 Logged In Store
               </label>
-              <span className="text-xs font-bold text-white block truncate max-w-[120px]">
-                {activeMerchant.name || settings.merchantId}
-              </span>
+              {userRole === 'superadmin' ? (
+                <select
+                  value={settings.merchantId}
+                  onChange={(e) => setSettings(prev => ({ ...prev, merchantId: e.target.value }))}
+                  className="bg-slate-800 text-white text-[11px] font-bold rounded-lg border border-slate-700 px-2 py-1 focus:outline-none cursor-pointer w-full"
+                >
+                  {availableMerchants.map(m => (
+                    <option key={m.id} value={m.id}>{m.name || m.id}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-xs font-bold text-white block truncate max-w-[120px]">
+                  {activeMerchant.name || settings.merchantId}
+                </span>
+              )}
             </div>
             <button
               onClick={logoutMerchant}
-              className="text-[10px] font-extrabold text-rose-500 hover:text-rose-400 uppercase tracking-wider transition-all"
+              className="text-[10px] font-extrabold text-rose-500 hover:text-rose-400 uppercase tracking-wider transition-all shrink-0"
             >
               Sign Out
             </button>
@@ -360,6 +375,7 @@ function MainLayout() {
 function PinLockscreen() {
   const { availableMerchants, loginMerchant, settings, setSettings } = usePOS();
   const [selectedMerchant, setSelectedMerchant] = useState('');
+  const [selectedSubMerchant, setSelectedSubMerchant] = useState('');
   const [pin, setPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [shake, setShake] = useState(false);
@@ -367,11 +383,12 @@ function PinLockscreen() {
   // Set default selected merchant once available
   useEffect(() => {
     if (availableMerchants.length > 0) {
-      // Find default Spoonful or first one
       const found = availableMerchants.find(m => m.id === 'restaurant_1' || m.id === '6a0f03b4500ed5db150be1a1') || availableMerchants[0];
       setSelectedMerchant(found.id);
+      setSelectedSubMerchant(found.id);
     } else {
       setSelectedMerchant(settings.merchantId || 'restaurant_1');
+      setSelectedSubMerchant(settings.merchantId || 'restaurant_1');
     }
   }, [availableMerchants]);
 
@@ -383,7 +400,13 @@ function PinLockscreen() {
       if (nextPin.length === 4) {
         // Automatic confirm
         const res = loginMerchant(selectedMerchant, nextPin);
-        if (!res.success) {
+        if (res.success) {
+          // If superadmin, lock onto the chosen submerchant restaurant initial context
+          if (selectedMerchant === 'superadmin_autoflow' || selectedMerchant === 'superadmin_raj') {
+            setSettings(prev => ({ ...prev, merchantId: selectedSubMerchant }));
+            localStorage.setItem('pos_authenticated_merchant', selectedSubMerchant);
+          }
+        } else {
           setShake(true);
           setErrorMsg(res.error);
           setPin('');
@@ -402,6 +425,15 @@ function PinLockscreen() {
     setErrorMsg('');
   };
 
+  // Build merchant option list prepending/appending Superadmin roles
+  const merchantOptions = [
+    ...availableMerchants,
+    { id: 'superadmin_autoflow', name: 'AutoFlow (Superadmin)' },
+    { id: 'superadmin_raj', name: 'Raj (Superadmin)' }
+  ];
+
+  const isSuperadminOption = selectedMerchant === 'superadmin_autoflow' || selectedMerchant === 'superadmin_raj';
+
   return (
     <div className="flex items-center justify-center min-h-screen w-screen bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 font-sans p-4">
       <div className="w-full max-w-sm bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col space-y-6">
@@ -416,7 +448,7 @@ function PinLockscreen() {
         {/* Dropdown Select store */}
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
-            Store / Restaurant
+            Store / User Profile
           </label>
           <div className="relative">
             <select
@@ -424,7 +456,7 @@ function PinLockscreen() {
               onChange={(e) => setSelectedMerchant(e.target.value)}
               className="w-full bg-slate-850 hover:bg-slate-800 border border-slate-700/80 text-white rounded-xl pl-3 pr-8 py-3 text-xs font-extrabold focus:outline-none focus:ring-1 focus:ring-brand-orange cursor-pointer appearance-none transition-all"
             >
-              {availableMerchants.map(m => (
+              {merchantOptions.map(m => (
                 <option key={m.id} value={m.id} className="bg-slate-900 text-white">
                   {m.name || m.id}
                 </option>
@@ -437,6 +469,33 @@ function PinLockscreen() {
             </div>
           </div>
         </div>
+
+        {/* Conditionally render Sub-Merchant Selector for Superadmins */}
+        {isSuperadminOption && (
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+              Select Initial Restaurant
+            </label>
+            <div className="relative">
+              <select
+                value={selectedSubMerchant}
+                onChange={(e) => setSelectedSubMerchant(e.target.value)}
+                className="w-full bg-slate-850 hover:bg-slate-800 border border-slate-700/80 text-white rounded-xl pl-3 pr-8 py-3 text-xs font-extrabold focus:outline-none focus:ring-1 focus:ring-brand-orange cursor-pointer appearance-none transition-all"
+              >
+                {availableMerchants.map(m => (
+                  <option key={m.id} value={m.id} className="bg-slate-900 text-white">
+                    {m.name || m.id}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* PIN Indicators */}
         <div className="flex flex-col items-center space-y-3">
