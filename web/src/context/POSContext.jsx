@@ -1297,7 +1297,7 @@ export const POSProvider = ({ children }) => {
     }
 
     let deliveryQRSection = '';
-    if ((order.type || '').toLowerCase() === 'delivery') {
+    if ((order.type || '').toLowerCase() === 'delivery' || (order.type || '').toLowerCase() === 'pickup') {
       const driverUrl = getDriverUrl(order.id);
       deliveryQRSection = `----------------------------------------
 Bezorging Claim QR Code:

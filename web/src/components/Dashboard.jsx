@@ -310,7 +310,7 @@ export default function Dashboard() {
               </div>
 
               {/* Delivery Driver & Dispatch Management Panel */}
-              {selectedOrder.type === 'delivery' && (
+              {(selectedOrder.type === 'delivery' || selectedOrder.type === 'pickup') && (
                 <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-md space-y-4 border border-slate-800">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div className="flex items-center space-x-2">
