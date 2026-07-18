@@ -105,7 +105,7 @@ export default function Dashboard() {
     <div className="h-full grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-slate-50">
       
       {/* Left Column: Master Order List Pane (lg:col-span-5) — hidden on mobile when detail is open */}
-      <div className={`lg:col-span-5 flex-col border-r border-slate-200 bg-white h-full ${showMobileDetail ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`lg:col-span-5 flex flex-col min-h-0 border-r border-slate-200 bg-white h-full ${showMobileDetail ? 'hidden lg:flex' : 'flex'}`}>
         {/* Navigation Tabs */}
         <div className="grid grid-cols-3 gap-2 p-4 border-b border-slate-100 bg-white">
           <button
@@ -228,7 +228,7 @@ export default function Dashboard() {
       </div>
 
       {/* Right Column: Order Detail View Panel (lg:col-span-7) — hidden on mobile when list is shown */}
-      <div className={`lg:col-span-7 flex-col h-full bg-slate-50 ${!showMobileDetail ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`lg:col-span-7 flex flex-col min-h-0 h-full bg-slate-50 ${!showMobileDetail ? 'hidden lg:flex' : 'flex'}`}>
         {selectedOrder ? (
           <div className="flex flex-col h-full justify-between overflow-hidden">
             
