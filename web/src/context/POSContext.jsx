@@ -5,6 +5,29 @@ const HYPERZOD_TENANT_ID = import.meta.env.VITE_HYPERZOD_TENANT_ID;
 const HYPERZOD_MERCHANT_ID = import.meta.env.VITE_HYPERZOD_MERCHANT_ID;
 const HYPERZOD_BASE_URL = import.meta.env.VITE_HYPERZOD_BASE_URL || 'https://api.hyperzod.app';
 
+export function getDriverUrl(orderId) {
+  if (typeof window === 'undefined') {
+    return `https://spoonful-pos.vercel.app/driver?order_id=${orderId}`;
+  }
+  const origin = window.location.origin;
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+
+  // Check if subdomain format, e.g. admin.yourdomain.com
+  if (hostname.includes('.') && !hostname.startsWith('localhost') && !/^\d{1,3}\.\d{1,3}/.test(hostname)) {
+    const parts = hostname.split('.');
+    if (parts.length >= 3) {
+      parts[0] = 'driver';
+      return `${protocol}//${parts.join('.')}/?order_id=${orderId}`;
+    } else {
+      return `${protocol}//driver.${hostname}/?order_id=${orderId}`;
+    }
+  }
+
+  // Fallback for localhost or default path routing
+  return `${origin}/driver?order_id=${orderId}`;
+}
+
 const POSContext = createContext();
 
 const initialMenuItems = [
@@ -1232,8 +1255,7 @@ export const POSProvider = ({ children }) => {
 
     let deliveryQRSection = '';
     if ((order.type || '').toLowerCase() === 'delivery') {
-      const host = typeof window !== 'undefined' ? window.location.origin : 'https://spoonful-pos.vercel.app';
-      const driverUrl = `${host}/driver?order_id=${order.id}`;
+      const driverUrl = getDriverUrl(order.id);
       deliveryQRSection = `----------------------------------------
 Bezorging Claim QR Code:
   [█▀▀▀█ ▄ █▄▀█▀ █▀▀▀█]

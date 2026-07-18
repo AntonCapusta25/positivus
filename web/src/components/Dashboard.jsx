@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { usePOS } from '../context/POSContext';
+import { usePOS, getDriverUrl } from '../context/POSContext';
 import { ShoppingCart, Phone, MapPin, ClipboardList, CheckCircle, Clock, Check, Printer, UserCheck, Navigation, Download, CheckCircle2, ChevronRight, X, QrCode, ChevronLeft } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -369,8 +369,7 @@ export default function Dashboard() {
                       Scan to Claim (Driver App)
                     </span>
                     {(() => {
-                      const host = window.location.origin;
-                      const driverUrl = `${host}/driver?order_id=${selectedOrder.id}`;
+                      const driverUrl = getDriverUrl(selectedOrder.id);
                       return (
                         <div className="flex flex-col items-center space-y-1.5">
                           <div className="bg-white p-2 rounded-xl flex items-center justify-center shadow-inner">
@@ -570,8 +569,7 @@ export default function Dashboard() {
                     Scan for driver route GPS
                   </span>
                   {(() => {
-                    const host = window.location.origin;
-                    const driverUrl = `${host}/driver?order_id=${printPreviewOrder.id}`;
+                    const driverUrl = getDriverUrl(printPreviewOrder.id);
                     return (
                       <div className="space-y-1.5">
                         <div className="mx-auto w-32 h-32 bg-white p-1 border border-slate-200 rounded-lg shadow-sm flex items-center justify-center">
