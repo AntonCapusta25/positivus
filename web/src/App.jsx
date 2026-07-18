@@ -169,7 +169,7 @@ function MainLayout() {
           {/* Overlay header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0">
             <div className="flex items-center space-x-3">
-              <span className="text-xl">🏠</span>
+              <img src="/favicon.png" alt="Spoonful Logo" className="w-8 h-8 rounded-lg object-cover" />
               <div>
                 <p className="font-extrabold text-sm tracking-wide text-brand-orange leading-tight">
                   {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFUL'}
@@ -237,7 +237,7 @@ function MainLayout() {
           {/* Header row */}
           <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-800">
             <div className="flex items-center space-x-3">
-              <span className="text-xl md:text-2xl">🏠</span>
+              <img src="/favicon.png" alt="Spoonful Logo" className="w-8 h-8 md:w-9 md:h-9 rounded-xl object-cover" />
               <div>
                 <h1 className="font-extrabold text-sm md:text-base tracking-wide text-brand-orange leading-tight font-sans my-0">
                   {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFUL'}
@@ -439,8 +439,8 @@ function PinLockscreen() {
       <div className="w-full max-w-sm bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col space-y-6">
         
         {/* Title Logo */}
-        <div className="text-center space-y-2">
-          <div className="text-4xl animate-pulse">🏠</div>
+        <div className="text-center space-y-2 flex flex-col items-center">
+          <img src="/favicon.png" alt="Spoonful Logo" className="w-16 h-16 rounded-2xl object-cover shadow-lg shadow-black/25 mb-1 animate-pulse" />
           <h2 className="text-xl font-black text-white tracking-tight uppercase">Spoonful Terminal</h2>
           <p className="text-xs text-slate-400 font-medium">Select your restaurant and input passcode to login</p>
         </div>
