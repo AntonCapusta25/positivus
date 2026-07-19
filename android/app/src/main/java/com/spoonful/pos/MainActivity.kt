@@ -127,6 +127,8 @@ class MainActivity : AppCompatActivity() {
 
     // --- Data & Services ---
     private val ordersList = mutableListOf<Order>()
+    // Track IDs of orders already sent to printer to prevent duplicate prints on WS reconnect
+    private val printedOrderIds = HashSet<String>()
     private lateinit var printerHelper: SunmiPrinterHelper
     private lateinit var supabaseManager: SupabaseManager
     private val handler = Handler(Looper.getMainLooper())
@@ -153,18 +155,19 @@ class MainActivity : AppCompatActivity() {
             listener = object : SupabaseManager.SupabaseListener {
                 override fun onOrderInserted(order: Order) {
                     runOnUiThread {
-                        // Prevent duplicates
+                        // Prevent duplicate list entries
                         if (ordersList.none { it.id == order.id }) {
                             ordersList.add(0, order)
                             refreshOrderList()
-                            
-                            // Auto print receipt if enabled
-                            if (isAutoPrintEnabled) {
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
-                                    if (success && !order.printed) {
-                                        order.printed = true
-                                        runOnUiThread { refreshOrderList() }
-                                    }
+                        }
+
+                        // Auto-print: only once per order ID, never on reconnect re-deliveries
+                        if (isAutoPrintEnabled && !printedOrderIds.contains(order.id)) {
+                            printedOrderIds.add(order.id)
+                            order.printed = true
+                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
+                                if (success) {
+                                    runOnUiThread { refreshOrderList() }
                                 }
                             }
                         }
@@ -796,21 +799,33 @@ class MainActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
-                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
-                    if (success) {
+                // Print receiptCopiesCount copies
+                var copiesLeft = receiptCopiesCount
+                fun printNext() {
+                    if (copiesLeft <= 0) {
                         runOnUiThread {
+                            val msg = if (receiptCopiesCount > 1) "$receiptCopiesCount receipts sent to printer!" else "Receipt sent to printer!"
+                            Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
                             if (!order.printed) {
                                 order.printed = true
+                                printedOrderIds.add(order.id ?: "")
                                 refreshOrderList()
                             }
-                            Toast.makeText(this@MainActivity, "Receipt sent to printer!", Toast.LENGTH_SHORT).show()
                         }
-                    } else {
-                        runOnUiThread {
-                            Toast.makeText(this@MainActivity, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+                    copiesLeft--
+                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
+                        if (success) {
+                            printNext()
+                        } else {
+                            runOnUiThread {
+                                Toast.makeText(this@MainActivity, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 }
+                printNext()
             }
         }
 
