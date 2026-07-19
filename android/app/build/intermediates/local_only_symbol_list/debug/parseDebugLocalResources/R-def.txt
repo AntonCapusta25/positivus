@@ -7,6 +7,7 @@ drawable plus_minus_bg
 drawable tab_bg_selected
 drawable tab_bg_unselected
 id btnDetailAction
+id btnDetailAssignDriver
 id btnDetailBack
 id btnDetailPrint
 id btnDrawerClose
@@ -14,6 +15,7 @@ id btnDrawerManagement
 id btnDrawerRefresh
 id btnDrawerSettings
 id btnDrawerStopOrders
+id btnDrawerSwitchRestaurant
 id btnHamburger
 id btnNotificationBell
 id btnReceiptsBack
@@ -79,6 +81,7 @@ id txtDetailTimeLabel
 id txtDetailTimeVal
 id txtDetailTotal
 id txtDetailType
+id txtDrawerActiveRestaurant
 id txtDrawerManagementChevron
 id txtDrawerSettingsChevron
 id txtDrawerStopOrdersDesc

@@ -82,7 +82,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtDetailDeliveryFee: TextView
     private lateinit var txtDetailTotal: TextView
     private lateinit var btnDetailAction: android.widget.Button
+    private lateinit var btnDetailAssignDriver: android.widget.Button
     private lateinit var btnToggleCustomerInfo: LinearLayout
+    private lateinit var btnDrawerSwitchRestaurant: LinearLayout
+    private lateinit var txtDrawerActiveRestaurant: TextView
+    private lateinit var btnSubMenuManagement: TextView
 
     // Receipts settings views
     private lateinit var btnReceiptsBack: TextView
@@ -168,6 +172,11 @@ class MainActivity : AppCompatActivity() {
         )
 
         bindViews()
+        txtDrawerActiveRestaurant.text = if (merchantId == "restaurant_1" || merchantId == "6a0f03b4500ed5db150be1a1") {
+            "Raj Curry House"
+        } else {
+            "Spoonful POS"
+        }
         setupDrawer()
         setupTabs()
         setupDetailScreen()
@@ -262,7 +271,11 @@ class MainActivity : AppCompatActivity() {
         txtDetailDeliveryFee = findViewById(R.id.txtDetailDeliveryFee)
         txtDetailTotal = findViewById(R.id.txtDetailTotal)
         btnDetailAction = findViewById(R.id.btnDetailAction)
+        btnDetailAssignDriver = findViewById(R.id.btnDetailAssignDriver)
         btnToggleCustomerInfo = findViewById(R.id.btnToggleCustomerInfo)
+        btnDrawerSwitchRestaurant = findViewById(R.id.btnDrawerSwitchRestaurant)
+        txtDrawerActiveRestaurant = findViewById(R.id.txtDrawerActiveRestaurant)
+        btnSubMenuManagement = findViewById(R.id.btnSubMenuManagement)
 
         btnReceiptsBack = findViewById(R.id.btnReceiptsBack)
         btnReceiptsMinus = findViewById(R.id.btnReceiptsMinus)
@@ -339,6 +352,75 @@ class MainActivity : AppCompatActivity() {
         btnSubReceipts.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             showScreen(Screen.SETTINGS_RECEIPTS)
+        }
+
+        btnDrawerSwitchRestaurant.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            Toast.makeText(this, "Loading restaurants...", Toast.LENGTH_SHORT).show()
+            supabaseManager.fetchMerchants { merchants ->
+                if (merchants.isEmpty()) {
+                    Toast.makeText(this, "Could not load restaurants", Toast.LENGTH_SHORT).show()
+                    return@fetchMerchants
+                }
+                val names = merchants.map { it.second }.toTypedArray()
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Select Restaurant")
+                    .setItems(names) { _, which ->
+                        val selected = merchants[which]
+                        val newId = selected.first
+                        val newName = selected.second
+                        
+                        getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                            .putString("merchant_id", newId)
+                            .apply()
+                            
+                        merchantId = newId
+                        txtDrawerActiveRestaurant.text = newName
+                        
+                        ordersList.clear()
+                        refreshOrderList()
+                        supabaseManager.updateMerchantId(newId)
+                        Toast.makeText(this, "Switched to $newName", Toast.LENGTH_SHORT).show()
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+        }
+
+        btnSubMenuManagement.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            Toast.makeText(this, "Loading menu items...", Toast.LENGTH_SHORT).show()
+            supabaseManager.fetchProducts { products ->
+                if (products.isEmpty()) {
+                    Toast.makeText(this, "No products found for this restaurant", Toast.LENGTH_SHORT).show()
+                    return@fetchProducts
+                }
+                
+                val names = products.map { it.get("name")?.asString ?: "Unnamed Item" }.toTypedArray()
+                val checked = products.map { it.get("in_stock")?.asBoolean != false }.toBooleanArray()
+                
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Dish Disabler (Toggle Stock)")
+                    .setMultiChoiceItems(names, checked) { _, which, isChecked ->
+                        val product = products[which]
+                        val productId = product.get("product_id")?.asString ?: ""
+                        if (productId.isNotEmpty()) {
+                            supabaseManager.updateProductStock(productId, isChecked) { success ->
+                                runOnUiThread {
+                                    val msg = if (success) {
+                                        product.addProperty("in_stock", isChecked)
+                                        "${names[which]} is now ${if (isChecked) "in stock" else "out of stock"}"
+                                    } else {
+                                        "Failed to update stock status"
+                                    }
+                                    Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+                    .setPositiveButton("Done", null)
+                    .show()
+            }
         }
     }
 
@@ -617,6 +699,46 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        btnDetailAssignDriver.setOnClickListener {
+            val order = selectedOrder ?: return@setOnClickListener
+            Toast.makeText(this, "Loading drivers...", Toast.LENGTH_SHORT).show()
+            supabaseManager.fetchDrivers { drivers ->
+                if (drivers.isEmpty()) {
+                    Toast.makeText(this, "No drivers found for this restaurant", Toast.LENGTH_SHORT).show()
+                    return@fetchDrivers
+                }
+                
+                val driverNames = drivers.map { it.get("name")?.asString ?: "Unnamed Driver" }.toTypedArray()
+                
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Assign Driver")
+                    .setItems(driverNames) { _, which ->
+                        val driverName = driverNames[which]
+                        
+                        val durations = arrayOf("15 mins", "20 mins", "30 mins", "40 mins", "50 mins")
+                        androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                            .setTitle("Select Delivery Time")
+                            .setItems(durations) { _, durWhich ->
+                                val duration = durations[durWhich]
+                                Toast.makeText(this@MainActivity, "Assigning $driverName ($duration)...", Toast.LENGTH_SHORT).show()
+                                supabaseManager.assignDriverToOrder(order.id, driverName, duration) { success ->
+                                    runOnUiThread {
+                                        if (success) {
+                                            Toast.makeText(this@MainActivity, "Driver assigned!", Toast.LENGTH_SHORT).show()
+                                            openOrderDetail(order)
+                                        } else {
+                                            Toast.makeText(this@MainActivity, "Assignment failed", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                            .show()
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+        }
     }
 
     private fun openOrderDetail(order: Order) {
@@ -697,6 +819,11 @@ class MainActivity : AppCompatActivity() {
         } else {
             btnDetailAction.visibility = View.GONE
         }
+
+        // Driver assignment visibility
+        val isDelivery = order.type.lowercase() == "delivery"
+        val canAssignDriver = isDelivery && (order.status.lowercase() == "preparing" || order.status.lowercase() == "ready")
+        btnDetailAssignDriver.visibility = if (canAssignDriver) View.VISIBLE else View.GONE
 
         showScreen(Screen.ORDER_DETAIL)
     }

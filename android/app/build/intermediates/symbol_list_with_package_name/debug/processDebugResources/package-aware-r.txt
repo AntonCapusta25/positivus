@@ -3179,6 +3179,7 @@ id bounceBoth
 id bounceEnd
 id bounceStart
 id btnDetailAction
+id btnDetailAssignDriver
 id btnDetailBack
 id btnDetailPrint
 id btnDrawerClose
@@ -3186,6 +3187,7 @@ id btnDrawerManagement
 id btnDrawerRefresh
 id btnDrawerSettings
 id btnDrawerStopOrders
+id btnDrawerSwitchRestaurant
 id btnHamburger
 id btnNotificationBell
 id btnReceiptsBack
@@ -3626,6 +3628,7 @@ id txtDetailTimeLabel
 id txtDetailTimeVal
 id txtDetailTotal
 id txtDetailType
+id txtDrawerActiveRestaurant
 id txtDrawerManagementChevron
 id txtDrawerSettingsChevron
 id txtDrawerStopOrdersDesc

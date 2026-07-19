@@ -30,6 +30,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final Button btnDetailAction;
 
   @NonNull
+  public final Button btnDetailAssignDriver;
+
+  @NonNull
   public final TextView btnDetailBack;
 
   @NonNull
@@ -49,6 +52,9 @@ public final class ActivityMainBinding implements ViewBinding {
 
   @NonNull
   public final LinearLayout btnDrawerStopOrders;
+
+  @NonNull
+  public final LinearLayout btnDrawerSwitchRestaurant;
 
   @NonNull
   public final TextView btnHamburger;
@@ -246,6 +252,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView txtDetailType;
 
   @NonNull
+  public final TextView txtDrawerActiveRestaurant;
+
+  @NonNull
   public final TextView txtDrawerManagementChevron;
 
   @NonNull
@@ -291,10 +300,11 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView txtTabPrepare;
 
   private ActivityMainBinding(@NonNull DrawerLayout rootView, @NonNull Button btnDetailAction,
-      @NonNull TextView btnDetailBack, @NonNull TextView btnDetailPrint,
-      @NonNull TextView btnDrawerClose, @NonNull LinearLayout btnDrawerManagement,
-      @NonNull LinearLayout btnDrawerRefresh, @NonNull LinearLayout btnDrawerSettings,
-      @NonNull LinearLayout btnDrawerStopOrders, @NonNull TextView btnHamburger,
+      @NonNull Button btnDetailAssignDriver, @NonNull TextView btnDetailBack,
+      @NonNull TextView btnDetailPrint, @NonNull TextView btnDrawerClose,
+      @NonNull LinearLayout btnDrawerManagement, @NonNull LinearLayout btnDrawerRefresh,
+      @NonNull LinearLayout btnDrawerSettings, @NonNull LinearLayout btnDrawerStopOrders,
+      @NonNull LinearLayout btnDrawerSwitchRestaurant, @NonNull TextView btnHamburger,
       @NonNull TextView btnNotificationBell, @NonNull TextView btnReceiptsBack,
       @NonNull TextView btnReceiptsMinus, @NonNull TextView btnReceiptsPlus,
       @NonNull Button btnReceiptsPrintTest, @NonNull TextView btnReceiptsReset,
@@ -328,16 +338,18 @@ public final class ActivityMainBinding implements ViewBinding {
       @NonNull TextView txtDetailOrderCode, @NonNull TextView txtDetailPaidBadge,
       @NonNull TextView txtDetailSubtotal, @NonNull TextView txtDetailTimeLabel,
       @NonNull TextView txtDetailTimeVal, @NonNull TextView txtDetailTotal,
-      @NonNull TextView txtDetailType, @NonNull TextView txtDrawerManagementChevron,
-      @NonNull TextView txtDrawerSettingsChevron, @NonNull TextView txtDrawerStopOrdersDesc,
-      @NonNull TextView txtDrawerStopOrdersIcon, @NonNull TextView txtDrawerStopOrdersTitle,
-      @NonNull TextView txtHeaderTitle, @NonNull TextView txtNoOrders,
-      @NonNull TextView txtOrderQueueTitle, @NonNull TextView txtPrinterStatus,
-      @NonNull TextView txtReceiptsCount, @NonNull TextView txtSoundVolumeVal,
-      @NonNull TextView txtSupabaseStatus, @NonNull TextView txtTabDone,
-      @NonNull TextView txtTabHandover, @NonNull TextView txtTabPrepare) {
+      @NonNull TextView txtDetailType, @NonNull TextView txtDrawerActiveRestaurant,
+      @NonNull TextView txtDrawerManagementChevron, @NonNull TextView txtDrawerSettingsChevron,
+      @NonNull TextView txtDrawerStopOrdersDesc, @NonNull TextView txtDrawerStopOrdersIcon,
+      @NonNull TextView txtDrawerStopOrdersTitle, @NonNull TextView txtHeaderTitle,
+      @NonNull TextView txtNoOrders, @NonNull TextView txtOrderQueueTitle,
+      @NonNull TextView txtPrinterStatus, @NonNull TextView txtReceiptsCount,
+      @NonNull TextView txtSoundVolumeVal, @NonNull TextView txtSupabaseStatus,
+      @NonNull TextView txtTabDone, @NonNull TextView txtTabHandover,
+      @NonNull TextView txtTabPrepare) {
     this.rootView = rootView;
     this.btnDetailAction = btnDetailAction;
+    this.btnDetailAssignDriver = btnDetailAssignDriver;
     this.btnDetailBack = btnDetailBack;
     this.btnDetailPrint = btnDetailPrint;
     this.btnDrawerClose = btnDrawerClose;
@@ -345,6 +357,7 @@ public final class ActivityMainBinding implements ViewBinding {
     this.btnDrawerRefresh = btnDrawerRefresh;
     this.btnDrawerSettings = btnDrawerSettings;
     this.btnDrawerStopOrders = btnDrawerStopOrders;
+    this.btnDrawerSwitchRestaurant = btnDrawerSwitchRestaurant;
     this.btnHamburger = btnHamburger;
     this.btnNotificationBell = btnNotificationBell;
     this.btnReceiptsBack = btnReceiptsBack;
@@ -410,6 +423,7 @@ public final class ActivityMainBinding implements ViewBinding {
     this.txtDetailTimeVal = txtDetailTimeVal;
     this.txtDetailTotal = txtDetailTotal;
     this.txtDetailType = txtDetailType;
+    this.txtDrawerActiveRestaurant = txtDrawerActiveRestaurant;
     this.txtDrawerManagementChevron = txtDrawerManagementChevron;
     this.txtDrawerSettingsChevron = txtDrawerSettingsChevron;
     this.txtDrawerStopOrdersDesc = txtDrawerStopOrdersDesc;
@@ -460,6 +474,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.btnDetailAssignDriver;
+      Button btnDetailAssignDriver = ViewBindings.findChildViewById(rootView, id);
+      if (btnDetailAssignDriver == null) {
+        break missingId;
+      }
+
       id = R.id.btnDetailBack;
       TextView btnDetailBack = ViewBindings.findChildViewById(rootView, id);
       if (btnDetailBack == null) {
@@ -499,6 +519,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.btnDrawerStopOrders;
       LinearLayout btnDrawerStopOrders = ViewBindings.findChildViewById(rootView, id);
       if (btnDrawerStopOrders == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDrawerSwitchRestaurant;
+      LinearLayout btnDrawerSwitchRestaurant = ViewBindings.findChildViewById(rootView, id);
+      if (btnDrawerSwitchRestaurant == null) {
         break missingId;
       }
 
@@ -888,6 +914,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.txtDrawerActiveRestaurant;
+      TextView txtDrawerActiveRestaurant = ViewBindings.findChildViewById(rootView, id);
+      if (txtDrawerActiveRestaurant == null) {
+        break missingId;
+      }
+
       id = R.id.txtDrawerManagementChevron;
       TextView txtDrawerManagementChevron = ViewBindings.findChildViewById(rootView, id);
       if (txtDrawerManagementChevron == null) {
@@ -978,24 +1010,25 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ActivityMainBinding((DrawerLayout) rootView, btnDetailAction, btnDetailBack,
-          btnDetailPrint, btnDrawerClose, btnDrawerManagement, btnDrawerRefresh, btnDrawerSettings,
-          btnDrawerStopOrders, btnHamburger, btnNotificationBell, btnReceiptsBack, btnReceiptsMinus,
-          btnReceiptsPlus, btnReceiptsPrintTest, btnReceiptsReset, btnSoundPlay, btnSoundsBack,
-          btnSubConnectivity, btnSubDeviceInfo, btnSubLanguage, btnSubMenuManagement,
-          btnSubReceipts, btnSubSounds, btnSubTodaySales, btnTabDone, btnTabHandover, btnTabPrepare,
-          btnToggleCustomerInfo, dotPrinter, dotSupabase, drawerLayout, drawerPane, headerBar,
-          layoutCustomerDetails, layoutDetailItemsContainer, layoutDrawerManagementSub,
-          layoutDrawerSettingsSub, layoutOrderDetail, layoutOrderList, layoutSettingsReceipts,
-          layoutSettingsSounds, mainTabContainer, ordersContainer, radioGroupSounds,
-          radioSoundDefault, radioSoundNoisy, radioSoundQuiet, screenContainer, seekBarVolume,
-          switchAutoPrint, switchEnlargeAddress, switchEnlargeNotes, switchEnlargeOrderNo,
-          switchEnlargePhone, switchReceiptCategories, switchReceiptCustAddress,
-          switchReceiptCustPhone, switchReceiptItemIds, txtCustomerChevron, txtDetailAddress,
-          txtDetailCustomerName, txtDetailCustomerNotes, txtDetailCustomerPhone,
-          txtDetailDeliveryFee, txtDetailHeaderTitle, txtDetailItemsCountHeader, txtDetailOrderCode,
-          txtDetailPaidBadge, txtDetailSubtotal, txtDetailTimeLabel, txtDetailTimeVal,
-          txtDetailTotal, txtDetailType, txtDrawerManagementChevron, txtDrawerSettingsChevron,
+      return new ActivityMainBinding((DrawerLayout) rootView, btnDetailAction,
+          btnDetailAssignDriver, btnDetailBack, btnDetailPrint, btnDrawerClose, btnDrawerManagement,
+          btnDrawerRefresh, btnDrawerSettings, btnDrawerStopOrders, btnDrawerSwitchRestaurant,
+          btnHamburger, btnNotificationBell, btnReceiptsBack, btnReceiptsMinus, btnReceiptsPlus,
+          btnReceiptsPrintTest, btnReceiptsReset, btnSoundPlay, btnSoundsBack, btnSubConnectivity,
+          btnSubDeviceInfo, btnSubLanguage, btnSubMenuManagement, btnSubReceipts, btnSubSounds,
+          btnSubTodaySales, btnTabDone, btnTabHandover, btnTabPrepare, btnToggleCustomerInfo,
+          dotPrinter, dotSupabase, drawerLayout, drawerPane, headerBar, layoutCustomerDetails,
+          layoutDetailItemsContainer, layoutDrawerManagementSub, layoutDrawerSettingsSub,
+          layoutOrderDetail, layoutOrderList, layoutSettingsReceipts, layoutSettingsSounds,
+          mainTabContainer, ordersContainer, radioGroupSounds, radioSoundDefault, radioSoundNoisy,
+          radioSoundQuiet, screenContainer, seekBarVolume, switchAutoPrint, switchEnlargeAddress,
+          switchEnlargeNotes, switchEnlargeOrderNo, switchEnlargePhone, switchReceiptCategories,
+          switchReceiptCustAddress, switchReceiptCustPhone, switchReceiptItemIds,
+          txtCustomerChevron, txtDetailAddress, txtDetailCustomerName, txtDetailCustomerNotes,
+          txtDetailCustomerPhone, txtDetailDeliveryFee, txtDetailHeaderTitle,
+          txtDetailItemsCountHeader, txtDetailOrderCode, txtDetailPaidBadge, txtDetailSubtotal,
+          txtDetailTimeLabel, txtDetailTimeVal, txtDetailTotal, txtDetailType,
+          txtDrawerActiveRestaurant, txtDrawerManagementChevron, txtDrawerSettingsChevron,
           txtDrawerStopOrdersDesc, txtDrawerStopOrdersIcon, txtDrawerStopOrdersTitle,
           txtHeaderTitle, txtNoOrders, txtOrderQueueTitle, txtPrinterStatus, txtReceiptsCount,
           txtSoundVolumeVal, txtSupabaseStatus, txtTabDone, txtTabHandover, txtTabPrepare);

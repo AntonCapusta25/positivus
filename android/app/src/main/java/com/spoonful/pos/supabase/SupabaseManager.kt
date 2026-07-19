@@ -299,6 +299,192 @@ class SupabaseManager(
     }
 
     /**
+     * Fetch the list of available merchants
+     */
+    fun fetchMerchants(onComplete: (List<Pair<String, String>>) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/merchants?select=merchant_id,name"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .get()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "Failed to fetch merchants", e)
+                mainHandler.post { onComplete(emptyList()) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        mainHandler.post { onComplete(emptyList()) }
+                        return
+                    }
+                    try {
+                        val json = response.body?.string() ?: "[]"
+                        val listType = object : com.google.gson.reflect.TypeToken<List<JsonObject>>() {}.type
+                        val list: List<JsonObject> = gson.fromJson(json, listType)
+                        val merchants = list.map {
+                            val id = it.get("merchant_id")?.asString ?: ""
+                            val name = it.get("name")?.asString ?: "Spoonful"
+                            Pair(id, name)
+                        }
+                        mainHandler.post { onComplete(merchants) }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to parse merchants", e)
+                        mainHandler.post { onComplete(emptyList()) }
+                    }
+                }
+            }
+        })
+    }
+
+    /**
+     * Fetch list of products for the active merchant
+     */
+    fun fetchProducts(onComplete: (List<JsonObject>) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/products?merchant_id=eq.$merchantId&select=*"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .get()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "Failed to fetch products", e)
+                mainHandler.post { onComplete(emptyList()) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        mainHandler.post { onComplete(emptyList()) }
+                        return
+                    }
+                    try {
+                        val json = response.body?.string() ?: "[]"
+                        val listType = object : com.google.gson.reflect.TypeToken<List<JsonObject>>() {}.type
+                        val list: List<JsonObject> = gson.fromJson(json, listType)
+                        mainHandler.post { onComplete(list) }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to parse products", e)
+                        mainHandler.post { onComplete(emptyList()) }
+                    }
+                }
+            }
+        })
+    }
+
+    /**
+     * Update in_stock status of a product
+     */
+    fun updateProductStock(productId: String, inStock: Boolean, onComplete: (Boolean) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/products?product_id=eq.$productId"
+        val updatePayload = JsonObject().apply {
+            addProperty("in_stock", inStock)
+        }
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(updatePayload).toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .addHeader("Content-Type", "application/json")
+            .patch(requestBody)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "Failed to update product stock", e)
+                mainHandler.post { onComplete(false) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    mainHandler.post { onComplete(response.isSuccessful) }
+                }
+            }
+        })
+    }
+
+    /**
+     * Fetch list of active drivers for the active merchant
+     */
+    fun fetchDrivers(onComplete: (List<JsonObject>) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/drivers?merchant_id=eq.$merchantId&select=*"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .get()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "Failed to fetch drivers", e)
+                mainHandler.post { onComplete(emptyList()) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        mainHandler.post { onComplete(emptyList()) }
+                        return
+                    }
+                    try {
+                        val json = response.body?.string() ?: "[]"
+                        val listType = object : com.google.gson.reflect.TypeToken<List<JsonObject>>() {}.type
+                        val list: List<JsonObject> = gson.fromJson(json, listType)
+                        mainHandler.post { onComplete(list) }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to parse drivers", e)
+                        mainHandler.post { onComplete(emptyList()) }
+                    }
+                }
+            }
+        })
+    }
+
+    /**
+     * Assign a driver and estimated delivery duration to an order
+     */
+    fun assignDriverToOrder(orderId: String, driverName: String, deliveryDuration: String, onComplete: (Boolean) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/orders?id=eq.$orderId"
+        val updatePayload = JsonObject().apply {
+            addProperty("driver_name", driverName)
+            addProperty("delivery_duration", deliveryDuration)
+        }
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(updatePayload).toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .addHeader("Content-Type", "application/json")
+            .patch(requestBody)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "Failed to assign driver", e)
+                mainHandler.post { onComplete(false) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    mainHandler.post { onComplete(response.isSuccessful) }
+                }
+            }
+        })
+    }
+
+    /**
      * Disconnect and release WebSocket resources
      */
     fun stop() {
