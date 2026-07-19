@@ -10,6 +10,13 @@ import com.spoonful.pos.model.Order
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonParser
+import com.spoonful.pos.model.OrderItem
+import java.lang.reflect.Type
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -39,7 +46,9 @@ class SupabaseManager(
         .writeTimeout(10, TimeUnit.SECONDS)
         .build()
 
-    private val gson = Gson()
+    private val gson = GsonBuilder()
+        .registerTypeAdapter(object : TypeToken<List<OrderItem>>() {}.type, OrderItemsDeserializer())
+        .create()
     private var webSocket: WebSocket? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var isConnected = false
@@ -498,5 +507,30 @@ class SupabaseManager(
 
     fun isRealtimeConnected(): Boolean {
         return isRealtimeActive
+    }
+}
+
+class OrderItemsDeserializer : JsonDeserializer<List<OrderItem>> {
+    override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): List<OrderItem> {
+        if (json.isJsonArray) {
+            val list = mutableListOf<OrderItem>()
+            for (element in json.asJsonArray) {
+                list.add(context.deserialize(element, OrderItem::class.java))
+            }
+            return list
+        } else if (json.isJsonPrimitive && json.asJsonPrimitive.isString) {
+            val str = json.asString
+            return try {
+                val array = JsonParser.parseString(str).asJsonArray
+                val list = mutableListOf<OrderItem>()
+                for (element in array) {
+                    list.add(context.deserialize(element, OrderItem::class.java))
+                }
+                list
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
+        return emptyList()
     }
 }
