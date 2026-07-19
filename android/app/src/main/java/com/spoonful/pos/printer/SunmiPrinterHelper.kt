@@ -129,7 +129,7 @@ class SunmiPrinterHelper(private val context: Context) {
             service.setAlignment(1, printCallback) // Center
             service.printText("Klantenbon\n", printCallback)
             
-            val isRajCurry = order.merchantId == "restaurant_1" || order.merchantId == "restaurant_2"
+            val isRajCurry = order.merchantId == "restaurant_1" || order.merchantId == "6a0f03b4500ed5db150be1a1" || order.merchantId == "restaurant_2"
             val merchantName = if (isRajCurry) "Raj Curry House" else "Spoonful POS"
             val merchantCity = if (isRajCurry) "Enschede" else ""
             val merchantStreet = if (isRajCurry) "Deurningerstraat91B" else ""

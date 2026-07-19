@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var supabaseManager: SupabaseManager
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var timerRunnable: Runnable
-    private var merchantId = "restaurant_1"
+    private var merchantId = "6a0f03b4500ed5db150be1a1"
 
     // --- Helpers ---
     private fun dp(value: Int) = (value * resources.displayMetrics.density + 0.5f).toInt()
@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
 
         // Load saved merchant ID
         val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
-        merchantId = prefs.getString("merchant_id", "restaurant_1") ?: "restaurant_1"
+        merchantId = prefs.getString("merchant_id", "6a0f03b4500ed5db150be1a1") ?: "6a0f03b4500ed5db150be1a1"
         isAutoPrintEnabled = prefs.getBoolean("auto_print", true)
 
         printerHelper = SunmiPrinterHelper(this)
