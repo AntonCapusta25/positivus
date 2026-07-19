@@ -19,6 +19,7 @@ import com.spoonful.pos.model.OrderItem
 import com.spoonful.pos.printer.SunmiPrinterHelper
 import com.spoonful.pos.supabase.SupabaseConfig
 import com.spoonful.pos.supabase.SupabaseManager
+import com.google.gson.JsonParser
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -50,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var layoutOrderDetail: LinearLayout
     private lateinit var layoutSettingsReceipts: LinearLayout
     private lateinit var layoutSettingsSounds: LinearLayout
+    private lateinit var layoutSettingsMenu: LinearLayout
 
     // Order List Views
     private lateinit var btnTabPrepare: LinearLayout
@@ -101,8 +103,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var seekBarVolume: SeekBar
     private lateinit var txtSoundVolumeVal: TextView
 
+    // Menu management views
+    private lateinit var btnMenuBack: TextView
+    private lateinit var menuItemsContainer: LinearLayout
+
+    // Drawer Auto-Print views
+    private lateinit var btnDrawerAutoPrintToggle: LinearLayout
+    private lateinit var txtDrawerAutoPrintStatus: TextView
+    private lateinit var switchDrawerAutoPrint: com.google.android.material.switchmaterial.SwitchMaterial
+
     // --- State ---
-    private enum class Screen { ORDER_LIST, ORDER_DETAIL, SETTINGS_RECEIPTS, SETTINGS_SOUNDS }
+    private enum class Screen { ORDER_LIST, ORDER_DETAIL, SETTINGS_RECEIPTS, SETTINGS_SOUNDS, SETTINGS_MENU }
     private var currentScreen = Screen.ORDER_LIST
     private var currentTab = "prepare" // "prepare", "handover", "done"
     private var selectedOrder: Order? = null
@@ -177,7 +188,14 @@ class MainActivity : AppCompatActivity() {
         } else {
             "Spoonful POS"
         }
+
+        // Sync auto-print UI
+        switchDrawerAutoPrint.isChecked = isAutoPrintEnabled
+        txtDrawerAutoPrintStatus.text = if (isAutoPrintEnabled) "Enabled" else "Disabled"
+        txtDrawerAutoPrintStatus.setTextColor(Color.parseColor(if (isAutoPrintEnabled) "#00A389" else "#EF4444"))
+
         setupDrawer()
+        setupMenuManagement()
         setupTabs()
         setupDetailScreen()
         setupReceiptsSettings()
@@ -241,6 +259,14 @@ class MainActivity : AppCompatActivity() {
         layoutOrderDetail = findViewById(R.id.layoutOrderDetail)
         layoutSettingsReceipts = findViewById(R.id.layoutSettingsReceipts)
         layoutSettingsSounds = findViewById(R.id.layoutSettingsSounds)
+        layoutSettingsMenu = findViewById(R.id.layoutSettingsMenu)
+
+        btnMenuBack = findViewById(R.id.btnMenuBack)
+        menuItemsContainer = findViewById(R.id.menuItemsContainer)
+
+        btnDrawerAutoPrintToggle = findViewById(R.id.btnDrawerAutoPrintToggle)
+        txtDrawerAutoPrintStatus = findViewById(R.id.txtDrawerAutoPrintStatus)
+        switchDrawerAutoPrint = findViewById(R.id.switchDrawerAutoPrint)
 
         btnTabPrepare = findViewById(R.id.btnTabPrepare)
         btnTabHandover = findViewById(R.id.btnTabHandover)
@@ -298,6 +324,7 @@ class MainActivity : AppCompatActivity() {
         layoutOrderDetail.visibility = if (screen == Screen.ORDER_DETAIL) View.VISIBLE else View.GONE
         layoutSettingsReceipts.visibility = if (screen == Screen.SETTINGS_RECEIPTS) View.VISIBLE else View.GONE
         layoutSettingsSounds.visibility = if (screen == Screen.SETTINGS_SOUNDS) View.VISIBLE else View.GONE
+        layoutSettingsMenu.visibility = if (screen == Screen.SETTINGS_MENU) View.VISIBLE else View.GONE
     }
 
     // ─────────────────────────────────────────────
@@ -389,38 +416,22 @@ class MainActivity : AppCompatActivity() {
 
         btnSubMenuManagement.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
-            Toast.makeText(this, "Loading menu items...", Toast.LENGTH_SHORT).show()
-            supabaseManager.fetchProducts { products ->
-                if (products.isEmpty()) {
-                    Toast.makeText(this, "No products found for this restaurant", Toast.LENGTH_SHORT).show()
-                    return@fetchProducts
-                }
+            loadMenuManagementScreen()
+        }
+
+        btnDrawerAutoPrintToggle.setOnClickListener {
+            val newState = !isAutoPrintEnabled
+            isAutoPrintEnabled = newState
+            getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                .putBoolean("auto_print", newState)
+                .apply()
                 
-                val names = products.map { it.get("name")?.asString ?: "Unnamed Item" }.toTypedArray()
-                val checked = products.map { it.get("in_stock")?.asBoolean != false }.toBooleanArray()
-                
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle("Dish Disabler (Toggle Stock)")
-                    .setMultiChoiceItems(names, checked) { _, which, isChecked ->
-                        val product = products[which]
-                        val productId = product.get("product_id")?.asString ?: ""
-                        if (productId.isNotEmpty()) {
-                            supabaseManager.updateProductStock(productId, isChecked) { success ->
-                                runOnUiThread {
-                                    val msg = if (success) {
-                                        product.addProperty("in_stock", isChecked)
-                                        "${names[which]} is now ${if (isChecked) "in stock" else "out of stock"}"
-                                    } else {
-                                        "Failed to update stock status"
-                                    }
-                                    Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                    }
-                    .setPositiveButton("Done", null)
-                    .show()
-            }
+            switchDrawerAutoPrint.isChecked = newState
+            switchAutoPrint.isChecked = newState
+            txtDrawerAutoPrintStatus.text = if (newState) "Enabled" else "Disabled"
+            txtDrawerAutoPrintStatus.setTextColor(Color.parseColor(if (newState) "#00A389" else "#EF4444"))
+            
+            Toast.makeText(this, "Auto-print ${if (newState) "enabled" else "disabled"}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -791,7 +802,8 @@ class MainActivity : AppCompatActivity() {
         txtDetailPaidBadge.setTextColor(Color.parseColor(if (isPaid) "#00A389" else "#EF4444"))
 
         txtDetailCustomerPhone.text = if (!order.customerPhone.isNullOrEmpty()) "📞 ${order.customerPhone}" else "No phone"
-        txtDetailCustomerNotes.text = if (!order.notes.isNullOrEmpty()) order.notes else "No delivery notes"
+        val parsedNotes = parseCustomerNotes(order.notes)
+        txtDetailCustomerNotes.text = if (parsedNotes.isNotEmpty()) parsedNotes else "No delivery notes"
 
         // Items
         txtDetailItemsCountHeader.text = "${order.items.sumOf { it.quantity }} item${if (order.items.sumOf { it.quantity } != 1) "s" else ""}"
@@ -919,6 +931,11 @@ class MainActivity : AppCompatActivity() {
         switchAutoPrint.setOnCheckedChangeListener { _, isChecked ->
             isAutoPrintEnabled = isChecked
             getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit().putBoolean("auto_print", isChecked).apply()
+            
+            // Sync drawer switch
+            switchDrawerAutoPrint.isChecked = isChecked
+            txtDrawerAutoPrintStatus.text = if (isChecked) "Enabled" else "Disabled"
+            txtDrawerAutoPrintStatus.setTextColor(Color.parseColor(if (isChecked) "#00A389" else "#EF4444"))
         }
     }
 
@@ -1067,5 +1084,165 @@ class MainActivity : AppCompatActivity() {
         ))
 
         refreshOrderList()
+    }
+
+    private fun parseCustomerNotes(rawNotes: String?): String {
+        if (rawNotes.isNullOrEmpty()) return ""
+        return try {
+            val obj = JsonParser.parseString(rawNotes).asJsonObject
+            obj.get("order_comment")?.asString
+                ?: obj.get("delivery_instructions")?.asString
+                ?: obj.get("notes")?.asString
+                ?: obj.get("order_instruction")?.asString
+                ?: ""
+        } catch (e: Exception) {
+            if (rawNotes.trim().startsWith("{")) "" else rawNotes
+        }
+    }
+
+    private fun setupMenuManagement() {
+        btnMenuBack.setOnClickListener { showScreen(Screen.ORDER_LIST) }
+    }
+
+    private fun loadMenuManagementScreen() {
+        menuItemsContainer.removeAllViews()
+        val loadingTxt = TextView(this).apply {
+            text = "Loading items..."
+            setTextColor(Color.parseColor("#64748B"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(40) }
+        }
+        menuItemsContainer.addView(loadingTxt)
+
+        showScreen(Screen.SETTINGS_MENU)
+
+        supabaseManager.fetchProducts { products ->
+            runOnUiThread {
+                menuItemsContainer.removeAllViews()
+                if (products.isEmpty()) {
+                    val emptyTxt = TextView(this@MainActivity).apply {
+                        text = "No products found for this restaurant."
+                        setTextColor(Color.parseColor("#64748B"))
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                        gravity = Gravity.CENTER
+                        layoutParams = LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        ).apply { topMargin = dp(40) }
+                    }
+                    menuItemsContainer.addView(emptyTxt)
+                    return@runOnUiThread
+                }
+
+                val grouped = products.groupBy { it.get("category_name")?.asString ?: "General" }
+
+                for ((categoryName, items) in grouped) {
+                    val categoryHeader = TextView(this@MainActivity).apply {
+                        text = categoryName.uppercase()
+                        setTextColor(Color.parseColor("#D8581B"))
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                        setTypeface(null, Typeface.BOLD)
+                        layoutParams = LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        ).apply {
+                            topMargin = dp(16)
+                            bottomMargin = dp(8)
+                        }
+                    }
+                    menuItemsContainer.addView(categoryHeader)
+
+                    for (product in items) {
+                        val card = androidx.cardview.widget.CardView(this@MainActivity).apply {
+                            radius = dp(12).toFloat()
+                            cardElevation = dp(1).toFloat()
+                            useCompatPadding = true
+                            layoutParams = LinearLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.WRAP_CONTENT
+                            ).apply { bottomMargin = dp(8) }
+                        }
+
+                        val row = LinearLayout(this@MainActivity).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = Gravity.CENTER_VERTICAL
+                            setPadding(dp(16), dp(14), dp(16), dp(14))
+                            setBackgroundColor(Color.WHITE)
+                        }
+
+                        val infoLayout = LinearLayout(this@MainActivity).apply {
+                            orientation = LinearLayout.VERTICAL
+                            layoutParams = LinearLayout.LayoutParams(
+                                0,
+                                ViewGroup.LayoutParams.WRAP_CONTENT,
+                                1f
+                            )
+                        }
+
+                        val nameTxt = TextView(this@MainActivity).apply {
+                            text = product.get("name")?.asString ?: "Unnamed Dish"
+                            setTextColor(Color.parseColor("#1E1E24"))
+                            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                            setTypeface(null, Typeface.BOLD)
+                        }
+
+                        val priceVal = product.get("price")?.asDouble ?: 0.0
+                        val priceTxt = TextView(this@MainActivity).apply {
+                            text = String.format(Locale.US, "€%.2f", priceVal)
+                            setTextColor(Color.parseColor("#64748B"))
+                            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                            layoutParams = LinearLayout.LayoutParams(
+                                ViewGroup.LayoutParams.WRAP_CONTENT,
+                                ViewGroup.LayoutParams.WRAP_CONTENT
+                            ).apply { topMargin = dp(2) }
+                        }
+
+                        infoLayout.addView(nameTxt)
+                        infoLayout.addView(priceTxt)
+
+                        val stockSwitch = com.google.android.material.switchmaterial.SwitchMaterial(this@MainActivity).apply {
+                            isChecked = product.get("in_stock")?.asBoolean != false
+                            thumbTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#D8581B"))
+                            trackTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFD0B3"))
+                            
+                            setOnCheckedChangeListener { _, isChecked ->
+                                val productId = product.get("product_id")?.asString ?: ""
+                                if (productId.isNotEmpty()) {
+                                    supabaseManager.updateProductStock(productId, isChecked) { success ->
+                                        runOnUiThread {
+                                            if (success) {
+                                                product.addProperty("in_stock", isChecked)
+                                                Toast.makeText(
+                                                    this@MainActivity,
+                                                    "${product.get("name")?.asString} status updated!",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            } else {
+                                                this@apply.isChecked = !isChecked
+                                                Toast.makeText(
+                                                    this@MainActivity,
+                                                    "Failed to update stock",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        row.addView(infoLayout)
+                        row.addView(stockSwitch)
+                        card.addView(row)
+                        card.setContentPadding(dp(16), dp(12), dp(16), dp(12))
+                        menuItemsContainer.addView(card)
+                    }
+                }
+            }
+        }
     }
 }

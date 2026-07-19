@@ -9,6 +9,7 @@ import android.util.Log
 import woyou.aidlservice.jiuiv5.ICallback
 import woyou.aidlservice.jiuiv5.IWoyouService
 import com.spoonful.pos.model.Order
+import com.google.gson.JsonParser
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -112,6 +113,39 @@ class SunmiPrinterHelper(private val context: Context) {
         }
     }
 
+    private fun sendText(service: IWoyouService, text: String) {
+        val cleaned = text
+            .replace("€", "EUR")
+            .replace("−", "-")
+            .replace("—", "-")
+            .replace("’", "'")
+            .replace("‘", "'")
+            .replace("”", "\"")
+            .replace("“", "\"")
+            .replace("█", "")
+            .replace("▀", "")
+            .replace("▄", "")
+        try {
+            service.printText(cleaned, printCallback)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error printing text", e)
+        }
+    }
+
+    private fun parseCustomerNotes(rawNotes: String?): String {
+        if (rawNotes.isNullOrEmpty()) return ""
+        return try {
+            val obj = JsonParser.parseString(rawNotes).asJsonObject
+            obj.get("order_comment")?.asString
+                ?: obj.get("delivery_instructions")?.asString
+                ?: obj.get("notes")?.asString
+                ?: obj.get("order_instruction")?.asString
+                ?: ""
+        } catch (e: Exception) {
+            if (rawNotes.trim().startsWith("{")) "" else rawNotes
+        }
+    }
+
     fun printReceipt(order: Order, onComplete: (Boolean) -> Unit = {}) {
         val service = woyouService
         if (service == null) {
@@ -127,7 +161,7 @@ class SunmiPrinterHelper(private val context: Context) {
 
             // 2. Header (Matching Raj Curry House reference)
             service.setAlignment(1, printCallback) // Center
-            service.printText("Klantenbon\n", printCallback)
+            sendText(service, "Klantenbon\n")
             
             val isRajCurry = order.merchantId == "restaurant_1" || order.merchantId == "6a0f03b4500ed5db150be1a1" || order.merchantId == "restaurant_2"
             val merchantName = if (isRajCurry) "Raj Curry House" else "Spoonful POS"
@@ -136,24 +170,24 @@ class SunmiPrinterHelper(private val context: Context) {
             val merchantPhone = if (isRajCurry) "053-3030011" else ""
 
             service.setFontSize(28f, printCallback)
-            service.printText("$merchantName\n", printCallback)
+            sendText(service, "$merchantName\n")
             service.setFontSize(24f, printCallback)
             
-            if (merchantCity.isNotEmpty()) service.printText("$merchantCity\n", printCallback)
-            if (merchantStreet.isNotEmpty()) service.printText("$merchantStreet\n", printCallback)
-            if (merchantPhone.isNotEmpty()) service.printText("$merchantPhone\n", printCallback)
+            if (merchantCity.isNotEmpty()) sendText(service, "$merchantCity\n")
+            if (merchantStreet.isNotEmpty()) sendText(service, "$merchantStreet\n")
+            if (merchantPhone.isNotEmpty()) sendText(service, "$merchantPhone\n")
             
-            service.printText("--------------------------------\n", printCallback)
+            sendText(service, "--------------------------------\n")
 
             // 3. Sequential / Short Order Identifier & Timestamps
             val seqNo = order.orderNumber.substringAfterLast("-").substringAfterLast("_")
             service.setFontSize(28f, printCallback) // Keep within safe limit of 28f
-            service.printText("$seqNo\n", printCallback)
+            sendText(service, "$seqNo\n")
             service.setFontSize(24f, printCallback) // Reset
             
-            service.printText("${formatDate(order.createdAt)}\n", printCallback)
-            service.printText("Pre order tijd:\n", printCallback)
-            service.printText("${formatDate(order.createdAt)}\n", printCallback)
+            sendText(service, "${formatDate(order.createdAt)}\n")
+            sendText(service, "Pre order tijd:\n")
+            sendText(service, "${formatDate(order.createdAt)}\n")
             
             val typeStr = when (order.type.lowercase(Locale.getDefault())) {
                 "pickup" -> "Afhalen"
@@ -161,27 +195,34 @@ class SunmiPrinterHelper(private val context: Context) {
                 else -> "Dine In"
             }
             service.setFontSize(28f, printCallback)
-            service.printText("$typeStr\n", printCallback)
+            sendText(service, "$typeStr\n")
             service.setFontSize(24f, printCallback)
             
-            service.printText("--------------------------------\n", printCallback)
+            sendText(service, "--------------------------------\n")
 
             // 4. Customer Address (Replicating exact layout in image)
             service.setAlignment(0, printCallback) // Left aligned for customer details
             if (!order.customerName.isNullOrEmpty()) {
                 val nameParts = order.customerName.split(" ")
                 for (part in nameParts) {
-                    service.printText("$part\n", printCallback)
+                    sendText(service, "$part\n")
                 }
             }
             if (!order.customerAddress.isNullOrEmpty()) {
-                service.printText("${order.customerAddress}\n", printCallback)
+                sendText(service, "${order.customerAddress}\n")
             }
             if (!order.customerPhone.isNullOrEmpty()) {
-                service.printText("${order.customerPhone}\n", printCallback)
+                sendText(service, "${order.customerPhone}\n")
             }
             
-            service.printText("--------------------------------\n", printCallback)
+            // Customer comment / notes (parsed correctly from JSON webhook payload)
+            val parsedNotes = parseCustomerNotes(order.notes)
+            if (parsedNotes.isNotEmpty()) {
+                sendText(service, "--------------------------------\n")
+                sendText(service, "Opmerking:\n$parsedNotes\n")
+            }
+            
+            sendText(service, "--------------------------------\n")
             
             // Notes / Courier details
             val courierText = if (order.type.lowercase(Locale.getDefault()) == "delivery") {
@@ -189,24 +230,24 @@ class SunmiPrinterHelper(private val context: Context) {
             } else {
                 "Order: ${order.orderNumber}"
             }
-            service.printText("$courierText\n", printCallback)
-            service.printText("--------------------------------\n", printCallback)
+            sendText(service, "$courierText\n")
+            sendText(service, "--------------------------------\n")
 
             // 5. Items Table
-            service.printText("Artikel                 Stuk  Totaal\n", printCallback)
+            sendText(service, "Artikel                 Stuk  Totaal\n")
             for (item in order.items) {
                 val itemText = "${item.quantity}  ${item.name}"
                 val priceVal = item.price * item.quantity
                 val priceStr = String.format(Locale.US, "%.2f", priceVal).replace(".", ",")
                 val formattedLine = formatLine(itemText, priceStr, MAX_LINE_CHAR_58MM)
-                service.printText("$formattedLine\n", printCallback)
+                sendText(service, "$formattedLine\n")
                 
                 if (!item.notes.isNullOrEmpty()) {
-                    service.printText("  * Note: ${item.notes}\n", printCallback)
+                    sendText(service, "  * Note: ${item.notes}\n")
                 }
             }
             
-            service.printText("--------------------------------\n", printCallback)
+            sendText(service, "--------------------------------\n")
 
             // 6. Calculations
             val totalValStr = String.format(Locale.US, "%.2f", order.total).replace(".", ",")
@@ -218,31 +259,31 @@ class SunmiPrinterHelper(private val context: Context) {
             val taxLine = formatLine("BTW.:", taxValStr, MAX_LINE_CHAR_58MM)
             val totalLine2 = formatLine("Totaal", totalValStr, MAX_LINE_CHAR_58MM)
 
-            service.printText("$totalLine1\n", printCallback)
-            service.printText("--------------------------------\n", printCallback)
-            service.printText("$nettoLine\n", printCallback)
-            service.printText("$taxLine\n", printCallback)
+            sendText(service, "$totalLine1\n")
+            sendText(service, "--------------------------------\n")
+            sendText(service, "$nettoLine\n")
+            sendText(service, "$taxLine\n")
             
             // Bold Total Line
             service.setFontSize(28f, printCallback)
-            service.printText("$totalLine2\n", printCallback)
+            sendText(service, "$totalLine2\n")
             service.setFontSize(24f, printCallback)
 
             // 7. Payment Info
             val paymentSource = if (order.paymentMethod.lowercase(Locale.getDefault()) == "online") "Online" else "Cash"
-            service.printText("Betaling $merchantName $paymentSource (Thuisbezorgd.nl)\n", printCallback)
+            sendText(service, "Betaling $merchantName $paymentSource (Thuisbezorgd.nl)\n")
             
             // 8. Footer & QR code
-            service.printText("================================\n", printCallback)
-            service.printText("$merchantName Online\n", printCallback)
-            service.printText("================================\n", printCallback)
+            sendText(service, "================================\n")
+            sendText(service, "$merchantName Online\n")
+            sendText(service, "================================\n")
             
             if (order.type.lowercase(Locale.getDefault()) == "delivery") {
-                service.printText("Bezorging Claim QR Code\n", printCallback)
+                sendText(service, "Bezorging Claim QR Code\n")
                 val driverUrl = "https://positivus-two-iota.vercel.app/driver?order_id=${order.id}"
                 service.printQRCode(driverUrl, 6, 1, printCallback)
             } else {
-                service.printText("Bestel via onze eigen webshop\n", printCallback)
+                sendText(service, "Bestel via onze eigen webshop\n")
                 val shopUrl = if (isRajCurry) "https://rajcurryhouse.nl" else "https://spoonful.nl"
                 service.printQRCode(shopUrl, 6, 1, printCallback)
             }
@@ -262,15 +303,15 @@ class SunmiPrinterHelper(private val context: Context) {
             service.printerInit(printCallback)
             service.setAlignment(1, printCallback)
             service.setFontSize(32f, printCallback)
-            service.printText("Spoonful POS\n", printCallback)
+            sendText(service, "Spoonful POS\n")
             service.setFontSize(24f, printCallback)
-            service.printText("Sunmi V2 Pro Print Test\n", printCallback)
-            service.printText("--------------------------------\n", printCallback)
+            sendText(service, "Sunmi V2 Pro Print Test\n")
+            sendText(service, "--------------------------------\n")
             service.setAlignment(0, printCallback)
-            service.printText("Printer Serial:\n${service.printerSerialNo}\n", printCallback)
-            service.printText("Printer Version:\n${service.printerVersion}\n", printCallback)
-            service.printText("Printer Status: ${service.getPrinterStatus()}\n", printCallback)
-            service.printText("--------------------------------\n", printCallback)
+            sendText(service, "Printer Serial:\n${service.printerSerialNo}\n")
+            sendText(service, "Printer Version:\n${service.printerVersion}\n")
+            sendText(service, "Printer Status: ${service.getPrinterStatus()}\n")
+            sendText(service, "--------------------------------\n")
             service.lineWrap(4, printCallback)
         } catch (e: Exception) {
             Log.e(TAG, "Error printing test page", e)

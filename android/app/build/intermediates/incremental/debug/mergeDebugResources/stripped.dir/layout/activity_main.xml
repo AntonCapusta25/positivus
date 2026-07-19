@@ -1182,6 +1182,64 @@
                     </LinearLayout>
                 </androidx.core.widget.NestedScrollView>
             </LinearLayout>
+
+            <!-- 5. MENU MANAGEMENT VIEW -->
+            <LinearLayout
+                android:id="@+id/layoutSettingsMenu"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:background="#F4F5F8"
+                android:visibility="gone">
+
+                <!-- Header Bar -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:background="#FFFFFF"
+                    android:elevation="2dp">
+
+                    <TextView
+                        android:id="@+id/btnMenuBack"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:gravity="center"
+                        android:text="←"
+                        android:textColor="#1E1E24"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Menu Management"
+                        android:textColor="#1E1E24"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginStart="8dp"/>
+                </LinearLayout>
+
+                <!-- Scrollable Product List -->
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:id="@+id/menuItemsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <!-- Dynamic product card rows will be added here -->
+                    </LinearLayout>
+                </ScrollView>
+            </LinearLayout>
         </FrameLayout>
     </LinearLayout>
 
@@ -1350,6 +1408,60 @@
                             android:textColor="#64748B"
                             android:textSize="11sp"/>
                     </LinearLayout>
+                </LinearLayout>
+
+                <!-- Auto-print Toggle inside Drawer -->
+                <LinearLayout
+                    android:id="@+id/btnDrawerAutoPrintToggle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="32dp"
+                        android:layout_height="wrap_content"
+                        android:text="🖨️"
+                        android:textSize="20sp"
+                        android:gravity="center"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Auto-Print Orders"
+                            android:textColor="#1E1E24"
+                            android:textStyle="bold"
+                            android:textSize="14sp"/>
+
+                        <TextView
+                            android:id="@+id/txtDrawerAutoPrintStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Enabled"
+                            android:textColor="#00A389"
+                            android:textSize="11sp"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchDrawerAutoPrint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:thumbTint="#D8581B"
+                        app:trackTint="#FFD0B3"
+                        android:clickable="false"
+                        android:focusable="false"/>
                 </LinearLayout>
 
                 <View

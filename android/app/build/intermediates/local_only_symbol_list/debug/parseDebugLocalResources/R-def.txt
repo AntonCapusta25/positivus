@@ -10,6 +10,7 @@ id btnDetailAction
 id btnDetailAssignDriver
 id btnDetailBack
 id btnDetailPrint
+id btnDrawerAutoPrintToggle
 id btnDrawerClose
 id btnDrawerManagement
 id btnDrawerRefresh
@@ -17,6 +18,7 @@ id btnDrawerSettings
 id btnDrawerStopOrders
 id btnDrawerSwitchRestaurant
 id btnHamburger
+id btnMenuBack
 id btnNotificationBell
 id btnReceiptsBack
 id btnReceiptsMinus
@@ -47,9 +49,11 @@ id layoutDrawerManagementSub
 id layoutDrawerSettingsSub
 id layoutOrderDetail
 id layoutOrderList
+id layoutSettingsMenu
 id layoutSettingsReceipts
 id layoutSettingsSounds
 id mainTabContainer
+id menuItemsContainer
 id ordersContainer
 id radioGroupSounds
 id radioSoundDefault
@@ -58,6 +62,7 @@ id radioSoundQuiet
 id screenContainer
 id seekBarVolume
 id switchAutoPrint
+id switchDrawerAutoPrint
 id switchEnlargeAddress
 id switchEnlargeNotes
 id switchEnlargeOrderNo
@@ -82,6 +87,7 @@ id txtDetailTimeVal
 id txtDetailTotal
 id txtDetailType
 id txtDrawerActiveRestaurant
+id txtDrawerAutoPrintStatus
 id txtDrawerManagementChevron
 id txtDrawerSettingsChevron
 id txtDrawerStopOrdersDesc
