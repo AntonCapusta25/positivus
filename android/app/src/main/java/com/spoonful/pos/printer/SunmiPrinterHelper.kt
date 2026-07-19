@@ -146,7 +146,7 @@ class SunmiPrinterHelper(private val context: Context) {
         }
     }
 
-    fun printReceipt(order: Order, onComplete: (Boolean) -> Unit = {}) {
+    fun printReceipt(order: Order, merchantName: String = "Spoonful POS", onComplete: (Boolean) -> Unit = {}) {
         val service = woyouService
         if (service == null) {
             Log.e(TAG, "Printer service is not bound.")
@@ -164,7 +164,6 @@ class SunmiPrinterHelper(private val context: Context) {
             sendText(service, "Klantenbon\n")
             
             val isRajCurry = order.merchantId == "restaurant_1" || order.merchantId == "6a0f03b4500ed5db150be1a1" || order.merchantId == "restaurant_2"
-            val merchantName = if (isRajCurry) "Raj Curry House" else "Spoonful POS"
             val merchantCity = if (isRajCurry) "Enschede" else ""
             val merchantStreet = if (isRajCurry) "Deurningerstraat91B" else ""
             val merchantPhone = if (isRajCurry) "053-3030011" else ""
@@ -236,11 +235,42 @@ class SunmiPrinterHelper(private val context: Context) {
             // 5. Items Table
             sendText(service, "Artikel                 Stuk  Totaal\n")
             for (item in order.items) {
-                val itemText = "${item.quantity}  ${item.name}"
+                val qtyStr = "${item.quantity}x "
+                val nameStr = item.name
                 val priceVal = item.price * item.quantity
                 val priceStr = String.format(Locale.US, "%.2f", priceVal).replace(".", ",")
-                val formattedLine = formatLine(itemText, priceStr, MAX_LINE_CHAR_58MM)
-                sendText(service, "$formattedLine\n")
+                
+                val rightWidth = priceStr.length
+                val leftWidth = MAX_LINE_CHAR_58MM - rightWidth - 1 // 32 - length - 1 (usually 25-26)
+                
+                val itemPrefix = qtyStr + nameStr
+                if (itemPrefix.length <= leftWidth) {
+                    val spaces = " ".repeat(MAX_LINE_CHAR_58MM - itemPrefix.length - rightWidth)
+                    sendText(service, "$itemPrefix$spaces$priceStr\n")
+                } else {
+                    val chunks = mutableListOf<String>()
+                    var current = itemPrefix
+                    while (current.length > leftWidth) {
+                        var wrapIndex = current.lastIndexOf(' ', leftWidth)
+                        if (wrapIndex == -1 || wrapIndex < leftWidth / 2) {
+                            wrapIndex = leftWidth
+                        }
+                        chunks.add(current.substring(0, wrapIndex).trimEnd())
+                        current = current.substring(wrapIndex).trimStart()
+                    }
+                    if (current.isNotEmpty()) {
+                        chunks.add(current)
+                    }
+                    
+                    val firstLineText = chunks[0]
+                    val spaces = " ".repeat(MAX_LINE_CHAR_58MM - firstLineText.length - rightWidth)
+                    sendText(service, "$firstLineText$spaces$priceStr\n")
+                    
+                    val padSpaces = " ".repeat(qtyStr.length)
+                    for (i in 1 until chunks.size) {
+                        sendText(service, "$padSpaces${chunks[i]}\n")
+                    }
+                }
                 
                 if (!item.notes.isNullOrEmpty()) {
                     sendText(service, "  * Note: ${item.notes}\n")
@@ -355,5 +385,9 @@ class SunmiPrinterHelper(private val context: Context) {
         } catch (e: Exception) {
             dateStr
         }
+    }
+
+    fun getWoyouServiceInstance(): IWoyouService? {
+        return woyouService
     }
 }

@@ -12,6 +12,10 @@
         "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/layout/activity_main.xml"
     },
     {
+        "merged": "com.spoonful.pos.app-debug-4:/drawable_logo.png.flat",
+        "source": "com.spoonful.pos.app-main-6:/drawable/logo.png"
+    },
+    {
         "merged": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-debug-4:/drawable_detail_header_bg.xml.flat",
         "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/drawable/detail_header_bg.xml"
     },

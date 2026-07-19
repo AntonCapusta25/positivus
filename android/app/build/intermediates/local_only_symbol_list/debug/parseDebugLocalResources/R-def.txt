@@ -2,6 +2,7 @@ R_DEF: Internal format may change without notice
 local
 drawable circle_badge_bg
 drawable detail_header_bg
+drawable logo
 drawable paid_badge_bg
 drawable plus_minus_bg
 drawable tab_bg_selected

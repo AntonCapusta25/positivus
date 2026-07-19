@@ -495,4 +495,8 @@ class SupabaseManager(
         isConnected = false
         isRealtimeActive = false
     }
+
+    fun isRealtimeConnected(): Boolean {
+        return isRealtimeActive
+    }
 }

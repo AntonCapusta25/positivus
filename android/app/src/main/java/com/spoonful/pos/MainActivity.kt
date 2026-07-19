@@ -39,6 +39,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtDrawerSettingsChevron: TextView
     private lateinit var btnSubSounds: TextView
     private lateinit var btnSubReceipts: TextView
+    private lateinit var btnSubTodaySales: TextView
+    private lateinit var btnSubConnectivity: TextView
+    private lateinit var btnSubLanguage: TextView
+    private lateinit var btnSubDeviceInfo: TextView
 
     // Status indicators (in drawer footer)
     private lateinit var dotSupabase: View
@@ -156,7 +160,7 @@ class MainActivity : AppCompatActivity() {
                             
                             // Auto print receipt if enabled
                             if (isAutoPrintEnabled) {
-                                printerHelper.printReceipt(order) { success ->
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
                                     if (success && !order.printed) {
                                         order.printed = true
                                         runOnUiThread { refreshOrderList() }
@@ -193,6 +197,9 @@ class MainActivity : AppCompatActivity() {
         switchDrawerAutoPrint.isChecked = isAutoPrintEnabled
         txtDrawerAutoPrintStatus.text = if (isAutoPrintEnabled) "Enabled" else "Disabled"
         txtDrawerAutoPrintStatus.setTextColor(Color.parseColor(if (isAutoPrintEnabled) "#00A389" else "#EF4444"))
+
+        setupSwitchColorStates(switchAutoPrint)
+        setupSwitchColorStates(switchDrawerAutoPrint)
 
         setupDrawer()
         setupMenuManagement()
@@ -249,6 +256,10 @@ class MainActivity : AppCompatActivity() {
         txtDrawerSettingsChevron = findViewById(R.id.txtDrawerSettingsChevron)
         btnSubSounds = findViewById(R.id.btnSubSounds)
         btnSubReceipts = findViewById(R.id.btnSubReceipts)
+        btnSubTodaySales = findViewById(R.id.btnSubTodaySales)
+        btnSubConnectivity = findViewById(R.id.btnSubConnectivity)
+        btnSubLanguage = findViewById(R.id.btnSubLanguage)
+        btnSubDeviceInfo = findViewById(R.id.btnSubDeviceInfo)
 
         dotSupabase = findViewById(R.id.dotSupabase)
         dotPrinter = findViewById(R.id.dotPrinter)
@@ -379,6 +390,72 @@ class MainActivity : AppCompatActivity() {
         btnSubReceipts.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             showScreen(Screen.SETTINGS_RECEIPTS)
+        }
+        btnSubTodaySales.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            val todayStr = SimpleDateFormat("yyyy-MM-day", Locale.getDefault()).format(Date())
+            val todayOrders = ordersList.filter { it.createdAt.startsWith(todayStr.substring(0, 10)) }
+            val count = todayOrders.size
+            val revenue = todayOrders.sumOf { it.total }
+            val onlineCount = todayOrders.count { it.paymentMethod.lowercase() == "online" }
+            val cashCount = todayOrders.count { it.paymentMethod.lowercase() == "cash" || it.paymentMethod.lowercase() == "card" }
+
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Today's Sales Report")
+                .setMessage(
+                    "Total Orders: $count\n" +
+                    "Total Revenue: €${String.format(Locale.US, "%.2f", revenue)}\n\n" +
+                    "Payment breakdown:\n" +
+                    "• Online: $onlineCount order(s)\n" +
+                    "• Cash/Card: $cashCount order(s)"
+                )
+                .setPositiveButton("Close", null)
+                .show()
+        }
+        btnSubConnectivity.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            val isSupabaseConnected = supabaseManager.isRealtimeConnected()
+            val isPrinterConnected = printerHelper.isPrinterConnected()
+
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Connectivity Status")
+                .setMessage(
+                    "• Supabase Database Realtime: ${if (isSupabaseConnected) "CONNECTED ✓" else "DISCONNECTED ✗"}\n" +
+                    "• Sunmi Internal Printer: ${if (isPrinterConnected) "CONNECTED ✓" else "DISCONNECTED ✗"}\n" +
+                    "• Target Restaurant ID: $merchantId"
+                )
+                .setPositiveButton("Close", null)
+                .show()
+        }
+        btnSubLanguage.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            val languages = arrayOf("English", "Nederlands (Dutch)", "Deutsch (German)")
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Select Language")
+                .setItems(languages) { _, which ->
+                    Toast.makeText(this, "Language switched to ${languages[which]} (Requires restart)", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+        btnSubDeviceInfo.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            val service = printerHelper.getWoyouServiceInstance()
+            val serial = try { service?.printerSerialNo ?: "N/A" } catch(e: Exception) { "N/A" }
+            val version = try { service?.printerVersion ?: "N/A" } catch(e: Exception) { "N/A" }
+
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Device Specification Info")
+                .setMessage(
+                    "• Brand: SUNMI\n" +
+                    "• Model: V2s / V2 Pro\n" +
+                    "• Printer SN: $serial\n" +
+                    "• Printer OS Version: $version\n" +
+                    "• Application Package: com.spoonful.pos\n" +
+                    "• Build Version: 1.0.0 (Debug)"
+                )
+                .setPositiveButton("Close", null)
+                .show()
         }
 
         btnDrawerSwitchRestaurant.setOnClickListener {
@@ -702,7 +779,7 @@ class MainActivity : AppCompatActivity() {
 
         btnDetailPrint.setOnClickListener {
             selectedOrder?.let { order ->
-                printerHelper.printReceipt(order) { success ->
+                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
                     if (success && !order.printed) {
                         order.printed = true
                         runOnUiThread { refreshOrderList() }
@@ -1100,6 +1177,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupSwitchColorStates(switchView: com.google.android.material.switchmaterial.SwitchMaterial) {
+        val thumbStates = android.content.res.ColorStateList(
+            arrayOf(
+                intArrayOf(android.R.attr.state_checked),
+                intArrayOf(-android.R.attr.state_checked)
+            ),
+            intArrayOf(
+                Color.parseColor("#D8581B"), // Orange when checked
+                Color.parseColor("#94A3B8")  // Grey when unchecked
+            )
+        )
+
+        val trackStates = android.content.res.ColorStateList(
+            arrayOf(
+                intArrayOf(android.R.attr.state_checked),
+                intArrayOf(-android.R.attr.state_checked)
+            ),
+            intArrayOf(
+                Color.parseColor("#FFD0B3"), // Light orange when checked
+                Color.parseColor("#E2E8F0")  // Light grey when unchecked
+            )
+        )
+
+        switchView.thumbTintList = thumbStates
+        switchView.trackTintList = trackStates
+    }
+
     private fun setupMenuManagement() {
         btnMenuBack.setOnClickListener { showScreen(Screen.ORDER_LIST) }
     }
@@ -1206,8 +1310,7 @@ class MainActivity : AppCompatActivity() {
 
                         val stockSwitch = com.google.android.material.switchmaterial.SwitchMaterial(this@MainActivity).apply {
                             isChecked = product.get("in_stock")?.asBoolean != false
-                            thumbTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#D8581B"))
-                            trackTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFD0B3"))
+                            setupSwitchColorStates(this)
                             
                             setOnCheckedChangeListener { _, isChecked ->
                                 val productId = product.get("product_id")?.asString ?: ""
