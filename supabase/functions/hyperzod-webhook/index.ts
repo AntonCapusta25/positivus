@@ -251,6 +251,8 @@ serve(async (req) => {
 
     // Normalization logic with fallbacks
     const orderNumber = data.order_unique_id || data.order_id?.toString() || `#HZ-${Math.floor(1000 + Math.random() * 9000)}`;
+    // Store the raw numeric order_id from Hyperzod so we can push status updates back
+    const hyperzodOrderId = Number(data.order_id) || null;
     const customerName = data.customer_name || data.customer?.name || "Guest Customer";
     const customerPhone = data.customer_phone || data.customer?.phone || "";
     const merchantId = data.merchant_id || "restaurant_1";
@@ -327,6 +329,7 @@ serve(async (req) => {
 
     const insertPayload = {
       order_number: orderNumber,
+      hyperzod_order_id: hyperzodOrderId,
       customer_name: customerName,
       customer_phone: customerPhone,
       merchant_id: merchantId,

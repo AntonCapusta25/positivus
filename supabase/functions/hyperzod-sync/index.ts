@@ -102,59 +102,63 @@ serve(async (req) => {
       if (type === "UPDATE") {
         const nextStatus = record.status;
         const orderNo = record.order_number;
+        // Use the stored numeric Hyperzod order ID (set when the order was first received from Hyperzod)
+        // Fall back to parseInt(order_number) only if hyperzod_order_id is not stored yet
+        const hyperzodOrderId = record.hyperzod_order_id
+          ? Number(record.hyperzod_order_id)
+          : parseInt(orderNo, 10);
         
-        if (nextStatus && orderNo) {
-          const hyperzodOrderId = parseInt(orderNo, 10);
-          if (!isNaN(hyperzodOrderId)) {
-            const mapSpoonfulStatusToHyperzod = (status: string) => {
-              switch (status.toLowerCase()) {
-                case 'incoming':
-                case 'pending':
-                  return 1;
-                case 'preparing':
-                case 'accepted':
-                  return 2;
-                case 'ready':
-                  return 3;
-                case 'collected':
-                case 'dispatched':
-                  return 4;
-                case 'completed':
-                  return 5;
-                case 'cancelled':
-                case 'declined':
-                  return 6;
-                default:
-                  return 2;
-              }
-            };
-            
-            const hyperzodStatus = mapSpoonfulStatusToHyperzod(nextStatus);
-            console.log(`Syncing order status update to Hyperzod: order_id = ${hyperzodOrderId}, status = ${hyperzodStatus}`);
-            
-            const response = await fetch("https://api.hyperzod.app/admin/v1/order/update-order-status", {
-              method: "POST",
-              headers: {
-                "X-API-KEY": HYPERZOD_API_KEY || "",
-                "X-TENANT": HYPERZOD_TENANT_ID || "",
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                order_id: hyperzodOrderId,
-                order_status: hyperzodStatus
-              })
-            });
-            const resData = await response.json();
-            console.log("Hyperzod order status update result:", JSON.stringify(resData));
-
-            if (!resData.success && !resData.message?.toLowerCase().includes("already set to")) {
-              return new Response(JSON.stringify({ success: false, error: resData.message || "Hyperzod status update failed" }), {
-                status: 400,
-                headers: { ...corsHeaders, "Content-Type": "application/json" }
-              });
+        if (nextStatus && orderNo && !isNaN(hyperzodOrderId)) {
+          const mapSpoonfulStatusToHyperzod = (status: string) => {
+            switch (status.toLowerCase()) {
+              case 'incoming':
+              case 'pending':
+                return 1;
+              case 'preparing':
+              case 'accepted':
+                return 2;
+              case 'ready':
+                return 3;
+              case 'collected':
+              case 'dispatched':
+                return 4;
+              case 'completed':
+                return 5;
+              case 'cancelled':
+              case 'declined':
+                return 6;
+              default:
+                return 2;
             }
+          };
+          
+          const hyperzodStatus = mapSpoonfulStatusToHyperzod(nextStatus);
+          console.log(`Syncing order status update to Hyperzod: hyperzod_order_id = ${hyperzodOrderId}, status = ${hyperzodStatus}`);
+          
+          const response = await fetch("https://api.hyperzod.app/admin/v1/order/update-order-status", {
+            method: "POST",
+            headers: {
+              "X-API-KEY": HYPERZOD_API_KEY || "",
+              "X-TENANT": HYPERZOD_TENANT_ID || "",
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              order_id: hyperzodOrderId,
+              order_status: hyperzodStatus
+            })
+          });
+          const resData = await response.json();
+          console.log("Hyperzod order status update result:", JSON.stringify(resData));
+
+          if (!resData.success && !resData.message?.toLowerCase().includes("already set to")) {
+            return new Response(JSON.stringify({ success: false, error: resData.message || "Hyperzod status update failed" }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
           }
+        } else if (!isNaN(hyperzodOrderId) === false) {
+          console.warn(`Skipping Hyperzod sync: no valid hyperzod_order_id for order ${orderNo}. This order may not have originated from Hyperzod.`);
         }
       }
     }

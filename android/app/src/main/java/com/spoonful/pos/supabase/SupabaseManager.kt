@@ -297,6 +297,64 @@ class SupabaseManager(
     }
 
     /**
+     * Notify Hyperzod of an order status change by calling the hyperzod-sync Edge Function.
+     * This mirrors what the web app does so the Android POS can push status changes back.
+     * @param orderNumber  the order_number stored in our DB (used by hyperzod-sync to look up the order)
+     * @param hyperzodOrderId  the numeric Hyperzod order_id stored on the order record (may be null for manual orders)
+     * @param status  the new Spoonful status string (e.g. "preparing", "ready", "completed")
+     */
+    fun notifyHyperzodStatusUpdate(orderNumber: String, hyperzodOrderId: Int?, status: String) {
+        if (hyperzodOrderId == null) {
+            Log.d(TAG, "Skipping Hyperzod sync for order $orderNumber — no hyperzod_order_id (manual order)")
+            return
+        }
+
+        val fnUrl = "$supabaseUrl/functions/v1/hyperzod-sync"
+
+        val body = JsonObject().apply {
+            addProperty("table", "orders")
+            addProperty("type", "UPDATE")
+            val record = JsonObject().apply {
+                addProperty("order_number", orderNumber)
+                addProperty("hyperzod_order_id", hyperzodOrderId)
+                addProperty("status", status)
+            }
+            add("record", record)
+            // old_record not needed for status updates, but field required by function structure
+            add("old_record", JsonObject())
+        }
+
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(body).toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url(fnUrl)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .addHeader("Content-Type", "application/json")
+            .post(requestBody)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, "Failed to notify Hyperzod of status change for order $orderNumber", e)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Hyperzod status sync successful for order $orderNumber -> $status")
+                    } else {
+                        val err = response.body?.string() ?: ""
+                        Log.e(TAG, "Hyperzod status sync failed: code ${response.code}, body $err")
+                    }
+                }
+            }
+        })
+    }
+
+
+    /**
      * Dynamically update the merchant ID and restart the realtime connection.
      */
     fun updateMerchantId(newId: String) {

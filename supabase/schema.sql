@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS public.orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_number VARCHAR(50) UNIQUE NOT NULL,
+    hyperzod_order_id INT DEFAULT NULL, -- The numeric order_id from Hyperzod (used to push status updates back)
     customer_name VARCHAR(100),
     customer_phone VARCHAR(50),
     merchant_id VARCHAR(100) NOT NULL DEFAULT 'restaurant_1',
@@ -21,6 +22,10 @@ CREATE TABLE IF NOT EXISTS public.orders (
     preparation_time INT DEFAULT 20,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration: add hyperzod_order_id to existing orders tables
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS hyperzod_order_id INT DEFAULT NULL;
+
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;

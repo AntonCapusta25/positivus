@@ -765,19 +765,34 @@ class MainActivity : AppCompatActivity() {
                 "ready" -> "completed"
                 else -> return@setOnClickListener
             }
-            supabaseManager.updateOrderPrintedAndStatus(order.id, order.printed, targetStatus) { success ->
-                if (success) {
-                    runOnUiThread {
-                        order.status = targetStatus
-                        showScreen(Screen.ORDER_LIST)
-                        refreshOrderList()
-                    }
-                }
-            }
-            // Optimistic UI update for mock data
+
+            // Optimistic UI update
             order.status = targetStatus
             showScreen(Screen.ORDER_LIST)
             refreshOrderList()
+
+            supabaseManager.updateOrderPrintedAndStatus(order.id, order.printed, targetStatus) { success ->
+                if (success) {
+                    // Push status change back to Hyperzod (fire-and-forget)
+                    supabaseManager.notifyHyperzodStatusUpdate(
+                        orderNumber = order.orderNumber,
+                        hyperzodOrderId = order.hyperzodOrderId,
+                        status = targetStatus
+                    )
+                } else {
+                    // Revert optimistic update on failure
+                    runOnUiThread {
+                        order.status = when (targetStatus) {
+                            "preparing" -> "incoming"
+                            "ready" -> "preparing"
+                            "completed" -> "ready"
+                            else -> order.status
+                        }
+                        refreshOrderList()
+                        Toast.makeText(this@MainActivity, "Status update failed. Please try again.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
 
         btnDetailPrint.setOnClickListener {
