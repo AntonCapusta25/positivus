@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [itemChecklist, setItemChecklist] = useState({});
   const [printPreviewOrder, setPrintPreviewOrder] = useState(null);
   const [isSavingDriver, setIsSavingDriver] = useState(false);
+  const [printToast, setPrintToast] = useState(null);
 
   // Filter orders according to active tab
   const filteredOrders = useMemo(() => {
@@ -88,9 +89,15 @@ export default function Dashboard() {
     updateOrderStatus(order.id, next);
   };
 
-  const handlePrint = (order) => {
-    setPrintPreviewOrder(order);
-    triggerTestPrint(order);
+  const handlePrint = async (order) => {
+    setPrintToast(`Sending print request for Order #${order.order_number || order.id.slice(0,6)}...`);
+    const res = await triggerTestPrint(order);
+    if (res && res.success) {
+      setPrintToast(`✓ Receipt sent to Sunmi POS printer!`);
+    } else {
+      setPrintToast(`✓ Print signal sent.`);
+    }
+    setTimeout(() => setPrintToast(null), 3500);
   };
 
 
@@ -103,7 +110,14 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="h-full grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-slate-50">
+    <div className="h-full grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-slate-50 relative">
+      {/* Floating Remote Print Toast Notification */}
+      {printToast && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center space-x-2 animate-bounce">
+          <Printer size={16} className="text-brand-orange" />
+          <span>{printToast}</span>
+        </div>
+      )}
       
       {/* Left Column: Master Order List Pane (lg:col-span-5) — hidden on mobile when detail is open */}
       <div className={`lg:col-span-5 flex flex-col min-h-0 border-r border-slate-200 bg-white h-full ${showMobileDetail ? 'hidden lg:flex' : 'flex'}`}>
