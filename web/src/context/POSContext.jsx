@@ -1281,6 +1281,22 @@ export const POSProvider = ({ children }) => {
   };
 
   const triggerTestPrint = (order) => {
+    // 1. Android Native Webview Bridge Integration
+    if (window.SunmiPrinterBridge) {
+      try {
+        console.log("Sunmi native bridge detected. Redirecting print job.");
+        const orderToSend = {
+          ...order,
+          items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items
+        };
+        window.SunmiPrinterBridge.printReceipt(JSON.stringify(orderToSend));
+        return;
+      } catch (err) {
+        console.warn("Sunmi bridge printing failed, falling back to browser print:", err);
+      }
+    }
+
+    // 2. Real Browser print (Web / PWA / Chrome on Sunmi device)
     const activeMerchant = availableMerchants.find(m => m.id === settingsRef.current.merchantId) || { name: 'Spoonful' };
     
     // Parse order items
@@ -1349,8 +1365,18 @@ ${deliveryQRSection}========================================
 ========================================
 `;
     
-    console.log(`[Sunmi Web Printer Mock] Printing receipt:\n${receiptContent}`);
-    alert(`Receipt Sent to Sunmi Printer!\nCopies: ${settingsRef.current.receiptCopies}\n\n${receiptContent}`);
+    // Inject print element
+    let printDiv = document.getElementById('thermal-print-section');
+    if (!printDiv) {
+      printDiv = document.createElement('pre');
+      printDiv.id = 'thermal-print-section';
+      printDiv.className = 'font-mono text-[10px] leading-tight text-black whitespace-pre-wrap p-2';
+      document.body.appendChild(printDiv);
+    }
+    printDiv.innerText = receiptContent;
+
+    console.log(`[Sunmi Web Printer] Printing receipt:\n${receiptContent}`);
+    window.print();
   };
 
   return (

@@ -44,3 +44,26 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* Print Media Styles for Thermal Receipt Printers */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #thermal-print-section, #thermal-print-section * {
+    visibility: visible;
+  }
+  #thermal-print-section {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  /* Remove default margins, headers, and footers added by browsers */
+  @page {
+    size: auto;
+    margin: 0mm;
+  }
+}
