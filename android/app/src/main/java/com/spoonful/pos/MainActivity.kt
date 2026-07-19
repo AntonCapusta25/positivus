@@ -779,10 +779,36 @@ class MainActivity : AppCompatActivity() {
 
         btnDetailPrint.setOnClickListener {
             selectedOrder?.let { order ->
+                val service = printerHelper.getWoyouServiceInstance()
+                if (service == null) {
+                    Toast.makeText(this, "Printer: Offline. Try restarting the app.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                val status = try { service.getPrinterStatus() } catch(e: Exception) { 4 }
+                if (status == 2) {
+                    Toast.makeText(this, "Printer Error: Out of paper! Please load paper.", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                } else if (status == 3) {
+                    Toast.makeText(this, "Printer Error: Overheated! Please wait.", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                } else if (status == 4) {
+                    Toast.makeText(this, "Printer Error: General Exception/Door open.", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
+
                 printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
-                    if (success && !order.printed) {
-                        order.printed = true
-                        runOnUiThread { refreshOrderList() }
+                    if (success) {
+                        runOnUiThread {
+                            if (!order.printed) {
+                                order.printed = true
+                                refreshOrderList()
+                            }
+                            Toast.makeText(this@MainActivity, "Receipt sent to printer!", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        runOnUiThread {
+                            Toast.makeText(this@MainActivity, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }
