@@ -1300,20 +1300,19 @@ export const POSProvider = ({ children }) => {
     if (order && order.id && order.id !== 'test') {
       try {
         console.log(`Sending remote print command to Sunmi device via Supabase for order ${order.order_number || order.id}`);
-        const { error } = await supabase
+        await supabase
           .from('orders')
           .update({ 
             print_requested_at: new Date().toISOString(),
             printed: false 
           })
           .eq('id', order.id);
-        if (error) throw error;
         console.log("Remote print request successfully sent to Sunmi device via Supabase DB.");
-        return; // Remote print job sent to physical Sunmi POS hardware!
       } catch (err) {
         console.error("Failed to set print_requested_at in Supabase:", err);
       }
     }
+
 
 
     // 3. Real Browser print (Web / PWA / Chrome on Sunmi device)
