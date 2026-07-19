@@ -775,6 +775,18 @@
                                         android:clickable="true"
                                         android:focusable="true"/>
                                 </LinearLayout>
+
+                                <com.google.android.material.switchmaterial.SwitchMaterial
+                                    android:id="@+id/switchAutoPrint"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Auto-Print Webhook Orders"
+                                    android:textColor="#475569"
+                                    android:textSize="13sp"
+                                    android:checked="true"
+                                    app:thumbTint="#D8581B"
+                                    app:trackTint="#FFD0B3"
+                                    android:layout_marginTop="12dp"/>
                             </LinearLayout>
                         </androidx.cardview.widget.CardView>
 

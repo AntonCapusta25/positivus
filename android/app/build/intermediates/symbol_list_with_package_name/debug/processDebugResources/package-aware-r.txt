@@ -3556,6 +3556,7 @@ id stretch
 id submenuarrow
 id submit_area
 id supportScrollUp
+id switchAutoPrint
 id switchEnlargeAddress
 id switchEnlargeNotes
 id switchEnlargeOrderNo

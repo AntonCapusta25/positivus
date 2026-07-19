@@ -114,6 +114,11 @@ export const POSProvider = ({ children }) => {
     };
   });
 
+  const settingsRef = useRef(settings);
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+
   // Save configurations to localStorage
   useEffect(() => {
     localStorage.setItem('pos_settings', JSON.stringify(settings));
@@ -283,10 +288,15 @@ export const POSProvider = ({ children }) => {
               if (prev.some(o => o.id === newOrder.id)) return prev;
               
               // 1. Admin sound / modal alert
-              if (settings.soundAlert) {
+              if (settingsRef.current.soundAlert) {
                 startSirenAlert();
               }
               setActiveIncomingOrder(newOrder);
+
+              // 1.5 Auto-print if enabled
+              if (settingsRef.current.autoPrint) {
+                triggerTestPrint(newOrder);
+              }
 
               // 2. Driver sound / popup offer notification (if unassigned delivery)
               const isDelivery = (newOrder.type || '').toLowerCase() === 'delivery';
@@ -1271,7 +1281,7 @@ export const POSProvider = ({ children }) => {
   };
 
   const triggerTestPrint = (order) => {
-    const activeMerchant = availableMerchants.find(m => m.id === settings.merchantId) || { name: 'Spoonful' };
+    const activeMerchant = availableMerchants.find(m => m.id === settingsRef.current.merchantId) || { name: 'Spoonful' };
     
     // Parse order items
     let itemsListText = '';
@@ -1340,7 +1350,7 @@ ${deliveryQRSection}========================================
 `;
     
     console.log(`[Sunmi Web Printer Mock] Printing receipt:\n${receiptContent}`);
-    alert(`Receipt Sent to Sunmi Printer!\nCopies: ${settings.receiptCopies}\n\n${receiptContent}`);
+    alert(`Receipt Sent to Sunmi Printer!\nCopies: ${settingsRef.current.receiptCopies}\n\n${receiptContent}`);
   };
 
   return (

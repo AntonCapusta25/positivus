@@ -90,6 +90,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnReceiptsPlus: TextView
     private lateinit var txtReceiptsCount: TextView
     private lateinit var btnReceiptsPrintTest: android.widget.Button
+    private lateinit var switchAutoPrint: com.google.android.material.switchmaterial.SwitchMaterial
 
     // Sounds settings views
     private lateinit var btnSoundsBack: TextView
@@ -103,6 +104,7 @@ class MainActivity : AppCompatActivity() {
     private var selectedOrder: Order? = null
     private var receiptCopiesCount = 1
     private var isStopOrdersActive = false
+    private var isAutoPrintEnabled = true
 
     // --- Data & Services ---
     private val ordersList = mutableListOf<Order>()
@@ -122,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         // Load saved merchant ID
         val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
         merchantId = prefs.getString("merchant_id", "restaurant_1") ?: "restaurant_1"
+        isAutoPrintEnabled = prefs.getBoolean("auto_print", true)
 
         printerHelper = SunmiPrinterHelper(this)
         supabaseManager = SupabaseManager(
@@ -135,6 +138,16 @@ class MainActivity : AppCompatActivity() {
                         if (ordersList.none { it.id == order.id }) {
                             ordersList.add(0, order)
                             refreshOrderList()
+                            
+                            // Auto print receipt if enabled
+                            if (isAutoPrintEnabled) {
+                                printerHelper.printReceipt(order) { success ->
+                                    if (success && !order.printed) {
+                                        order.printed = true
+                                        runOnUiThread { refreshOrderList() }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -256,6 +269,7 @@ class MainActivity : AppCompatActivity() {
         btnReceiptsPlus = findViewById(R.id.btnReceiptsPlus)
         txtReceiptsCount = findViewById(R.id.txtReceiptsCount)
         btnReceiptsPrintTest = findViewById(R.id.btnReceiptsPrintTest)
+        switchAutoPrint = findViewById(R.id.switchAutoPrint)
 
         btnSoundsBack = findViewById(R.id.btnSoundsBack)
         seekBarVolume = findViewById(R.id.seekBarVolume)
@@ -772,6 +786,12 @@ class MainActivity : AppCompatActivity() {
         }
         btnReceiptsPrintTest.setOnClickListener {
             printerHelper.printTestPage()
+        }
+
+        switchAutoPrint.isChecked = isAutoPrintEnabled
+        switchAutoPrint.setOnCheckedChangeListener { _, isChecked ->
+            isAutoPrintEnabled = isChecked
+            getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit().putBoolean("auto_print", isChecked).apply()
         }
     }
 

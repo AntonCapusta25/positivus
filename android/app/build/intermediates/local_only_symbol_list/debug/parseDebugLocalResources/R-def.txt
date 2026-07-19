@@ -55,6 +55,7 @@ id radioSoundNoisy
 id radioSoundQuiet
 id screenContainer
 id seekBarVolume
+id switchAutoPrint
 id switchEnlargeAddress
 id switchEnlargeNotes
 id switchEnlargeOrderNo

@@ -174,6 +174,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final SeekBar seekBarVolume;
 
   @NonNull
+  public final SwitchMaterial switchAutoPrint;
+
+  @NonNull
   public final SwitchMaterial switchEnlargeAddress;
 
   @NonNull
@@ -312,9 +315,10 @@ public final class ActivityMainBinding implements ViewBinding {
       @NonNull LinearLayout ordersContainer, @NonNull RadioGroup radioGroupSounds,
       @NonNull RadioButton radioSoundDefault, @NonNull RadioButton radioSoundNoisy,
       @NonNull RadioButton radioSoundQuiet, @NonNull FrameLayout screenContainer,
-      @NonNull SeekBar seekBarVolume, @NonNull SwitchMaterial switchEnlargeAddress,
-      @NonNull SwitchMaterial switchEnlargeNotes, @NonNull SwitchMaterial switchEnlargeOrderNo,
-      @NonNull SwitchMaterial switchEnlargePhone, @NonNull SwitchMaterial switchReceiptCategories,
+      @NonNull SeekBar seekBarVolume, @NonNull SwitchMaterial switchAutoPrint,
+      @NonNull SwitchMaterial switchEnlargeAddress, @NonNull SwitchMaterial switchEnlargeNotes,
+      @NonNull SwitchMaterial switchEnlargeOrderNo, @NonNull SwitchMaterial switchEnlargePhone,
+      @NonNull SwitchMaterial switchReceiptCategories,
       @NonNull SwitchMaterial switchReceiptCustAddress,
       @NonNull SwitchMaterial switchReceiptCustPhone, @NonNull SwitchMaterial switchReceiptItemIds,
       @NonNull TextView txtCustomerChevron, @NonNull TextView txtDetailAddress,
@@ -382,6 +386,7 @@ public final class ActivityMainBinding implements ViewBinding {
     this.radioSoundQuiet = radioSoundQuiet;
     this.screenContainer = screenContainer;
     this.seekBarVolume = seekBarVolume;
+    this.switchAutoPrint = switchAutoPrint;
     this.switchEnlargeAddress = switchEnlargeAddress;
     this.switchEnlargeNotes = switchEnlargeNotes;
     this.switchEnlargeOrderNo = switchEnlargeOrderNo;
@@ -739,6 +744,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.switchAutoPrint;
+      SwitchMaterial switchAutoPrint = ViewBindings.findChildViewById(rootView, id);
+      if (switchAutoPrint == null) {
+        break missingId;
+      }
+
       id = R.id.switchEnlargeAddress;
       SwitchMaterial switchEnlargeAddress = ViewBindings.findChildViewById(rootView, id);
       if (switchEnlargeAddress == null) {
@@ -978,16 +989,16 @@ public final class ActivityMainBinding implements ViewBinding {
           layoutDrawerSettingsSub, layoutOrderDetail, layoutOrderList, layoutSettingsReceipts,
           layoutSettingsSounds, mainTabContainer, ordersContainer, radioGroupSounds,
           radioSoundDefault, radioSoundNoisy, radioSoundQuiet, screenContainer, seekBarVolume,
-          switchEnlargeAddress, switchEnlargeNotes, switchEnlargeOrderNo, switchEnlargePhone,
-          switchReceiptCategories, switchReceiptCustAddress, switchReceiptCustPhone,
-          switchReceiptItemIds, txtCustomerChevron, txtDetailAddress, txtDetailCustomerName,
-          txtDetailCustomerNotes, txtDetailCustomerPhone, txtDetailDeliveryFee,
-          txtDetailHeaderTitle, txtDetailItemsCountHeader, txtDetailOrderCode, txtDetailPaidBadge,
-          txtDetailSubtotal, txtDetailTimeLabel, txtDetailTimeVal, txtDetailTotal, txtDetailType,
-          txtDrawerManagementChevron, txtDrawerSettingsChevron, txtDrawerStopOrdersDesc,
-          txtDrawerStopOrdersIcon, txtDrawerStopOrdersTitle, txtHeaderTitle, txtNoOrders,
-          txtOrderQueueTitle, txtPrinterStatus, txtReceiptsCount, txtSoundVolumeVal,
-          txtSupabaseStatus, txtTabDone, txtTabHandover, txtTabPrepare);
+          switchAutoPrint, switchEnlargeAddress, switchEnlargeNotes, switchEnlargeOrderNo,
+          switchEnlargePhone, switchReceiptCategories, switchReceiptCustAddress,
+          switchReceiptCustPhone, switchReceiptItemIds, txtCustomerChevron, txtDetailAddress,
+          txtDetailCustomerName, txtDetailCustomerNotes, txtDetailCustomerPhone,
+          txtDetailDeliveryFee, txtDetailHeaderTitle, txtDetailItemsCountHeader, txtDetailOrderCode,
+          txtDetailPaidBadge, txtDetailSubtotal, txtDetailTimeLabel, txtDetailTimeVal,
+          txtDetailTotal, txtDetailType, txtDrawerManagementChevron, txtDrawerSettingsChevron,
+          txtDrawerStopOrdersDesc, txtDrawerStopOrdersIcon, txtDrawerStopOrdersTitle,
+          txtHeaderTitle, txtNoOrders, txtOrderQueueTitle, txtPrinterStatus, txtReceiptsCount,
+          txtSoundVolumeVal, txtSupabaseStatus, txtTabDone, txtTabHandover, txtTabPrepare);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));
