@@ -90,8 +90,9 @@ export default function Dashboard() {
 
   const handlePrint = (order) => {
     setPrintPreviewOrder(order);
-    updateOrderPrinted(order.id, true);
+    triggerTestPrint(order);
   };
+
 
   const toggleChecklistItem = (orderId, index) => {
     const key = `${orderId}-${index}`;

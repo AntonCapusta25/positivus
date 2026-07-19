@@ -173,6 +173,52 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+
+                override fun onOrderUpdated(order: Order) {
+                    runOnUiThread {
+                        val index = ordersList.indexOfFirst { it.id == order.id }
+                        if (index != -1) {
+                            val existingOrder = ordersList[index]
+                            
+                            // Check if a remote print was requested (printRequestedAt changed to a new timestamp)
+                            val isNewPrintRequest = order.printRequestedAt != null && 
+                                    order.printRequestedAt != existingOrder.printRequestedAt
+                                    
+                            // Update local list object
+                            ordersList[index] = order
+                            refreshOrderList()
+                            
+                            // Also update selectedOrder reference if the user has it open
+                            if (selectedOrder?.id == order.id) {
+                                openOrderDetail(order)
+                            }
+                            
+                            if (isNewPrintRequest) {
+                                android.util.Log.d("MainActivity", "Remote print request received for order: ${order.orderNumber}")
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
+                                    if (success) {
+                                        // Mark as printed in database so everyone is synced
+                                        supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status) {
+                                            // Done
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            // If it's not in the list for some reason, add it
+                            ordersList.add(0, order)
+                            refreshOrderList()
+                            if (order.printRequestedAt != null) {
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
+                                    if (success) {
+                                        supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 override fun onOrdersLoaded(orders: List<Order>) {
                     runOnUiThread {
                         ordersList.clear()

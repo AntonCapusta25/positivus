@@ -1280,7 +1280,7 @@ export const POSProvider = ({ children }) => {
     }
   };
 
-  const triggerTestPrint = (order) => {
+  const triggerTestPrint = async (order) => {
     // 1. Android Native Webview Bridge Integration
     if (window.SunmiPrinterBridge) {
       try {
@@ -1292,12 +1292,33 @@ export const POSProvider = ({ children }) => {
         window.SunmiPrinterBridge.printReceipt(JSON.stringify(orderToSend));
         return;
       } catch (err) {
-        console.warn("Sunmi bridge printing failed, falling back to browser print:", err);
+        console.warn("Sunmi bridge printing failed, falling back to database/browser print:", err);
       }
     }
 
-    // 2. Real Browser print (Web / PWA / Chrome on Sunmi device)
+    // 2. Notify remote Sunmi printer (Android POS app) via Supabase print_requested_at field
+    if (order && order.id && order.id !== 'test') {
+      try {
+        console.log(`Sending remote print command to Sunmi device via Supabase for order ${order.order_number || order.id}`);
+        const { error } = await supabase
+          .from('orders')
+          .update({ 
+            print_requested_at: new Date().toISOString(),
+            printed: false 
+          })
+          .eq('id', order.id);
+        if (error) throw error;
+        console.log("Remote print request successfully sent to Sunmi device via Supabase DB.");
+        return; // Remote print job sent to physical Sunmi POS hardware!
+      } catch (err) {
+        console.error("Failed to set print_requested_at in Supabase:", err);
+      }
+    }
+
+
+    // 3. Real Browser print (Web / PWA / Chrome on Sunmi device)
     const activeMerchant = availableMerchants.find(m => m.id === settingsRef.current.merchantId) || { name: 'Spoonful' };
+
     
     // Parse order items
     let itemsListText = '';

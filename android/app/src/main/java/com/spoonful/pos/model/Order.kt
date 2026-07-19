@@ -20,10 +20,12 @@ data class Order(
     @SerializedName("payment_status") val paymentStatus: String, // pending, paid, refunded
     @SerializedName("notes") val notes: String?,
     @SerializedName("printed") var printed: Boolean,
+    @SerializedName("print_requested_at") var printRequestedAt: String? = null,
     @SerializedName("merchant_id") val merchantId: String? = null,
     @SerializedName("customer_address") val customerAddress: String? = null,
     @SerializedName("created_at") val createdAt: String
 )
+
 
 data class OrderItem(
     @SerializedName("name") val name: String,

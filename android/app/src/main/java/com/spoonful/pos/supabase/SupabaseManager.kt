@@ -29,6 +29,7 @@ class SupabaseManager(
 
     interface SupabaseListener {
         fun onOrderInserted(order: Order)
+        fun onOrderUpdated(order: Order)
         fun onOrdersLoaded(orders: List<Order>)
         fun onConnectionStatusChanged(connected: Boolean)
         fun onError(error: String)
@@ -199,6 +200,12 @@ class SupabaseManager(
                   "schema": "public",
                   "table": "orders",
                   "filter": "merchant_id=eq.$merchantId"
+                },
+                {
+                  "event": "UPDATE",
+                  "schema": "public",
+                  "table": "orders",
+                  "filter": "merchant_id=eq.$merchantId"
                 }
               ]
             }
@@ -207,7 +214,7 @@ class SupabaseManager(
         }
         """.trimIndent()
         ws.send(joinMsg)
-        Log.d(TAG, "Sent join channel request with filter: merchant_id=eq.$merchantId")
+        Log.d(TAG, "Sent join channel request with filter: merchant_id=eq.$merchantId (INSERT & UPDATE)")
     }
 
     private fun sendHeartbeat() {
@@ -237,11 +244,16 @@ class SupabaseManager(
                 if (payload != null) {
                     val data = payload.getAsJsonObject("data")
                     if (data != null) {
+                        val type = data.get("type")?.asString
                         val record = data.getAsJsonObject("record")
                         if (record != null) {
                             val order = gson.fromJson(record, Order::class.java)
                             mainHandler.post {
-                                listener.onOrderInserted(order)
+                                if (type == "INSERT") {
+                                    listener.onOrderInserted(order)
+                                } else if (type == "UPDATE") {
+                                    listener.onOrderUpdated(order)
+                                }
                             }
                         }
                     }
