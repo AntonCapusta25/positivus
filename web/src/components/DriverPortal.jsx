@@ -27,8 +27,9 @@ export default function DriverPortal() {
   });
   
   const [directionsResponse, setDirectionsResponse] = useState(null);
-  const [driverCoords, setDriverCoords] = useState([52.370216, 4.895168]); // Default Amsterdam
-  const [customerCoords, setCustomerCoords] = useState([52.373216, 4.899168]);
+  // Default to Enschede (Raj Curry House location)
+  const [driverCoords, setDriverCoords] = useState([52.2215372, 6.8936619]);
+  const [customerCoords, setCustomerCoords] = useState([52.2265372, 6.8986619]);
 
   // Track Driver GPS coordinates using watchPosition
   useEffect(() => {
@@ -54,7 +55,7 @@ export default function DriverPortal() {
     };
   }, []);
 
-  // Geocode active order customer address or create a nearby route offset
+  // Geocode active order customer address using Google Maps Geocoder or Nominatim
   useEffect(() => {
     if (!activeOrder) return;
     
@@ -65,6 +66,25 @@ export default function DriverPortal() {
         return;
       }
       
+      // 1. Try Google Maps Geocoder if Google Maps API is loaded
+      if (isLoaded && window.google?.maps?.Geocoder) {
+        try {
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ address: address }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+              const loc = results[0].geometry.location;
+              setCustomerCoords([loc.lat(), loc.lng()]);
+              return;
+            } else {
+              console.warn("Google Geocode status:", status);
+            }
+          });
+        } catch (e) {
+          console.warn("Google Geocoder error:", e);
+        }
+      }
+
+      // 2. Fallback to Nominatim OpenStreetMap
       try {
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
         const res = await fetch(url, { headers: { 'User-Agent': 'SpoonfulPOS/1.0' } });
@@ -74,7 +94,6 @@ export default function DriverPortal() {
           const lon = parseFloat(json[0].lon);
           setCustomerCoords([lat, lon]);
         } else {
-          // Fallback offset
           setCustomerCoords([driverCoords[0] + 0.005, driverCoords[1] + 0.005]);
         }
       } catch (err) {
@@ -84,7 +103,8 @@ export default function DriverPortal() {
     };
 
     geocodeAddress();
-  }, [activeOrder, driverCoords]);
+  }, [activeOrder, driverCoords, isLoaded]);
+
 
   // Fetch Directions when coordinates change
   useEffect(() => {

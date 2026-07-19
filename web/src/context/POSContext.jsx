@@ -1156,12 +1156,12 @@ export const POSProvider = ({ children }) => {
       const addressPayload = {
         user_id: userId,
         address_type: 'home',
-        location_lat_lon: [52.370216, 4.895168],
-        address: '10 Test Street, Amsterdam, NL',
-        building: '10',
-        landmark: 'Central Station',
-        city: 'Amsterdam',
-        area: 'Center',
+        location_lat_lon: [52.2215372, 6.8936619],
+        address: 'Deurningerstraat 91B, Enschede, NL',
+        building: '91B',
+        landmark: 'Raj Curry House',
+        city: 'Enschede',
+        area: 'Deurningerstraat',
         country: 'Netherlands',
         country_code: 'NL'
       };
@@ -1207,9 +1207,10 @@ export const POSProvider = ({ children }) => {
         cart_id: String(cartId),
         order_type: 'pickup',
         address_id: String(addressId),
-        delivery_location: '52.370216,4.895168',
+        delivery_location: '52.2215372,6.8936619',
         payment_mode_id: '3'
       });
+
       const valRes = await fetch(`${HYPERZOD_BASE_URL}/store/v1/cart/validate?${validateParams.toString()}`, {
         method: 'GET',
         headers
