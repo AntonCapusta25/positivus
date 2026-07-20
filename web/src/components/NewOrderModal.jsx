@@ -217,6 +217,8 @@ export default function NewOrderModal() {
                 >
                   +20m
                 </button>
+              </div>
+
               {/* Driver Selector for Delivery Orders */}
               {(order.type || '').toLowerCase() === 'delivery' && (
                 <div className="w-full pt-2 border-t border-slate-100 flex flex-col items-center">
