@@ -92,7 +92,7 @@ export const POSProvider = ({ children }) => {
     return {
       merchantId: parsed.merchantId || defaultMerchantId,
       receiptCopies: parsed.receiptCopies || 2, // Default to 2 copies since user wants kitchen/driver and customer receipts
-      autoPrint: parsed.autoPrint !== undefined ? parsed.autoPrint : true,
+      autoPrint: parsed.autoPrint !== undefined ? parsed.autoPrint : false,
       soundAlert: parsed.soundAlert !== undefined ? parsed.soundAlert : true,
       soundVolume: parsed.soundVolume !== undefined ? parsed.soundVolume : 80,
       soundTheme: parsed.soundTheme || 'default',
@@ -302,8 +302,8 @@ export const POSProvider = ({ children }) => {
               }
               setActiveIncomingOrder(newOrder);
 
-              // 1.5 Auto-print if enabled
-              if (settingsRef.current.autoPrint) {
+              // 1.5 Auto-print if explicitly enabled
+              if (settingsRef.current.autoPrint === true) {
                 triggerTestPrint(newOrder);
               }
 

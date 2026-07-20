@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity() {
     private var selectedOrder: Order? = null
     private var receiptCopiesCount = 1
     private var isStopOrdersActive = false
-    private var isAutoPrintEnabled = true
+    private var isAutoPrintEnabled = false
 
     // --- Data & Services ---
     private val ordersList = mutableListOf<Order>()
@@ -145,7 +145,8 @@ class MainActivity : AppCompatActivity() {
         // Load saved merchant ID
         val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
         merchantId = prefs.getString("merchant_id", "6a0f03b4500ed5db150be1a1") ?: "6a0f03b4500ed5db150be1a1"
-        isAutoPrintEnabled = prefs.getBoolean("auto_print", true)
+        isAutoPrintEnabled = prefs.getBoolean("auto_print", false)
+
 
         printerHelper = SunmiPrinterHelper(this)
         supabaseManager = SupabaseManager(
