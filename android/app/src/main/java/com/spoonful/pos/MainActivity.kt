@@ -193,15 +193,27 @@ class MainActivity : AppCompatActivity() {
                                 openOrderDetail(order)
                             }
                             
-                            // Remote print requests (from web dashboard Print button) always print regardless of auto-print setting
-                            if (isNewPrintRequest && printTs != null && !printedOrderIds.contains(printTs)) {
+                            // Remote print requests: only print if isAutoPrintEnabled IS TRUE, OR if the request was made manually (> 5 seconds after creation)
+                            val isAutoTriggerOnCreation = try {
+                                val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
+                                val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(printTs, java.time.Instant::from).toEpochMilli()
+                                Math.abs(printTime - createdTime) < 5000
+                            } catch (e: Exception) {
+                                false
+                            }
+
+                            val shouldPrint = isAutoPrintEnabled || !isAutoTriggerOnCreation
+
+                            if (shouldPrint && isNewPrintRequest && printTs != null && !printedOrderIds.contains(printTs)) {
                                 printedOrderIds.add(printTs)
-                                android.util.Log.d("MainActivity", "Remote manual print request for order: ${order.orderNumber}")
+                                android.util.Log.d("MainActivity", "Remote print request executed for order: ${order.orderNumber}")
                                 printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
                                     if (success) {
                                         supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
                                     }
                                 }
+                            } else if (isNewPrintRequest) {
+                                android.util.Log.d("MainActivity", "Remote print request BLOCKED (Auto-print is OFF and request was automatic on creation)")
                             }
                         } else {
                             // If it's not in the list for some reason, add it
