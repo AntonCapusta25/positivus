@@ -253,9 +253,14 @@ export const POSProvider = ({ children }) => {
   }, [settings.merchantId]);
 
   // Fetch initial orders and listen to realtime updates from Supabase
+  // With auto-reconnect: if the WebSocket drops, re-fetches orders and re-subscribes
   useEffect(() => {
     if (!settings.merchantId) return;
     setSupabaseConnected(true);
+
+    let activeChannel = null;
+    let reconnectTimeout = null;
+    let destroyed = false;
 
     const fetchOrders = async () => {
       try {
@@ -273,90 +278,110 @@ export const POSProvider = ({ children }) => {
       }
     };
 
-    fetchOrders();
+    const setupChannel = () => {
+      if (destroyed) return;
 
-    // Subscribe to public.orders postgres change replication
-    const channel = supabase
-      .channel('realtime:pos_orders')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' },
-        (payload) => {
-          const activeMerchantId = settingsRef.current.merchantId;
+      // Use a unique channel name each time to avoid Supabase rejecting re-subscribe
+      const channelName = `realtime:pos_orders_${Date.now()}`;
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'orders' },
+          (payload) => {
+            const activeMerchantId = settingsRef.current.merchantId;
 
-          if (payload.eventType === 'INSERT') {
-            const newOrder = payload.new;
-            const isMatch = newOrder.merchant_id === activeMerchantId ||
-              ((activeMerchantId === 'restaurant_1' || activeMerchantId === '6a0f03b4500ed5db150be1a1') &&
-               (newOrder.merchant_id === 'restaurant_1' || newOrder.merchant_id === '6a0f03b4500ed5db150be1a1')) ||
-              !newOrder.merchant_id;
+            if (payload.eventType === 'INSERT') {
+              const newOrder = payload.new;
+              const isMatch = newOrder.merchant_id === activeMerchantId ||
+                ((activeMerchantId === 'restaurant_1' || activeMerchantId === '6a0f03b4500ed5db150be1a1') &&
+                 (newOrder.merchant_id === 'restaurant_1' || newOrder.merchant_id === '6a0f03b4500ed5db150be1a1')) ||
+                !newOrder.merchant_id;
 
-            if (!isMatch) return;
+              if (!isMatch) return;
 
-            setOrders((prev) => {
-              if (prev.some(o => o.id === newOrder.id)) return prev;
-              
-              // 1. Admin sound / modal alert
-              if (settingsRef.current.soundAlert !== false) {
-                startSirenAlert();
-              }
-              setActiveIncomingOrder(newOrder);
+              setOrders((prev) => {
+                if (prev.some(o => o.id === newOrder.id)) return prev;
+                
+                // 1. Admin sound / modal alert
+                if (settingsRef.current.soundAlert !== false) {
+                  startSirenAlert();
+                }
+                setActiveIncomingOrder(newOrder);
 
-              // 1.5 Auto-print if explicitly enabled
-              if (settingsRef.current.autoPrint === true) {
-                triggerTestPrint(newOrder);
-              }
+                // 1.5 Auto-print if explicitly enabled
+                if (settingsRef.current.autoPrint === true) {
+                  triggerTestPrint(newOrder);
+                }
 
-              // 2. Driver sound / popup offer notification (if unassigned delivery)
-              const isDelivery = (newOrder.type || '').toLowerCase() === 'delivery';
-              const isUnassigned = !newOrder.driver_name || newOrder.driver_name === '';
-              if (isDelivery && isUnassigned) {
-                setActiveDriverOffer(newOrder);
-                playDriverChime();
-              }
+                // 2. Driver sound / popup offer notification (if unassigned delivery)
+                const isDelivery = (newOrder.type || '').toLowerCase() === 'delivery';
+                const isUnassigned = !newOrder.driver_name || newOrder.driver_name === '';
+                if (isDelivery && isUnassigned) {
+                  setActiveDriverOffer(newOrder);
+                  playDriverChime();
+                }
 
-              return [newOrder, ...prev];
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedOrder = payload.new;
-            const isMatch = updatedOrder.merchant_id === activeMerchantId ||
-              ((activeMerchantId === 'restaurant_1' || activeMerchantId === '6a0f03b4500ed5db150be1a1') &&
-               (updatedOrder.merchant_id === 'restaurant_1' || updatedOrder.merchant_id === '6a0f03b4500ed5db150be1a1')) ||
-              !updatedOrder.merchant_id;
+                return [newOrder, ...prev];
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedOrder = payload.new;
+              const isMatch = updatedOrder.merchant_id === activeMerchantId ||
+                ((activeMerchantId === 'restaurant_1' || activeMerchantId === '6a0f03b4500ed5db150be1a1') &&
+                 (updatedOrder.merchant_id === 'restaurant_1' || updatedOrder.merchant_id === '6a0f03b4500ed5db150be1a1')) ||
+                !updatedOrder.merchant_id;
 
-            if (!isMatch) return;
+              if (!isMatch) return;
 
-            setOrders((prev) => {
-              const matchedPrev = prev.find(o => o.id === updatedOrder.id);
-              
-              // Driver notification: if status changed to ready/preparing and is unassigned delivery
-              const isDelivery = (updatedOrder.type || '').toLowerCase() === 'delivery';
-              const isUnassigned = !updatedOrder.driver_name || updatedOrder.driver_name === '';
-              const statusChanged = matchedPrev && matchedPrev.status !== updatedOrder.status;
-              const isNowAvailable = updatedOrder.status === 'ready' || updatedOrder.status === 'preparing';
+              setOrders((prev) => {
+                const matchedPrev = prev.find(o => o.id === updatedOrder.id);
+                
+                // Driver notification: if status changed to ready/preparing and is unassigned delivery
+                const isDelivery = (updatedOrder.type || '').toLowerCase() === 'delivery';
+                const isUnassigned = !updatedOrder.driver_name || updatedOrder.driver_name === '';
+                const statusChanged = matchedPrev && matchedPrev.status !== updatedOrder.status;
+                const isNowAvailable = updatedOrder.status === 'ready' || updatedOrder.status === 'preparing';
 
-              if (isDelivery && isUnassigned && statusChanged && isNowAvailable) {
-                setActiveDriverOffer(updatedOrder);
-                playDriverChime();
-              }
+                if (isDelivery && isUnassigned && statusChanged && isNowAvailable) {
+                  setActiveDriverOffer(updatedOrder);
+                  playDriverChime();
+                }
 
-              return prev.map(o => o.id === updatedOrder.id ? updatedOrder : o);
-            });
-          } else if (payload.eventType === 'DELETE') {
-            setOrders((prev) => prev.filter(o => o.id !== payload.old.id));
+                return prev.map(o => o.id === updatedOrder.id ? updatedOrder : o);
+              });
+            } else if (payload.eventType === 'DELETE') {
+              setOrders((prev) => prev.filter(o => o.id !== payload.old.id));
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setSupabaseConnected(true);
-        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          setSupabaseConnected(false);
-        }
-      });
+        )
+        .subscribe((status) => {
+          console.log('[Realtime] Orders channel status:', status);
+          if (status === 'SUBSCRIBED') {
+            setSupabaseConnected(true);
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            setSupabaseConnected(false);
+            if (!destroyed) {
+              console.warn('[Realtime] Connection lost. Re-fetching and reconnecting in 3s...');
+              reconnectTimeout = setTimeout(() => {
+                if (!destroyed) {
+                  fetchOrders(); // Re-sync any missed orders
+                  setupChannel(); // Re-subscribe
+                }
+              }, 3000);
+            }
+          }
+        });
+
+      activeChannel = channel;
+    };
+
+    fetchOrders();
+    setupChannel();
 
     return () => {
-      supabase.removeChannel(ordersChannel);
+      destroyed = true;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (activeChannel) supabase.removeChannel(activeChannel);
     };
   }, [settings.merchantId, settings.soundAlert, settings.soundVolume]);
 
