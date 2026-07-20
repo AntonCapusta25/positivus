@@ -1112,10 +1112,13 @@ export const POSProvider = ({ children }) => {
     // 3. Close the modal overlay
     setActiveIncomingOrder(null);
 
-    // 4. Trigger print
+    // 4. Trigger print ONLY if auto-print is enabled
     const orderObj = orders.find(o => o.id === orderId);
-    if (orderObj) {
+    if (orderObj && settingsRef.current.autoPrint === true) {
+      console.log('[AutoPrint] Auto-print is ON. Triggering print for accepted order...');
       triggerTestPrint({ ...orderObj, status: 'preparing', preparation_time: prepTime });
+    } else {
+      console.log('[AutoPrint] Auto-print is OFF. Skipping automatic print.');
     }
   };
 

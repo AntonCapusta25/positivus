@@ -85,34 +85,44 @@ function MainLayout() {
           const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
           console.log('[PWA Push] Loading VAPID Public Key:', vapidPublicKey);
           if (vapidPublicKey) {
-            // Request permission
-            const permission = await Notification.requestPermission();
+            // Check if notification permission is already granted, or request it
+            let permission = Notification.permission;
+            if (permission === 'default') {
+              permission = await Notification.requestPermission();
+            }
+            
             if (permission === 'granted') {
-              let sub = await activeReg.pushManager.getSubscription();
-              if (sub) {
+              let subscription = await activeReg.pushManager.getSubscription();
+              
+              if (subscription) {
+                // Subscription exists — just make sure it's saved in the DB
+                console.log('[PWA Push] Existing subscription found, ensuring it is saved to DB...');
+              } else {
+                // No existing subscription — create a new one
+                console.log('[PWA Push] No existing subscription. Subscribing with VAPID key...');
                 try {
-                  await sub.unsubscribe();
-                  console.log('[PWA Push] Unsubscribed old VAPID subscription');
-                } catch (e) {
-                  console.warn('[PWA Push] Error unsubscribing old sub:', e);
+                  subscription = await activeReg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+                  });
+                  console.log('[PWA Push] New subscription created successfully.');
+                } catch (subErr) {
+                  console.error('[PWA Push] Failed to create push subscription:', subErr);
+                  return;
                 }
               }
 
-              const subscription = await activeReg.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
-              });
-              
               const subJson = subscription.toJSON();
               
-              // Save to Supabase push_subscriptions table
+              // Save to Supabase push_subscriptions table (upsert is safe for duplicates)
+              const merchantId = settings.merchantId || "6a0f03b4500ed5db150be1a1";
               const { error } = await supabase
                 .from('push_subscriptions')
                 .upsert(
                   { 
                     endpoint: subJson.endpoint, 
                     keys: subJson.keys,
-                    merchant_id: settings.merchantId || "6a0f03b4500ed5db150be1a1"
+                    merchant_id: merchantId
                   },
                   { onConflict: 'endpoint' }
                 );
@@ -120,10 +130,11 @@ function MainLayout() {
               if (error) {
                 console.error('[PWA Push] Failed to save subscription to Supabase:', error);
               } else {
-                console.log('[PWA Push] Successfully subscribed device to notifications for merchant:', settings.merchantId);
+                console.log('[PWA Push] Device successfully registered for push notifications. Merchant:', merchantId);
+                console.log('[PWA Push] iOS NOTE: Notifications only work when app is added to Home Screen (iOS 16.4+)');
               }
             } else {
-              console.warn('[PWA Push] Notification permission denied');
+              console.warn('[PWA Push] Notification permission denied or not granted:', permission);
             }
 
           }
