@@ -90,40 +90,28 @@ function MainLayout() {
   // Request notification permission (called from button tap — required by iOS)
   const enablePushNotifications = async () => {
     try {
-      alert('Debug 1: Tapped Enable Push Notifications');
-      if (typeof window === 'undefined') {
-        alert('Debug 2: window is undefined');
-        return;
-      }
-      alert('Debug 3: typeof Notification is ' + typeof Notification);
       if (typeof Notification === 'undefined') {
         alert('Push notifications require the app to be Added to Home Screen on iOS 16.4+');
         return;
       }
-      alert('Debug 4: Current permission status: ' + Notification.permission);
       
       let perm;
       try {
-        alert('Debug 5: Requesting permission (promise mode)...');
         perm = await Notification.requestPermission();
       } catch (promiseErr) {
-        alert('Debug 5 Fallback: Promise mode failed (' + promiseErr.message + '), trying callback mode...');
         perm = await new Promise((resolve) => {
           Notification.requestPermission(resolve);
         });
       }
       
-      alert('Debug 6: Permission decision: ' + perm);
       setNotifPermission(perm);
       if (perm === 'granted') {
-        alert('Debug 7: Registering push subscription with database...');
         await registerPushSubscription();
         alert('✅ Push notifications enabled! You will receive alerts for new orders.');
       } else {
-        alert('❌ Permission status: ' + perm + '. Please allow notifications in iPhone Settings → Spoonful POS → Notifications.');
+        alert('❌ Permission not granted. Please allow notifications in iPhone Settings → Spoonful POS → Notifications.');
       }
     } catch (err) {
-      alert('Debug Error: ' + err.message);
       console.warn('[PWA Push] Permission request failed:', err);
     }
   };
