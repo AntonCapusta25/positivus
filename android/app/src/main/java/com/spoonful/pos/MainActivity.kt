@@ -193,16 +193,15 @@ class MainActivity : AppCompatActivity() {
                                 openOrderDetail(order)
                             }
                             
-                            if (isAutoPrintEnabled && isNewPrintRequest && printTs != null && !printedOrderIds.contains(printTs)) {
+                            // Remote print requests (from web dashboard Print button) always print regardless of auto-print setting
+                            if (isNewPrintRequest && printTs != null && !printedOrderIds.contains(printTs)) {
                                 printedOrderIds.add(printTs)
-                                android.util.Log.d("MainActivity", "Remote print request received for order: ${order.orderNumber} (auto-print is ON)")
+                                android.util.Log.d("MainActivity", "Remote manual print request for order: ${order.orderNumber}")
                                 printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
                                     if (success) {
                                         supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
                                     }
                                 }
-                            } else if (isNewPrintRequest) {
-                                android.util.Log.d("MainActivity", "Remote print request IGNORED for order: ${order.orderNumber} (auto-print is OFF)")
                             }
                         } else {
                             // If it's not in the list for some reason, add it

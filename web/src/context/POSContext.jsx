@@ -497,6 +497,32 @@ export const POSProvider = ({ children }) => {
     };
   }, [settings.merchantId, userRole]);
 
+  // Re-fetch orders when user switches back to tab (iOS PWA kills WebSockets in background)
+  useEffect(() => {
+    if (!settings.merchantId) return;
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[Realtime] Tab became visible — re-fetching orders to catch up...');
+        try {
+          const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('merchant_id', settings.merchantId)
+            .order('created_at', { ascending: false })
+            .limit(50);
+          if (!error && data) {
+            setOrders(data);
+          }
+        } catch (err) {
+          console.warn('[Realtime] Re-fetch on visibility failed:', err);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [settings.merchantId]);
 
   // Global AudioContext for mobile web browser compatibility (bypasses gesture restrictions)
   const globalAudioCtxRef = useRef(null);
