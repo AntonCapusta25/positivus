@@ -95,21 +95,24 @@ function MainLayout() {
               let subscription = await activeReg.pushManager.getSubscription();
               
               if (subscription) {
-                // Subscription exists — just make sure it's saved in the DB
-                console.log('[PWA Push] Existing subscription found, ensuring it is saved to DB...');
-              } else {
-                // No existing subscription — create a new one
-                console.log('[PWA Push] No existing subscription. Subscribing with VAPID key...');
+                console.log('[PWA Push] Existing subscription found. Unsubscribing to refresh with latest VAPID key...');
                 try {
-                  subscription = await activeReg.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
-                  });
-                  console.log('[PWA Push] New subscription created successfully.');
-                } catch (subErr) {
-                  console.error('[PWA Push] Failed to create push subscription:', subErr);
-                  return;
+                  await subscription.unsubscribe();
+                } catch (unsubErr) {
+                  console.warn('[PWA Push] Failed to unsubscribe existing subscription:', unsubErr);
                 }
+              }
+
+              console.log('[PWA Push] Subscribing with latest VAPID key...');
+              try {
+                subscription = await activeReg.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+                });
+                console.log('[PWA Push] New subscription created successfully.');
+              } catch (subErr) {
+                console.error('[PWA Push] Failed to create push subscription:', subErr);
+                return;
               }
 
               const subJson = subscription.toJSON();
