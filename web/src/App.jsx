@@ -8,7 +8,7 @@ import Drivers from './components/Drivers';
 import Coupons from './components/Coupons';
 import MyStores from './components/MyStores';
 import NewOrderModal from './components/NewOrderModal';
-import { ShoppingBag, Store, BarChart3, Settings as SettingsIcon, AlertCircle, Wifi, WifiOff, Download, Menu, X, Bike, Ticket, Bell } from 'lucide-react';
+import { ShoppingBag, Store, BarChart3, Settings as SettingsIcon, AlertCircle, Wifi, WifiOff, Download, Menu, X, Bike, Ticket } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import './App.css';
 
@@ -81,65 +81,28 @@ function MainLayout() {
           // Wait for service worker to be fully active/ready
           const activeReg = await navigator.serviceWorker.ready;
           
-          // Subscribe to push notifications if VAPID key is configured
+          // Subscribe to push notifications only if supported and permission already granted
           const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-          console.log('[PWA Push] Loading VAPID Public Key:', vapidPublicKey);
-          if (vapidPublicKey) {
-            // Check if notification permission is already granted, or request it
-            let permission = Notification.permission;
-            if (permission === 'default') {
-              permission = await Notification.requestPermission();
-            }
-            
-            if (permission === 'granted') {
+          if (vapidPublicKey && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            try {
               let subscription = await activeReg.pushManager.getSubscription();
-              
               if (subscription) {
-                console.log('[PWA Push] Existing subscription found. Unsubscribing to refresh with latest VAPID key...');
-                try {
-                  await subscription.unsubscribe();
-                } catch (unsubErr) {
-                  console.warn('[PWA Push] Failed to unsubscribe existing subscription:', unsubErr);
-                }
+                await subscription.unsubscribe();
               }
-
-              console.log('[PWA Push] Subscribing with latest VAPID key...');
-              try {
-                subscription = await activeReg.pushManager.subscribe({
-                  userVisibleOnly: true,
-                  applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
-                });
-                console.log('[PWA Push] New subscription created successfully.');
-              } catch (subErr) {
-                console.error('[PWA Push] Failed to create push subscription:', subErr);
-                return;
-              }
-
+              subscription = await activeReg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+              });
               const subJson = subscription.toJSON();
-              
-              // Save to Supabase push_subscriptions table (upsert is safe for duplicates)
-              const merchantId = settings.merchantId || "6a0f03b4500ed5db150be1a1";
-              const { error } = await supabase
-                .from('push_subscriptions')
-                .upsert(
-                  { 
-                    endpoint: subJson.endpoint, 
-                    keys: subJson.keys,
-                    merchant_id: merchantId
-                  },
-                  { onConflict: 'endpoint' }
-                );
-              
-              if (error) {
-                console.error('[PWA Push] Failed to save subscription to Supabase:', error);
-              } else {
-                console.log('[PWA Push] Device successfully registered for push notifications. Merchant:', merchantId);
-                console.log('[PWA Push] iOS NOTE: Notifications only work when app is added to Home Screen (iOS 16.4+)');
-              }
-            } else {
-              console.warn('[PWA Push] Notification permission denied or not granted:', permission);
+              const merchantId = settings.merchantId || '6a0f03b4500ed5db150be1a1';
+              await supabase.from('push_subscriptions').upsert(
+                { endpoint: subJson.endpoint, keys: subJson.keys, merchant_id: merchantId },
+                { onConflict: 'endpoint' }
+              );
+              console.log('[PWA Push] Push subscription registered for merchant:', merchantId);
+            } catch (subErr) {
+              console.warn('[PWA Push] Push subscription failed:', subErr);
             }
-
           }
         } catch (err) {
           console.warn('[PWA SW] Service worker registration/subscription failed: ', err);
@@ -182,23 +145,6 @@ function MainLayout() {
     { id: 'settings', icon: SettingsIcon, label: 'Settings' },
   ];
 
-  const requestPushPermission = async () => {
-    try {
-      if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-        alert('Push Notifications are not supported in this browser. On iOS, please Add to Home Screen (PWA) first.');
-        return;
-      }
-      const perm = await Notification.requestPermission();
-      if (perm === 'granted') {
-        alert('Notification permission granted! Registering push device...');
-        window.location.reload();
-      } else {
-        alert('Notification permission was denied or dismissed.');
-      }
-    } catch (err) {
-      alert('Error requesting notification permission: ' + err.message);
-    }
-  };
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-50">
@@ -392,38 +338,20 @@ function MainLayout() {
       </aside>
 
       {/* Main Screen Content Area */}
-      <main className="flex-1 overflow-hidden h-full w-full flex flex-col">
-        {/* Push Notification Enable Banner */}
-        {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
-          <div className="bg-gradient-to-r from-amber-500 to-brand-orange text-white px-4 py-2.5 flex items-center justify-between shadow-sm shrink-0">
-            <div className="flex items-center space-x-2 text-xs font-bold">
-              <Bell size={16} className="animate-bounce shrink-0" />
-              <span className="leading-tight">Enable Mobile Push Notifications for new orders!</span>
-            </div>
-            <button
-              onClick={requestPushPermission}
-              className="bg-white text-slate-900 px-3.5 py-1.5 rounded-xl text-xs font-black hover:bg-slate-100 active:scale-95 transition-all shadow-sm shrink-0 ml-2"
-            >
-              🔔 Enable
-            </button>
+      <main className="flex-1 overflow-hidden h-full w-full">
+        {/* Dashboard manages its own internal scroll */}
+        {currentPage === 'orders' && <Dashboard />}
+        {/* Other pages need an outer scroll container */}
+        {currentPage !== 'orders' && (
+          <div className="h-full overflow-y-auto">
+            {currentPage === 'stores' && <MyStores />}
+            {currentPage === 'menu' && <MenuManagement />}
+            {currentPage === 'drivers' && <Drivers />}
+            {currentPage === 'coupons' && <Coupons />}
+            {currentPage === 'analytics' && <Analytics />}
+            {currentPage === 'settings' && <Settings />}
           </div>
         )}
-
-        <div className="flex-1 overflow-hidden relative">
-          {/* Dashboard manages its own internal scroll */}
-          {currentPage === 'orders' && <Dashboard />}
-          {/* Other pages need an outer scroll container */}
-          {currentPage !== 'orders' && (
-            <div className="h-full overflow-y-auto">
-              {currentPage === 'stores' && <MyStores />}
-              {currentPage === 'menu' && <MenuManagement />}
-              {currentPage === 'drivers' && <Drivers />}
-              {currentPage === 'coupons' && <Coupons />}
-              {currentPage === 'analytics' && <Analytics />}
-              {currentPage === 'settings' && <Settings />}
-            </div>
-          )}
-        </div>
       </main>
 
     </div>
