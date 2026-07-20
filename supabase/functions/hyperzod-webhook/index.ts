@@ -115,7 +115,7 @@ async function processOrderCoupons(orderNumber: string, customerEmail: string, p
       .eq("status", "active");
 
     if (countError) throw countError;
-    
+
     const currentActiveCount = count || 0;
     if (currentActiveCount >= 200) {
       console.warn(`Coupon issue aborted: active coupons limit (200) reached. Current: ${currentActiveCount}`);
@@ -132,7 +132,7 @@ async function processOrderCoupons(orderNumber: string, customerEmail: string, p
 
     // 4. Generate & Insert Coupon Records
     const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(); // 14 days limit
-    
+
     // We only issue up to what the cap permits
     const maxInsertCount = Math.min(couponIds.length, 200 - currentActiveCount);
     const toInsert = [];
@@ -166,7 +166,7 @@ async function processOrderCoupons(orderNumber: string, customerEmail: string, p
     // 6. Trigger external decoupled edge function for SendGrid email dispatch
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    
+
     if (SUPABASE_URL) {
       console.log(`Triggering decoupled send-coupon-email edge function for: ${cleanEmail}`);
       try {
@@ -246,7 +246,7 @@ serve(async (req) => {
     //   "order_type": "Delivery",
     //   "notes": "Please leave at door."
     // }
-    
+
     // Normalize payload wrapper (Hyperzod wraps webhooks in { event, payload })
     const data = body.payload || body;
 
@@ -257,7 +257,7 @@ serve(async (req) => {
     const customerName = data.customer_name || data.customer?.name || "Guest Customer";
     const customerPhone = data.customer_phone || data.customer?.phone || "";
     const merchantId = data.merchant_id || "restaurant_1";
-    
+
     // Map cart items
     const rawItems = data.cart_items || data.items || [];
     const items = rawItems.map((item: any) => ({
@@ -272,7 +272,7 @@ serve(async (req) => {
     const deliveryFee = Number(data.delivery_charges || data.delivery_fee) || 0.0;
     const discount = Number(data.discount || data.discount_amount) || 0.0;
     const total = Number(data.total_amount || data.total) || (subtotal + tax + deliveryFee - discount);
-    
+
     const type = (data.order_type || "dine_in").toLowerCase(); // delivery, pickup, dine_in
     let paymentMethod = "online";
     if (data.payment_mode) {
@@ -306,7 +306,7 @@ serve(async (req) => {
     // Map Hyperzod status code or label to Spoonful string status
     let mappedStatus = "incoming";
     const statusVal = data.order_status ?? data.status ?? data.status_id;
-    
+
     if (statusVal !== undefined && statusVal !== null) {
       const statusStr = statusVal.toString().toLowerCase();
       if (statusStr === "1" || statusStr === "pending" || statusStr === "incoming") {
@@ -354,7 +354,7 @@ serve(async (req) => {
       notes: JSON.stringify(body),
       updated_at: new Date().toISOString()
     };
-    
+
     // Only update fields if they were explicitly provided in the webhook payload
     if (data.payment_status) updatePayload.payment_status = paymentStatus;
     if (data.customer_name || data.customer?.name) updatePayload.customer_name = customerName;

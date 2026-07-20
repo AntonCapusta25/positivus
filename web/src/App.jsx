@@ -202,22 +202,6 @@ function MainLayout() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-50">
-
-      {/* Push Notification Enable Banner */}
-      {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
-        <div className="md:hidden fixed top-0 left-0 right-0 z-[150] bg-gradient-to-r from-amber-500 to-brand-orange text-white px-4 py-2.5 flex items-center justify-between shadow-lg">
-          <div className="flex items-center space-x-2 text-xs font-bold">
-            <Bell size={16} className="animate-bounce shrink-0" />
-            <span className="leading-tight">Enable Mobile Push Notifications for new orders!</span>
-          </div>
-          <button
-            onClick={requestPushPermission}
-            className="bg-white text-slate-900 px-3.5 py-1.5 rounded-xl text-xs font-black hover:bg-slate-100 active:scale-95 transition-all shadow-sm shrink-0 ml-2"
-          >
-            🔔 Enable
-          </button>
-        </div>
-      )}
       
       {/* ── Mobile Full-Screen Nav Overlay ── */}
       {mobileNavOpen && (
@@ -408,20 +392,38 @@ function MainLayout() {
       </aside>
 
       {/* Main Screen Content Area */}
-      <main className="flex-1 overflow-hidden h-full w-full">
-        {/* Dashboard manages its own internal scroll */}
-        {currentPage === 'orders' && <Dashboard />}
-        {/* Other pages need an outer scroll container */}
-        {currentPage !== 'orders' && (
-          <div className="h-full overflow-y-auto">
-            {currentPage === 'stores' && <MyStores />}
-            {currentPage === 'menu' && <MenuManagement />}
-            {currentPage === 'drivers' && <Drivers />}
-            {currentPage === 'coupons' && <Coupons />}
-            {currentPage === 'analytics' && <Analytics />}
-            {currentPage === 'settings' && <Settings />}
+      <main className="flex-1 overflow-hidden h-full w-full flex flex-col">
+        {/* Push Notification Enable Banner */}
+        {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
+          <div className="bg-gradient-to-r from-amber-500 to-brand-orange text-white px-4 py-2.5 flex items-center justify-between shadow-sm shrink-0">
+            <div className="flex items-center space-x-2 text-xs font-bold">
+              <Bell size={16} className="animate-bounce shrink-0" />
+              <span className="leading-tight">Enable Mobile Push Notifications for new orders!</span>
+            </div>
+            <button
+              onClick={requestPushPermission}
+              className="bg-white text-slate-900 px-3.5 py-1.5 rounded-xl text-xs font-black hover:bg-slate-100 active:scale-95 transition-all shadow-sm shrink-0 ml-2"
+            >
+              🔔 Enable
+            </button>
           </div>
         )}
+
+        <div className="flex-1 overflow-hidden relative">
+          {/* Dashboard manages its own internal scroll */}
+          {currentPage === 'orders' && <Dashboard />}
+          {/* Other pages need an outer scroll container */}
+          {currentPage !== 'orders' && (
+            <div className="h-full overflow-y-auto">
+              {currentPage === 'stores' && <MyStores />}
+              {currentPage === 'menu' && <MenuManagement />}
+              {currentPage === 'drivers' && <Drivers />}
+              {currentPage === 'coupons' && <Coupons />}
+              {currentPage === 'analytics' && <Analytics />}
+              {currentPage === 'settings' && <Settings />}
+            </div>
+          )}
+        </div>
       </main>
 
     </div>
