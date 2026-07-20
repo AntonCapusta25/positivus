@@ -273,6 +273,18 @@ export const POSProvider = ({ children }) => {
 
         if (error) throw error;
         setOrders(data || []);
+
+        // Auto-show popup if there is any pending incoming order on load
+        if (data && data.length > 0) {
+          const pendingIncoming = data.find(o => (o.status || '').toLowerCase() === 'incoming');
+          if (pendingIncoming) {
+            console.log('[POS Initial Load] Found pending incoming order:', pendingIncoming.order_number);
+            setActiveIncomingOrder(pendingIncoming);
+            if (settingsRef.current.soundAlert !== false) {
+              startSirenAlert();
+            }
+          }
+        }
       } catch (err) {
         console.error('Supabase fetch error:', err);
       }
