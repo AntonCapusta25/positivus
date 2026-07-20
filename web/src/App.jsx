@@ -145,6 +145,10 @@ function MainLayout() {
     { id: 'settings', icon: SettingsIcon, label: 'Settings' },
   ];
 
+  const navigateTo = (page) => {
+    setCurrentPage(page);
+    setMobileNavOpen(false);
+  };
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-50">
