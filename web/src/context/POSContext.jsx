@@ -310,6 +310,7 @@ export const POSProvider = ({ children }) => {
                 setActiveIncomingOrder(newOrder);
 
                 // 1.5 Auto-print if explicitly enabled
+                console.log('[AutoPrintCheck] INSERT event received for order:', newOrder.order_number, 'settings.autoPrint is:', settingsRef.current.autoPrint);
                 if (settingsRef.current.autoPrint === true) {
                   triggerTestPrint(newOrder);
                 }
@@ -1352,6 +1353,7 @@ export const POSProvider = ({ children }) => {
   };
 
   const triggerTestPrint = async (order) => {
+    console.log('[PrintTrigger] triggerTestPrint called for order:', order?.order_number || order?.id, 'autoPrint setting:', settingsRef.current.autoPrint, 'Stack:', new Error().stack);
     // 1. Android Native Webview Bridge Integration
     if (window.SunmiPrinterBridge) {
       try {
