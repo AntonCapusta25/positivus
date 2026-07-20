@@ -6,6 +6,7 @@ import Analytics from './components/Analytics';
 import Settings from './components/Settings';
 import Drivers from './components/Drivers';
 import Coupons from './components/Coupons';
+import MyStores from './components/MyStores';
 import NewOrderModal from './components/NewOrderModal';
 import { ShoppingBag, Store, BarChart3, Settings as SettingsIcon, AlertCircle, Wifi, WifiOff, Download, Menu, X, Bike, Ticket } from 'lucide-react';
 import { supabase } from './supabaseClient';
@@ -148,6 +149,7 @@ function MainLayout() {
 
   const navItems = [
     { id: 'orders', icon: ShoppingBag, label: 'Active Orders', badge: activeOrdersCount },
+    ...(userRole === 'superadmin' ? [{ id: 'stores', icon: Store, label: 'My Stores' }] : []),
     { id: 'menu', icon: Store, label: 'Storefront Menu' },
     { id: 'drivers', icon: Bike, label: 'Couriers' },
     { id: 'coupons', icon: Ticket, label: 'VIP Coupons' },
@@ -358,6 +360,7 @@ function MainLayout() {
         {/* Other pages need an outer scroll container */}
         {currentPage !== 'orders' && (
           <div className="h-full overflow-y-auto">
+            {currentPage === 'stores' && <MyStores />}
             {currentPage === 'menu' && <MenuManagement />}
             {currentPage === 'drivers' && <Drivers />}
             {currentPage === 'coupons' && <Coupons />}
@@ -425,14 +428,12 @@ function PinLockscreen() {
     setErrorMsg('');
   };
 
-  // Build merchant option list prepending/appending Superadmin roles
-  const merchantOptions = [
-    ...availableMerchants,
-    { id: 'superadmin_autoflow', name: 'AutoFlow (Superadmin)' },
-    { id: 'superadmin_raj', name: 'Raj (Superadmin)' }
+  // Clean merchant option list containing only valid store profiles
+  const merchantOptions = availableMerchants.length > 0 ? availableMerchants : [
+    { id: 'restaurant_1', name: 'Raj Curry House' }
   ];
 
-  const isSuperadminOption = selectedMerchant === 'superadmin_autoflow' || selectedMerchant === 'superadmin_raj';
+  const isSuperadminOption = false;
 
   return (
     <div className="flex items-center justify-center min-h-screen w-screen bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 font-sans p-4">

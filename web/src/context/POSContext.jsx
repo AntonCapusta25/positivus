@@ -582,28 +582,27 @@ export const POSProvider = ({ children }) => {
   const loginMerchant = (merchantId, pin) => {
     const cleanPin = pin.trim();
 
-    // Check if logging in as Superadmin
-    if (merchantId === 'superadmin_autoflow' || merchantId === 'superadmin_raj' || merchantId === 'AutoFlow' || merchantId === 'Raj') {
-      const name = (merchantId === 'superadmin_autoflow' || merchantId === 'AutoFlow') ? 'AutoFlow' : 'Raj';
-      if (cleanPin === '1234' || cleanPin === '9999') {
-        setUserRole('superadmin');
-        setSuperadminName(name);
-        localStorage.setItem('pos_user_role', 'superadmin');
-        localStorage.setItem('pos_superadmin_name', name);
+    // 1. Check if logging in with Superadmin PIN passcodes (9999 = AutoFlow, 7777 = Raj)
+    if (cleanPin === '9999' || cleanPin === '7777' || merchantId === 'superadmin_autoflow' || merchantId === 'superadmin_raj') {
+      const name = (cleanPin === '9999' || merchantId === 'superadmin_autoflow') ? 'AutoFlow' : 'Raj';
+      setUserRole('superadmin');
+      setSuperadminName(name);
+      localStorage.setItem('pos_user_role', 'superadmin');
+      localStorage.setItem('pos_superadmin_name', name);
 
-        // Pick default logged in merchant (first one) or fallback
-        const defaultId = availableMerchants[0]?.id || 'restaurant_1';
-        setAuthenticatedMerchantId(defaultId);
-        localStorage.setItem('pos_authenticated_merchant', defaultId);
-        setSettings(prev => ({ ...prev, merchantId: defaultId }));
-        return { success: true };
-      }
-      return { success: false, error: 'Incorrect Superadmin PIN passcode. Please try again.' };
+      const targetMerchant = (merchantId && merchantId !== 'superadmin_autoflow' && merchantId !== 'superadmin_raj')
+        ? merchantId
+        : (availableMerchants[0]?.id || 'restaurant_1');
+
+      setAuthenticatedMerchantId(targetMerchant);
+      localStorage.setItem('pos_authenticated_merchant', targetMerchant);
+      setSettings(prev => ({ ...prev, merchantId: targetMerchant }));
+      return { success: true, isSuperadmin: true, name };
     }
 
-    // Standard Merchant login check
+    // 2. Standard Merchant login check
     const isSpoonful = merchantId === 'restaurant_1' || merchantId === '6a0f03b4500ed5db150be1a1';
-    const last4 = merchantId.slice(-4);
+    const last4 = merchantId ? merchantId.slice(-4) : '';
     const validPins = ['1234'];
     if (last4) validPins.push(last4);
 
@@ -616,11 +615,12 @@ export const POSProvider = ({ children }) => {
       setAuthenticatedMerchantId(merchantId);
       localStorage.setItem('pos_authenticated_merchant', merchantId);
       setSettings(prev => ({ ...prev, merchantId }));
-      return { success: true };
+      return { success: true, isSuperadmin: false };
     }
 
     return { success: false, error: 'Incorrect PIN passcode. Please try again.' };
   };
+
 
   const logoutMerchant = () => {
     setAuthenticatedMerchantId(null);
