@@ -48,7 +48,7 @@ async function sendPushNotifications(newOrder: any, supabase: any) {
     const payload = JSON.stringify({
       title: "New Kitchen Order!",
       body: `Order #${newOrder.order_number} for €${Number(newOrder.total).toFixed(2)} (${newOrder.type})`,
-      url: "/"
+      url: `/?incoming_order_id=${newOrder.id}`
     });
 
     const sendPromises = subs.map((sub: any) => {

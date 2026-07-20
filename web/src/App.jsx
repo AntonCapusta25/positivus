@@ -31,8 +31,48 @@ function urlBase64ToUint8Array(base64String) {
 function MainLayout() {
   const [currentPage, setCurrentPage] = useState('orders');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const { orders, supabaseConnected, restaurantOpen, settings, setSettings, availableMerchants, logoutMerchant, userRole, superadminName } = usePOS();
+  const { orders, supabaseConnected, restaurantOpen, settings, setSettings, availableMerchants, logoutMerchant, userRole, superadminName, setActiveIncomingOrder } = usePOS();
   const [pwaInstallPrompt, setPwaInstallPrompt] = useState(null);
+
+  // Handle order query parameter from notifications
+  useEffect(() => {
+    const handleUrlQuery = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const orderId = params.get('incoming_order_id');
+        if (orderId) {
+          console.log('[PWA Navigation] Found incoming_order_id in URL:', orderId);
+          // First check if it's already in the local orders array
+          const existing = orders.find(o => o.id === orderId);
+          if (existing) {
+            setActiveIncomingOrder(existing);
+            setCurrentPage('orders'); // Go to active orders tab
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            // Fetch it directly from Supabase
+            const { data, error } = await supabase
+              .from('orders')
+              .select('*')
+              .eq('id', orderId)
+              .single();
+              
+            if (error) {
+              console.error('[PWA Navigation] Failed to fetch query order:', error);
+            } else if (data) {
+              console.log('[PWA Navigation] Fetched order from DB:', data);
+              setActiveIncomingOrder(data);
+              setCurrentPage('orders');
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[PWA Navigation] Error handling URL query:', err);
+      }
+    };
+
+    handleUrlQuery();
+  }, [orders, setActiveIncomingOrder]);
   // Safely read Notification.permission — undefined on iOS Safari browser (not PWA)
   const [notifPermission, setNotifPermission] = useState(() => {
     try { return typeof Notification !== 'undefined' ? Notification.permission : null; } catch { return null; }

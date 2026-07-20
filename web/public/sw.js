@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spoonful-pos-v2';
+const CACHE_NAME = 'spoonful-pos-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -97,11 +97,14 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Focus existing window if open
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
+      // Focus existing window client and navigate if open
+      if (windowClients.length > 0) {
+        const client = windowClients[0];
+        if ('focus' in client) {
+          client.focus();
+        }
+        if ('navigate' in client) {
+          return client.navigate(urlToOpen);
         }
       }
       // Otherwise open new window
