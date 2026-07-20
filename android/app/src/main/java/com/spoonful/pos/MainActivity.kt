@@ -161,6 +161,9 @@ class MainActivity : AppCompatActivity() {
                             refreshOrderList()
                         }
 
+                        // Show Incoming Order Popup Screen (just like web version!)
+                        showIncomingOrderDialog(order)
+
                         // Auto-print: only once per order ID, never on reconnect re-deliveries
                         if (isAutoPrintEnabled && !printedOrderIds.contains(order.id)) {
                             printedOrderIds.add(order.id)
@@ -1450,4 +1453,104 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun showIncomingOrderDialog(order: Order) {
+        try {
+            val dialogView = layoutInflater.inflate(R.layout.dialog_incoming_order, null, false)
+            val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(false)
+                .create()
+
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+            val txtOrderNo = dialogView.findViewById<TextView>(R.id.txtDialogOrderNo)
+            val txtCustomerName = dialogView.findViewById<TextView>(R.id.txtDialogCustomerName)
+            val txtCustomerPhone = dialogView.findViewById<TextView>(R.id.txtDialogCustomerPhone)
+            val txtAddress = dialogView.findViewById<TextView>(R.id.txtDialogAddress)
+            val txtTotal = dialogView.findViewById<TextView>(R.id.txtDialogTotal)
+            val containerItems = dialogView.findViewById<LinearLayout>(R.id.containerDialogItems)
+            val btnAccept = dialogView.findViewById<Button>(R.id.btnDialogAccept)
+            val btnDecline = dialogView.findViewById<Button>(R.id.btnDialogDecline)
+            val spinnerPrepTime = dialogView.findViewById<Spinner>(R.id.spinnerDialogPrepTime)
+
+            txtOrderNo.text = "#${order.orderNumber}"
+            txtCustomerName.text = "${order.customerName ?: "Customer"} (${order.type.uppercase()})"
+            txtCustomerPhone.text = if (!order.customerPhone.isNullOrEmpty()) "📞 ${order.customerPhone}" else "No phone number"
+            txtAddress.text = order.customerAddress ?: "No delivery address"
+            txtTotal.text = String.format(Locale.US, "€%.2f", order.total)
+
+            // Setup Prep Time Spinner Options
+            val prepOptions = arrayOf("15 minutes", "20 minutes", "30 minutes", "45 minutes")
+            val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, prepOptions)
+            spinnerPrepTime.adapter = adapter
+            spinnerPrepTime.setSelection(1) // Default to 20 mins
+
+            // Populate Items Container
+            containerItems.removeAllViews()
+            order.items.forEach { item ->
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { bottomMargin = dp(6) }
+                }
+
+                val txtName = TextView(this).apply {
+                    text = "${item.quantity}× ${item.name}"
+                    setTextColor(Color.parseColor("#334155"))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                    setTypeface(null, Typeface.BOLD)
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                }
+
+                val txtPrice = TextView(this).apply {
+                    text = String.format(Locale.US, "€%.2f", item.price * item.quantity)
+                    setTextColor(Color.parseColor("#0F172A"))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                    setTypeface(null, Typeface.BOLD)
+                }
+
+                row.addView(txtName)
+                row.addView(txtPrice)
+                containerItems.addView(row)
+            }
+
+            // Accept & Print Receipt
+            btnAccept.setOnClickListener {
+                dialog.dismiss()
+
+                // 1. Update status to preparing in Supabase
+                supabaseManager.updateOrderPrintedAndStatus(order.id, true, "preparing") { success ->
+                    supabaseManager.notifyHyperzodStatusUpdate(order.orderNumber, order.hyperzodOrderId, "preparing")
+                    runOnUiThread { refreshOrderList() }
+                }
+
+                // 2. Print receipt if not already printed
+                if (!printedOrderIds.contains(order.id)) {
+                    printedOrderIds.add(order.id)
+                    order.printed = true
+                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) {
+                        runOnUiThread { refreshOrderList() }
+                    }
+                }
+            }
+
+            // Decline Order
+            btnDecline.setOnClickListener {
+                dialog.dismiss()
+                supabaseManager.updateOrderPrintedAndStatus(order.id, false, "cancelled") { success ->
+                    supabaseManager.notifyHyperzodStatusUpdate(order.orderNumber, order.hyperzodOrderId, "cancelled")
+                    runOnUiThread { refreshOrderList() }
+                }
+            }
+
+
+            dialog.show()
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error showing incoming order dialog", e)
+        }
+    }
 }
+

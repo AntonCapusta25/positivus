@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_rounded_bg"
+    android:padding="20dp">
+
+    <!-- Top Badge Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔔 NEW INCOMING ORDER"
+            android:textColor="#D8581B"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:background="#FFF3EC"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/txtDialogOrderNo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="#1021"
+            android:textColor="#0F172A"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Customer Name & Order Type -->
+    <TextView
+        android:id="@+id/txtDialogCustomerName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="John Doe"
+        android:textColor="#0F172A"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/txtDialogCustomerPhone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📞 +31 6 87196711"
+        android:textColor="#64748B"
+        android:textSize="13sp"
+        android:layout_marginTop="2dp" />
+
+    <!-- Address Box -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#F8FAFC"
+        android:padding="12dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DELIVERY ADDRESS"
+            android:textColor="#94A3B8"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtDialogAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Deurningerstraat 91B, Enschede"
+            android:textColor="#334155"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <!-- Items List Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E2E8F0"
+        android:layout_marginBottom="10dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ORDER ITEMS"
+        android:textColor="#94A3B8"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="6dp" />
+
+    <!-- Items Scroll Container -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:maxHeight="160dp">
+
+        <LinearLayout
+            android:id="@+id/containerDialogItems"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <!-- Total Amount Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="10dp"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Total Amount"
+            android:textColor="#0F172A"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/txtDialogTotal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="€24.50"
+            android:textColor="#D8581B"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Prep Time Selection Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Target Prep Time:"
+            android:textColor="#64748B"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerDialogPrepTime"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="#F1F5F9" />
+    </LinearLayout>
+
+    <!-- Action Buttons Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="3">
+
+        <Button
+            android:id="@+id/btnDialogDecline"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="DECLINE"
+            android:textColor="#64748B"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:background="@drawable/btn_decline_bg"
+            android:stateListAnimator="@null" />
+
+        <Button
+            android:id="@+id/btnDialogAccept"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="2"
+            android:layout_marginStart="10dp"
+            android:text="ACCEPT &amp; PRINT"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/btn_accept_bg"
+            android:stateListAnimator="@null" />
+    </LinearLayout>
+
+</LinearLayout>

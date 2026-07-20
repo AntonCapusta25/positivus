@@ -4,16 +4,28 @@
         "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/drawable/paid_badge_bg.xml"
     },
     {
+        "merged": "com.spoonful.pos.app-debug-4:/drawable_dialog_rounded_bg.xml.flat",
+        "source": "com.spoonful.pos.app-main-6:/drawable/dialog_rounded_bg.xml"
+    },
+    {
         "merged": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-debug-4:/drawable_tab_bg_unselected.xml.flat",
         "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/drawable/tab_bg_unselected.xml"
     },
     {
-        "merged": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-debug-4:/layout_activity_main.xml.flat",
-        "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/layout/activity_main.xml"
+        "merged": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-debug-4:/drawable_logo.png.flat",
+        "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/drawable/logo.png"
     },
     {
-        "merged": "com.spoonful.pos.app-debug-4:/drawable_logo.png.flat",
-        "source": "com.spoonful.pos.app-main-6:/drawable/logo.png"
+        "merged": "com.spoonful.pos.app-debug-4:/drawable_btn_accept_bg.xml.flat",
+        "source": "com.spoonful.pos.app-main-6:/drawable/btn_accept_bg.xml"
+    },
+    {
+        "merged": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-debug-4:/drawable_plus_minus_bg.xml.flat",
+        "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/drawable/plus_minus_bg.xml"
+    },
+    {
+        "merged": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-debug-4:/layout_activity_main.xml.flat",
+        "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/layout/activity_main.xml"
     },
     {
         "merged": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-debug-4:/drawable_detail_header_bg.xml.flat",
@@ -24,15 +36,15 @@
         "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/drawable/circle_badge_bg.xml"
     },
     {
-        "merged": "com.spoonful.pos.app-debug-4:/layout_activity_main.xml.flat",
-        "source": "com.spoonful.pos.app-main-6:/layout/activity_main.xml"
+        "merged": "com.spoonful.pos.app-debug-4:/drawable_btn_decline_bg.xml.flat",
+        "source": "com.spoonful.pos.app-main-6:/drawable/btn_decline_bg.xml"
+    },
+    {
+        "merged": "com.spoonful.pos.app-debug-4:/layout_dialog_incoming_order.xml.flat",
+        "source": "com.spoonful.pos.app-main-6:/layout/dialog_incoming_order.xml"
     },
     {
         "merged": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-debug-4:/drawable_tab_bg_selected.xml.flat",
         "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/drawable/tab_bg_selected.xml"
-    },
-    {
-        "merged": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-debug-4:/drawable_plus_minus_bg.xml.flat",
-        "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/drawable/plus_minus_bg.xml"
     }
 ]

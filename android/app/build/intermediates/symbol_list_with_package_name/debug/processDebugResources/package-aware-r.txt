@@ -2968,10 +2968,12 @@ drawable abc_textfield_search_material
 drawable abc_vector_test
 drawable avd_hide_password
 drawable avd_show_password
+drawable btn_accept_bg
 drawable btn_checkbox_checked_mtrl
 drawable btn_checkbox_checked_to_unchecked_mtrl_animation
 drawable btn_checkbox_unchecked_mtrl
 drawable btn_checkbox_unchecked_to_checked_mtrl_animation
+drawable btn_decline_bg
 drawable btn_radio_off_mtrl
 drawable btn_radio_off_to_on_mtrl_animation
 drawable btn_radio_on_mtrl
@@ -2983,6 +2985,7 @@ drawable design_ic_visibility_off
 drawable design_password_eye
 drawable design_snackbar_background
 drawable detail_header_bg
+drawable dialog_rounded_bg
 drawable ic_arrow_back_black_24
 drawable ic_call_answer
 drawable ic_call_answer_low
@@ -3183,6 +3186,8 @@ id btnDetailAction
 id btnDetailAssignDriver
 id btnDetailBack
 id btnDetailPrint
+id btnDialogAccept
+id btnDialogDecline
 id btnDrawerAutoPrintToggle
 id btnDrawerClose
 id btnDrawerManagement
@@ -3238,6 +3243,7 @@ id compress
 id confirm_button
 id constraint
 id container
+id containerDialogItems
 id content
 id contentPanel
 id contiguous
@@ -3542,6 +3548,7 @@ id snapMargins
 id south
 id spacer
 id special_effects_controller_view_tag
+id spinnerDialogPrepTime
 id spline
 id split_action_bar
 id spread
@@ -3634,6 +3641,11 @@ id txtDetailTimeLabel
 id txtDetailTimeVal
 id txtDetailTotal
 id txtDetailType
+id txtDialogAddress
+id txtDialogCustomerName
+id txtDialogCustomerPhone
+id txtDialogOrderNo
+id txtDialogTotal
 id txtDrawerActiveRestaurant
 id txtDrawerAutoPrintStatus
 id txtDrawerManagementChevron
@@ -3805,6 +3817,7 @@ layout design_navigation_menu
 layout design_navigation_menu_item
 layout design_text_input_end_icon
 layout design_text_input_start_icon
+layout dialog_incoming_order
 layout ime_base_split_test_activity
 layout ime_secondary_split_test_activity
 layout m3_alert_dialog

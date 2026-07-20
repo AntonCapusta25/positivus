@@ -1,7 +1,10 @@
 R_DEF: Internal format may change without notice
 local
+drawable btn_accept_bg
+drawable btn_decline_bg
 drawable circle_badge_bg
 drawable detail_header_bg
+drawable dialog_rounded_bg
 drawable logo
 drawable paid_badge_bg
 drawable plus_minus_bg
@@ -11,6 +14,8 @@ id btnDetailAction
 id btnDetailAssignDriver
 id btnDetailBack
 id btnDetailPrint
+id btnDialogAccept
+id btnDialogDecline
 id btnDrawerAutoPrintToggle
 id btnDrawerClose
 id btnDrawerManagement
@@ -39,6 +44,7 @@ id btnTabDone
 id btnTabHandover
 id btnTabPrepare
 id btnToggleCustomerInfo
+id containerDialogItems
 id dotPrinter
 id dotSupabase
 id drawerLayout
@@ -62,6 +68,7 @@ id radioSoundNoisy
 id radioSoundQuiet
 id screenContainer
 id seekBarVolume
+id spinnerDialogPrepTime
 id switchAutoPrint
 id switchDrawerAutoPrint
 id switchEnlargeAddress
@@ -87,6 +94,11 @@ id txtDetailTimeLabel
 id txtDetailTimeVal
 id txtDetailTotal
 id txtDetailType
+id txtDialogAddress
+id txtDialogCustomerName
+id txtDialogCustomerPhone
+id txtDialogOrderNo
+id txtDialogTotal
 id txtDrawerActiveRestaurant
 id txtDrawerAutoPrintStatus
 id txtDrawerManagementChevron
@@ -105,6 +117,7 @@ id txtTabDone
 id txtTabHandover
 id txtTabPrepare
 layout activity_main
+layout dialog_incoming_order
 string app_name
 string auto_print
 string no_orders
