@@ -182,13 +182,42 @@ function MainLayout() {
     { id: 'settings', icon: SettingsIcon, label: 'Settings' },
   ];
 
-  const navigateTo = (page) => {
-    setCurrentPage(page);
-    setMobileNavOpen(false);
+  const requestPushPermission = async () => {
+    try {
+      if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+        alert('Push Notifications are not supported in this browser. On iOS, please Add to Home Screen (PWA) first.');
+        return;
+      }
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        alert('Notification permission granted! Registering push device...');
+        window.location.reload();
+      } else {
+        alert('Notification permission was denied or dismissed.');
+      }
+    } catch (err) {
+      alert('Error requesting notification permission: ' + err.message);
+    }
   };
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-50">
+
+      {/* Push Notification Enable Banner */}
+      {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
+        <div className="md:hidden fixed top-0 left-0 right-0 z-[150] bg-gradient-to-r from-amber-500 to-brand-orange text-white px-4 py-2.5 flex items-center justify-between shadow-lg">
+          <div className="flex items-center space-x-2 text-xs font-bold">
+            <Bell size={16} className="animate-bounce shrink-0" />
+            <span className="leading-tight">Enable Mobile Push Notifications for new orders!</span>
+          </div>
+          <button
+            onClick={requestPushPermission}
+            className="bg-white text-slate-900 px-3.5 py-1.5 rounded-xl text-xs font-black hover:bg-slate-100 active:scale-95 transition-all shadow-sm shrink-0 ml-2"
+          >
+            🔔 Enable
+          </button>
+        </div>
+      )}
       
       {/* ── Mobile Full-Screen Nav Overlay ── */}
       {mobileNavOpen && (
