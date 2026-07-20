@@ -60,12 +60,15 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  const title = data.title || 'New Order Received!';
+  const title = data.title || '🔔 New Kitchen Order!';
   const options = {
-    body: data.body || 'Open the dashboard to view order details.',
+    body: data.body || 'Open the Spoonful Terminal to view order details.',
     icon: '/logo-192.png',
-    badge: '/favicon.svg',
-    vibrate: [200, 100, 200, 100, 200],
+    badge: '/favicon.png',
+    vibrate: [300, 100, 300, 100, 400, 100, 500],
+    tag: `order-${data.order_number || Date.now()}`,
+    renotify: true,
+    requireInteraction: true,
     data: {
       url: data.url || '/'
     }
