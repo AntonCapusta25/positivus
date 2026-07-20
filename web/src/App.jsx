@@ -88,6 +88,16 @@ function MainLayout() {
             // Request permission
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
+              let sub = await activeReg.pushManager.getSubscription();
+              if (sub) {
+                try {
+                  await sub.unsubscribe();
+                  console.log('[PWA Push] Unsubscribed old VAPID subscription');
+                } catch (e) {
+                  console.warn('[PWA Push] Error unsubscribing old sub:', e);
+                }
+              }
+
               const subscription = await activeReg.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
@@ -102,7 +112,7 @@ function MainLayout() {
                   { 
                     endpoint: subJson.endpoint, 
                     keys: subJson.keys,
-                    merchant_id: settings.merchantId
+                    merchant_id: settings.merchantId || "6a0f03b4500ed5db150be1a1"
                   },
                   { onConflict: 'endpoint' }
                 );
@@ -115,6 +125,7 @@ function MainLayout() {
             } else {
               console.warn('[PWA Push] Notification permission denied');
             }
+
           }
         } catch (err) {
           console.warn('[PWA SW] Service worker registration/subscription failed: ', err);
