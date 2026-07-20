@@ -8,7 +8,7 @@ import Drivers from './components/Drivers';
 import Coupons from './components/Coupons';
 import MyStores from './components/MyStores';
 import NewOrderModal from './components/NewOrderModal';
-import { ShoppingBag, Store, BarChart3, Settings as SettingsIcon, AlertCircle, Wifi, WifiOff, Download, Menu, X, Bike, Ticket } from 'lucide-react';
+import { ShoppingBag, Store, BarChart3, Settings as SettingsIcon, AlertCircle, Wifi, WifiOff, Download, Menu, X, Bike, Ticket, Bell } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import './App.css';
 
