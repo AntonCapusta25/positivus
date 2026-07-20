@@ -27,15 +27,11 @@ async function sendPushNotifications(newOrder: any, supabase: any) {
       VAPID_PRIVATE_KEY
     );
 
-    // Filter by this order's specific merchant_id (including alias mapping for Raj Curry House)
-    const targetMerchants = (newOrder.merchant_id === "restaurant_1" || newOrder.merchant_id === "6a0f03b4500ed5db150be1a1")
-      ? ["restaurant_1", "6a0f03b4500ed5db150be1a1"]
-      : [newOrder.merchant_id];
-
+    // Fetch all active device subscriptions registered for push notifications
     const { data: subs, error: subsError } = await supabase
       .from("push_subscriptions")
-      .select("*")
-      .in("merchant_id", targetMerchants);
+      .select("*");
+
 
 
     if (subsError) {
