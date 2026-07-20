@@ -3,7 +3,7 @@ import { usePOS } from '../context/POSContext';
 import { Play, Plus, Minus, Bell, Printer, ShoppingBag, X, PlusCircle, MinusCircle } from 'lucide-react';
 
 export default function NewOrderModal() {
-  const { activeIncomingOrder, setActiveIncomingOrder, acceptOrder, availableMerchants, settings, sirenActive, stopSirenAlert } = usePOS();
+  const { activeIncomingOrder, setActiveIncomingOrder, acceptOrder, updateOrderStatus, availableMerchants, settings, sirenActive, stopSirenAlert } = usePOS();
   const [prepTime, setPrepTime] = useState(25); // Default preparation time: 25 mins
 
   if (!activeIncomingOrder) return null;
@@ -229,6 +229,7 @@ export default function NewOrderModal() {
             type="button"
             onClick={() => {
               stopSirenAlert();
+              updateOrderStatus(order.id, 'cancelled');
               setActiveIncomingOrder(null);
             }}
             className="flex-1 py-3 px-4 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 rounded-2xl text-sm font-bold transition-all"

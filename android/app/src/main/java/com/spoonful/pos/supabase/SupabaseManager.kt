@@ -332,6 +332,8 @@ class SupabaseManager(
         val body = JsonObject().apply {
             addProperty("table", "orders")
             addProperty("type", "UPDATE")
+            addProperty("hyperzod_api_key", "b5LztNPujIndMPYpsRhwuw07beiaFZxQ5L6Di9LEn4JfZHPzPvyFJ1xr7xls-UAzjcgg5g2GVw==")
+            addProperty("hyperzod_tenant_id", "8218")
             val record = JsonObject().apply {
                 addProperty("order_number", orderNumber)
                 addProperty("hyperzod_order_id", hyperzodOrderId)
