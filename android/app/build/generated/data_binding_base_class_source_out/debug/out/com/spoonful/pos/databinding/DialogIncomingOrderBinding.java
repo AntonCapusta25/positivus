@@ -46,6 +46,9 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
   public final TextView txtDialogOrderNo;
 
   @NonNull
+  public final TextView txtDialogTimer;
+
+  @NonNull
   public final TextView txtDialogTotal;
 
   private DialogIncomingOrderBinding(@NonNull LinearLayout rootView,
@@ -53,7 +56,7 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
       @NonNull LinearLayout containerDialogItems, @NonNull Spinner spinnerDialogPrepTime,
       @NonNull TextView txtDialogAddress, @NonNull TextView txtDialogCustomerName,
       @NonNull TextView txtDialogCustomerPhone, @NonNull TextView txtDialogOrderNo,
-      @NonNull TextView txtDialogTotal) {
+      @NonNull TextView txtDialogTimer, @NonNull TextView txtDialogTotal) {
     this.rootView = rootView;
     this.btnDialogAccept = btnDialogAccept;
     this.btnDialogDecline = btnDialogDecline;
@@ -63,6 +66,7 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
     this.txtDialogCustomerName = txtDialogCustomerName;
     this.txtDialogCustomerPhone = txtDialogCustomerPhone;
     this.txtDialogOrderNo = txtDialogOrderNo;
+    this.txtDialogTimer = txtDialogTimer;
     this.txtDialogTotal = txtDialogTotal;
   }
 
@@ -141,6 +145,12 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.txtDialogTimer;
+      TextView txtDialogTimer = ViewBindings.findChildViewById(rootView, id);
+      if (txtDialogTimer == null) {
+        break missingId;
+      }
+
       id = R.id.txtDialogTotal;
       TextView txtDialogTotal = ViewBindings.findChildViewById(rootView, id);
       if (txtDialogTotal == null) {
@@ -149,7 +159,8 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
 
       return new DialogIncomingOrderBinding((LinearLayout) rootView, btnDialogAccept,
           btnDialogDecline, containerDialogItems, spinnerDialogPrepTime, txtDialogAddress,
-          txtDialogCustomerName, txtDialogCustomerPhone, txtDialogOrderNo, txtDialogTotal);
+          txtDialogCustomerName, txtDialogCustomerPhone, txtDialogOrderNo, txtDialogTimer,
+          txtDialogTotal);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

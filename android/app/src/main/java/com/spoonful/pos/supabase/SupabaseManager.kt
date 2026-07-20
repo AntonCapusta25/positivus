@@ -198,14 +198,12 @@ class SupabaseManager(
                 {
                   "event": "INSERT",
                   "schema": "public",
-                  "table": "orders",
-                  "filter": "merchant_id=eq.$merchantId"
+                  "table": "orders"
                 },
                 {
                   "event": "UPDATE",
                   "schema": "public",
-                  "table": "orders",
-                  "filter": "merchant_id=eq.$merchantId"
+                  "table": "orders"
                 }
               ]
             }
@@ -214,8 +212,9 @@ class SupabaseManager(
         }
         """.trimIndent()
         ws.send(joinMsg)
-        Log.d(TAG, "Sent join channel request with filter: merchant_id=eq.$merchantId (INSERT & UPDATE)")
+        Log.d(TAG, "Sent join channel request for orders table (INSERT & UPDATE)")
     }
+
 
     private fun sendHeartbeat() {
         val ws = webSocket
@@ -248,11 +247,18 @@ class SupabaseManager(
                         val record = data.getAsJsonObject("record")
                         if (record != null) {
                             val order = gson.fromJson(record, Order::class.java)
-                            mainHandler.post {
-                                if (type == "INSERT") {
-                                    listener.onOrderInserted(order)
-                                } else if (type == "UPDATE") {
-                                    listener.onOrderUpdated(order)
+                            val isMatch = order.merchantId == merchantId ||
+                                    (merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
+                                     order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1")) ||
+                                    order.merchantId.isNullOrEmpty()
+
+                            if (isMatch) {
+                                mainHandler.post {
+                                    if (type == "INSERT") {
+                                        listener.onOrderInserted(order)
+                                    } else if (type == "UPDATE") {
+                                        listener.onOrderUpdated(order)
+                                    }
                                 }
                             }
                         }

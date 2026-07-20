@@ -276,19 +276,28 @@ export const POSProvider = ({ children }) => {
     fetchOrders();
 
     // Subscribe to public.orders postgres change replication
-    const ordersChannel = supabase
+    const channel = supabase
       .channel('realtime:pos_orders')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders', filter: `merchant_id=eq.${settings.merchantId}` },
+        { event: '*', schema: 'public', table: 'orders' },
         (payload) => {
+          const activeMerchantId = settingsRef.current.merchantId;
+
           if (payload.eventType === 'INSERT') {
             const newOrder = payload.new;
+            const isMatch = newOrder.merchant_id === activeMerchantId ||
+              ((activeMerchantId === 'restaurant_1' || activeMerchantId === '6a0f03b4500ed5db150be1a1') &&
+               (newOrder.merchant_id === 'restaurant_1' || newOrder.merchant_id === '6a0f03b4500ed5db150be1a1')) ||
+              !newOrder.merchant_id;
+
+            if (!isMatch) return;
+
             setOrders((prev) => {
               if (prev.some(o => o.id === newOrder.id)) return prev;
               
               // 1. Admin sound / modal alert
-              if (settingsRef.current.soundAlert) {
+              if (settingsRef.current.soundAlert !== false) {
                 startSirenAlert();
               }
               setActiveIncomingOrder(newOrder);
@@ -310,6 +319,13 @@ export const POSProvider = ({ children }) => {
             });
           } else if (payload.eventType === 'UPDATE') {
             const updatedOrder = payload.new;
+            const isMatch = updatedOrder.merchant_id === activeMerchantId ||
+              ((activeMerchantId === 'restaurant_1' || activeMerchantId === '6a0f03b4500ed5db150be1a1') &&
+               (updatedOrder.merchant_id === 'restaurant_1' || updatedOrder.merchant_id === '6a0f03b4500ed5db150be1a1')) ||
+              !updatedOrder.merchant_id;
+
+            if (!isMatch) return;
+
             setOrders((prev) => {
               const matchedPrev = prev.find(o => o.id === updatedOrder.id);
               

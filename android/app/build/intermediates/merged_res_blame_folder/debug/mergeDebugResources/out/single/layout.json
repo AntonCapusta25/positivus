@@ -6,5 +6,9 @@
     {
         "merged": "com.spoonful.pos.app-mergeDebugResources-3:/layout/dialog_incoming_order.xml",
         "source": "com.spoonful.pos.app-main-6:/layout/dialog_incoming_order.xml"
+    },
+    {
+        "merged": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-mergeDebugResources-3:/layout/dialog_incoming_order.xml",
+        "source": "/Users/alexandrfilippov/.gradle/daemon/9.5.1/com.spoonful.pos.app-main-6:/layout/dialog_incoming_order.xml"
     }
 ]

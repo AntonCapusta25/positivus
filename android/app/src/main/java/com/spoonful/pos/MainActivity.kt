@@ -182,28 +182,22 @@ class MainActivity : AppCompatActivity() {
                         val index = ordersList.indexOfFirst { it.id == order.id }
                         if (index != -1) {
                             val existingOrder = ordersList[index]
-                            
-                            // Check if a remote print was requested (printRequestedAt changed to a new timestamp)
-                            val isNewPrintRequest = order.printRequestedAt != null && 
-                                    order.printRequestedAt != existingOrder.printRequestedAt
-                                    
-                            // Update local list object
+                            val printTs = order.printRequestedAt
+                            val isNewPrintRequest = printTs != null && printTs != existingOrder.printRequestedAt
+
                             ordersList[index] = order
                             refreshOrderList()
                             
-                            // Also update selectedOrder reference if the user has it open
                             if (selectedOrder?.id == order.id) {
                                 openOrderDetail(order)
                             }
                             
-                            if (isNewPrintRequest) {
+                            if (isNewPrintRequest && printTs != null && !printedOrderIds.contains(printTs)) {
+                                printedOrderIds.add(printTs)
                                 android.util.Log.d("MainActivity", "Remote print request received for order: ${order.orderNumber}")
                                 printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
                                     if (success) {
-                                        // Mark as printed in database so everyone is synced
-                                        supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status) {
-                                            // Done
-                                        }
+                                        supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
                                     }
                                 }
                             }
@@ -211,7 +205,8 @@ class MainActivity : AppCompatActivity() {
                             // If it's not in the list for some reason, add it
                             ordersList.add(0, order)
                             refreshOrderList()
-                            if (order.printRequestedAt != null) {
+                            if (isAutoPrintEnabled && order.printRequestedAt != null && !printedOrderIds.contains(order.id)) {
+                                printedOrderIds.add(order.id)
                                 printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
                                     if (success) {
                                         supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
@@ -219,6 +214,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
                         }
+
                     }
                 }
 
@@ -1456,6 +1452,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showIncomingOrderDialog(order: Order) {
         try {
+            playIncomingOrderSound()
+
             val dialogView = layoutInflater.inflate(R.layout.dialog_incoming_order, null, false)
             val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -1469,6 +1467,7 @@ class MainActivity : AppCompatActivity() {
             val txtCustomerPhone = dialogView.findViewById<TextView>(R.id.txtDialogCustomerPhone)
             val txtAddress = dialogView.findViewById<TextView>(R.id.txtDialogAddress)
             val txtTotal = dialogView.findViewById<TextView>(R.id.txtDialogTotal)
+            val txtTimer = dialogView.findViewById<TextView>(R.id.txtDialogTimer)
             val containerItems = dialogView.findViewById<LinearLayout>(R.id.containerDialogItems)
             val btnAccept = dialogView.findViewById<Button>(R.id.btnDialogAccept)
             val btnDecline = dialogView.findViewById<Button>(R.id.btnDialogDecline)
@@ -1479,6 +1478,24 @@ class MainActivity : AppCompatActivity() {
             txtCustomerPhone.text = if (!order.customerPhone.isNullOrEmpty()) "📞 ${order.customerPhone}" else "No phone number"
             txtAddress.text = order.customerAddress ?: "No delivery address"
             txtTotal.text = String.format(Locale.US, "€%.2f", order.total)
+
+            // Setup Live Counting Timer
+            val startTime = System.currentTimeMillis()
+            val timerHandler = android.os.Handler(android.os.Looper.getMainLooper())
+            val timerRunnable = object : Runnable {
+                override fun run() {
+                    val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+                    val mins = elapsedSeconds / 60
+                    val secs = elapsedSeconds % 60
+                    txtTimer?.text = String.format(Locale.US, "⏱ %02d:%02d", mins, secs)
+                    timerHandler.postDelayed(this, 1000)
+                }
+            }
+            timerHandler.post(timerRunnable)
+
+            dialog.setOnDismissListener {
+                timerHandler.removeCallbacks(timerRunnable)
+            }
 
             // Setup Prep Time Spinner Options
             val prepOptions = arrayOf("15 minutes", "20 minutes", "30 minutes", "45 minutes")
@@ -1546,11 +1563,29 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-
             dialog.show()
+            dialog.window?.setLayout(
+                (resources.displayMetrics.widthPixels * 0.92).toInt(),
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Error showing incoming order dialog", e)
         }
     }
+
+    private fun playIncomingOrderSound() {
+        try {
+            val uri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM)
+                ?: android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+            val ringtone = android.media.RingtoneManager.getRingtone(applicationContext, uri)
+            ringtone.play()
+        } catch (e: Exception) {
+            try {
+                val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_ALARM, 100)
+                toneGen.startTone(android.media.ToneGenerator.TONE_CDMA_HIGH_L, 1000)
+            } catch (t: Exception) {}
+        }
+    }
+
 }
 

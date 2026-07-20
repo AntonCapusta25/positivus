@@ -98,6 +98,7 @@ id txtDialogAddress
 id txtDialogCustomerName
 id txtDialogCustomerPhone
 id txtDialogOrderNo
+id txtDialogTimer
 id txtDialogTotal
 id txtDrawerActiveRestaurant
 id txtDrawerAutoPrintStatus
