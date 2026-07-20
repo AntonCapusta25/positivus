@@ -33,6 +33,10 @@ function MainLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { orders, supabaseConnected, restaurantOpen, settings, setSettings, availableMerchants, logoutMerchant, userRole, superadminName } = usePOS();
   const [pwaInstallPrompt, setPwaInstallPrompt] = useState(null);
+  // Safely read Notification.permission — undefined on iOS Safari browser (not PWA)
+  const [notifPermission, setNotifPermission] = useState(() => {
+    try { return typeof Notification !== 'undefined' ? Notification.permission : null; } catch { return null; }
+  });
 
   // Listen to PWA installability prompt trigger
   useEffect(() => {
@@ -58,71 +62,76 @@ function MainLayout() {
     }
   };
 
-  // Register PWA service worker and subscribe to Push notifications
+  // Register PWA service worker + subscribe to push if permission already granted
+  const registerPushSubscription = async () => {
+    try {
+      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      if (!vapidPublicKey || typeof Notification === 'undefined') return;
+      if (!('serviceWorker' in navigator)) return;
+      const activeReg = await navigator.serviceWorker.ready;
+      let subscription = await activeReg.pushManager.getSubscription();
+      if (subscription) { try { await subscription.unsubscribe(); } catch {} }
+      subscription = await activeReg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+      });
+      const subJson = subscription.toJSON();
+      const merchantId = settings.merchantId || '6a0f03b4500ed5db150be1a1';
+      await supabase.from('push_subscriptions').upsert(
+        { endpoint: subJson.endpoint, keys: subJson.keys, merchant_id: merchantId },
+        { onConflict: 'endpoint' }
+      );
+      console.log('[PWA Push] Push subscription registered for merchant:', merchantId);
+    } catch (err) {
+      console.warn('[PWA Push] Subscription failed:', err);
+    }
+  };
+
+  // Request notification permission (called from button tap — required by iOS)
+  const enablePushNotifications = async () => {
+    try {
+      if (typeof Notification === 'undefined') {
+        alert('Push notifications require the app to be Added to Home Screen on iOS 16.4+');
+        return;
+      }
+      const perm = await Notification.requestPermission();
+      setNotifPermission(perm);
+      if (perm === 'granted') {
+        await registerPushSubscription();
+        alert('✅ Push notifications enabled! You will receive alerts for new orders.');
+      } else {
+        alert('❌ Permission not granted. Please allow notifications in iPhone Settings → Spoonful POS → Notifications.');
+      }
+    } catch (err) {
+      console.warn('[PWA Push] Permission request failed:', err);
+    }
+  };
+
   useEffect(() => {
     let controllerChangeCleanup = () => {};
-
     if ('serviceWorker' in navigator) {
-      const handleControllerChange = () => {
-        console.log('[PWA SW] Service worker controller changed. Reloading page for updates...');
-        window.location.reload();
-      };
-      
+      const handleControllerChange = () => { window.location.reload(); };
       navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
-      controllerChangeCleanup = () => {
-        navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
-      };
+      controllerChangeCleanup = () => navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
 
       const registerSW = async () => {
         try {
-          const reg = await navigator.serviceWorker.register('/sw.js');
-          console.log('[PWA SW] Service worker registered successfully: ', reg.scope);
-          
-          // Wait for service worker to be fully active/ready
-          const activeReg = await navigator.serviceWorker.ready;
-          
-          // Subscribe to push notifications only if supported and permission already granted
-          const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-          if (vapidPublicKey && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            try {
-              let subscription = await activeReg.pushManager.getSubscription();
-              if (subscription) {
-                await subscription.unsubscribe();
-              }
-              subscription = await activeReg.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
-              });
-              const subJson = subscription.toJSON();
-              const merchantId = settings.merchantId || '6a0f03b4500ed5db150be1a1';
-              await supabase.from('push_subscriptions').upsert(
-                { endpoint: subJson.endpoint, keys: subJson.keys, merchant_id: merchantId },
-                { onConflict: 'endpoint' }
-              );
-              console.log('[PWA Push] Push subscription registered for merchant:', merchantId);
-            } catch (subErr) {
-              console.warn('[PWA Push] Push subscription failed:', subErr);
-            }
+          await navigator.serviceWorker.register('/sw.js');
+          // Auto-subscribe if already granted (returning user)
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            await registerPushSubscription();
           }
         } catch (err) {
-          console.warn('[PWA SW] Service worker registration/subscription failed: ', err);
+          console.warn('[PWA SW] Registration failed:', err);
         }
       };
 
       if (document.readyState === 'complete') {
         registerSW();
-        return () => {
-          controllerChangeCleanup();
-        };
+        return () => { controllerChangeCleanup(); };
       } else {
-        const loadHandler = () => {
-          registerSW();
-        };
-        window.addEventListener('load', loadHandler);
-        return () => {
-          window.removeEventListener('load', loadHandler);
-          controllerChangeCleanup();
-        };
+        window.addEventListener('load', registerSW);
+        return () => { window.removeEventListener('load', registerSW); controllerChangeCleanup(); };
       }
     }
   }, [settings.merchantId]);
@@ -199,24 +208,34 @@ function MainLayout() {
           </div>
 
           {/* Overlay footer */}
-          <div className="p-4 border-t border-slate-800 flex items-center justify-between shrink-0">
-            <div className="flex items-center space-x-2">
-              {supabaseConnected
-                ? <Wifi size={14} className="text-emerald-500" />
-                : <WifiOff size={14} className="text-red-500" />}
-              <span className={`text-xs font-semibold ${supabaseConnected ? 'text-slate-400' : 'text-red-400'}`}>
-                {supabaseConnected ? 'Live Connection' : 'Offline'}
-              </span>
-              <span className="text-slate-700 text-xs">•</span>
-              <div className={`w-2 h-2 rounded-full ${restaurantOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-              <span className="text-slate-400 text-xs capitalize">{restaurantOpen ? 'Store Open' : 'Closed'}</span>
+          <div className="p-4 border-t border-slate-800 flex flex-col space-y-3 shrink-0">
+            {notifPermission !== 'granted' && (
+              <button
+                onClick={enablePushNotifications}
+                className="w-full py-3 px-4 bg-brand-orange text-white font-extrabold rounded-2xl text-sm flex items-center justify-center space-x-2 active:scale-95 transition-all shadow-md shadow-brand-orange/25"
+              >
+                <span>🔔 Enable Push Notifications</span>
+              </button>
+            )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {supabaseConnected
+                  ? <Wifi size={14} className="text-emerald-500" />
+                  : <WifiOff size={14} className="text-red-500" />}
+                <span className={`text-xs font-semibold ${supabaseConnected ? 'text-slate-400' : 'text-red-400'}`}>
+                  {supabaseConnected ? 'Live Connection' : 'Offline'}
+                </span>
+                <span className="text-slate-700 text-xs">•</span>
+                <div className={`w-2 h-2 rounded-full ${restaurantOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                <span className="text-slate-400 text-xs capitalize">{restaurantOpen ? 'Store Open' : 'Closed'}</span>
+              </div>
+              <button
+                onClick={logoutMerchant}
+                className="text-xs font-extrabold text-rose-500 border border-rose-500/30 px-3 py-2 rounded-xl active:scale-95 transition-all"
+              >
+                Sign Out
+              </button>
             </div>
-            <button
-              onClick={logoutMerchant}
-              className="text-xs font-extrabold text-rose-500 border border-rose-500/30 px-3 py-2 rounded-xl active:scale-95 transition-all"
-            >
-              Sign Out
-            </button>
           </div>
         </div>
       )}
@@ -310,10 +329,19 @@ function MainLayout() {
 
         {/* Sidebar Footer Controls — desktop only */}
         <div className="hidden md:block p-4 border-t border-slate-800 space-y-4">
+          {notifPermission !== 'granted' && (
+            <button
+              onClick={enablePushNotifications}
+              className="w-full py-2.5 px-3 bg-brand-orange hover:bg-opacity-95 text-white font-extrabold rounded-xl text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-95"
+            >
+              <span>🔔 Enable Push Notifications</span>
+            </button>
+          )}
+
           {pwaInstallPrompt && (
             <button
               onClick={triggerPwaInstall}
-              className="w-full py-2 px-3 bg-brand-orange hover:bg-opacity-95 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-2 transition-all shadow-sm"
+              className="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-2 transition-all shadow-sm"
             >
               <Download size={14} />
               <span>Install Web App</span>
