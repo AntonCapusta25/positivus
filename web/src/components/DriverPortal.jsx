@@ -611,8 +611,16 @@ export default function DriverPortal() {
                     ) : (
                       <GoogleMap
                         mapContainerStyle={{ width: '100%', height: '100%' }}
-                        center={{ lat: driverCoords[0], lng: driverCoords[1] }}
-                        zoom={14}
+                        center={{ lat: (driverCoords[0] + customerCoords[0]) / 2, lng: (driverCoords[1] + customerCoords[1]) / 2 }}
+                        zoom={13}
+                        onLoad={(map) => {
+                          if (window.google?.maps) {
+                            const bounds = new window.google.maps.LatLngBounds();
+                            bounds.extend({ lat: driverCoords[0], lng: driverCoords[1] });
+                            bounds.extend({ lat: customerCoords[0], lng: customerCoords[1] });
+                            map.fitBounds(bounds, { top: 30, right: 30, bottom: 30, left: 30 });
+                          }
+                        }}
                         options={{
                           disableDefaultUI: true,
                           zoomControl: true,
@@ -621,12 +629,13 @@ export default function DriverPortal() {
                         {directionsResponse && (
                           <DirectionsRenderer 
                             directions={directionsResponse}
-                            options={{ suppressMarkers: true, polylineOptions: { strokeColor: '#ff6b00', strokeWeight: 4 } }}
+                            options={{ suppressMarkers: true, polylineOptions: { strokeColor: '#ff6b00', strokeWeight: 5 } }}
                           />
                         )}
-                        <Marker position={{ lat: driverCoords[0], lng: driverCoords[1] }} label="🛵" />
-                        <Marker position={{ lat: customerCoords[0], lng: customerCoords[1] }} label="📍" />
+                        <Marker position={{ lat: driverCoords[0], lng: driverCoords[1] }} label="🛵" title="Courier / Restaurant" />
+                        <Marker position={{ lat: customerCoords[0], lng: customerCoords[1] }} label="📍" title="Customer Destination" />
                       </GoogleMap>
+
                     )}
                   </div>
                   
@@ -669,14 +678,16 @@ export default function DriverPortal() {
                   ) : (
                     <>
                       <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeOrder.customer_address || '')}`}
+                        href={`https://www.google.com/maps/dir/?api=1&origin=${driverCoords[0]},${driverCoords[1]}&destination=${customerCoords[0]},${customerCoords[1]}&travelmode=driving`}
                         target="_blank"
                         rel="noreferrer"
-                        className="bg-slate-800 hover:bg-slate-750 text-white font-bold p-3.5 rounded-xl text-sm flex items-center justify-center transition-all shrink-0"
-                        title="Navigate via GPS"
+                        className="bg-brand-orange hover:bg-opacity-95 text-white font-black py-3.5 px-4 rounded-xl text-sm flex items-center justify-center space-x-2 transition-all shadow-lg shadow-brand-orange/20 shrink-0"
+                        title="Start Turn-by-Turn GPS Navigation"
                       >
-                        <Navigation size={18} className="text-brand-orange" />
+                        <Navigation size={18} />
+                        <span>Start Navigation</span>
                       </a>
+
                       
                       {activeOrder.status === 'ready' && (
                         <button
