@@ -55,16 +55,34 @@ export default function DriverPortal() {
     };
   }, []);
 
-  // Geocode active order customer address using Google Maps Geocoder or Nominatim
+  // Geocode active order customer address using payload lat/lon, Google Maps Geocoder, or Nominatim
   useEffect(() => {
     if (!activeOrder) return;
     
     const geocodeAddress = async () => {
+      // 1. Direct Hyperzod Payload GPS Extraction (Highest Accuracy)
+      if (activeOrder.notes) {
+        try {
+          const parsed = typeof activeOrder.notes === 'string' ? JSON.parse(activeOrder.notes) : activeOrder.notes;
+          const payloadData = parsed.payload || parsed;
+          const addrObj = payloadData.address || payloadData.delivery_address || payloadData;
+          if (addrObj && Array.isArray(addrObj.location_lat_lon) && addrObj.location_lat_lon.length === 2) {
+            const lat = parseFloat(addrObj.location_lat_lon[0]);
+            const lon = parseFloat(addrObj.location_lat_lon[1]);
+            if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+              setCustomerCoords([lat, lon]);
+              return;
+            }
+          }
+        } catch (e) {}
+      }
+
       const address = activeOrder.customer_address;
       if (!address) {
         setCustomerCoords([driverCoords[0] + 0.005, driverCoords[1] + 0.005]);
         return;
       }
+
       
       // 1. Try Google Maps Geocoder if Google Maps API is loaded
       if (isLoaded && window.google?.maps?.Geocoder) {
