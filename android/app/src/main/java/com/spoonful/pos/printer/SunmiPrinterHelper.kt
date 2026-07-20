@@ -219,7 +219,11 @@ class SunmiPrinterHelper(private val context: Context) {
             bodyBuilder.append("--------------------------------\n")
             
             val courierText = if (order.type.lowercase(Locale.getDefault()) == "delivery") {
-                "Courier: takeaway Thuisbezorgd.nl ${order.orderNumber.substringAfterLast("-")}"
+                if (!order.driverName.isNullOrEmpty()) {
+                    "Courier: ${order.driverName}"
+                } else {
+                    "Courier: Unassigned (Claim via QR)"
+                }
             } else {
                 "Order: ${order.orderNumber}"
             }
@@ -310,7 +314,8 @@ class SunmiPrinterHelper(private val context: Context) {
             // 7. QR code & spacing
             service.setAlignment(1, printCallback)
             if (order.type.lowercase(Locale.getDefault()) == "delivery") {
-                val driverUrl = "https://positivus-two-iota.vercel.app/driver?order_id=${order.id}"
+                val driverParam = if (!order.driverName.isNullOrEmpty()) "&driver=" + java.net.URLEncoder.encode(order.driverName, "UTF-8") else ""
+                val driverUrl = "https://positivus-two-iota.vercel.app/driver?order_id=${order.id}$driverParam"
                 service.printQRCode(driverUrl, 6, 1, printCallback)
             } else {
                 val shopUrl = if (isRajCurry) "https://rajcurryhouse.nl" else "https://spoonful.nl"

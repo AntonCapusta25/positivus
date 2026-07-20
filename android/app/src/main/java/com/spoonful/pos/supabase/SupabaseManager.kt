@@ -315,6 +315,42 @@ class SupabaseManager(
     }
 
     /**
+     * Update assigned driver name for an order in Supabase database
+     */
+    fun assignDriverToOrder(orderId: String, driverName: String, onComplete: (Boolean) -> Unit = {}) {
+        val url = "$supabaseUrl/rest/v1/orders?id=eq.$orderId"
+        
+        val updatePayload = JsonObject().apply {
+            addProperty("driver_name", driverName)
+        }
+
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(updatePayload).toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .addHeader("Content-Type", "application/json")
+            .patch(requestBody)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, "Failed to update driver name", e)
+                mainHandler.post { onComplete(false) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    val success = response.isSuccessful
+                    mainHandler.post { onComplete(success) }
+                }
+            }
+        })
+    }
+
+    /**
      * Notify Hyperzod of an order status change by calling the hyperzod-sync Edge Function.
      * This mirrors what the web app does so the Android POS can push status changes back.
      * @param orderNumber  the order_number stored in our DB (used by hyperzod-sync to look up the order)

@@ -1512,13 +1512,43 @@ class MainActivity : AppCompatActivity() {
                 timerHandler.removeCallbacks(timerRunnable)
             }
 
+            val layoutDialogDriver = dialogView.findViewById<LinearLayout>(R.id.layoutDialogDriver)
+            val spinnerDialogDriver = dialogView.findViewById<Spinner>(R.id.spinnerDialogDriver)
+
+            val isDelivery = order.type.lowercase(Locale.getDefault()) == "delivery"
+            var driverNamesList = listOf("Unassigned (Claim via QR)")
+            if (isDelivery) {
+                layoutDialogDriver.visibility = View.VISIBLE
+                supabaseManager.fetchDrivers { driversJson ->
+                    runOnUiThread {
+                        val names = driversJson.map { it.get("name")?.asString ?: "Driver" }
+                        driverNamesList = listOf("Unassigned (Claim via QR)") + names
+                        val driverAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, driverNamesList)
+                        driverAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                        spinnerDialogDriver.adapter = driverAdapter
+                    }
+                }
+            } else {
+                layoutDialogDriver.visibility = View.GONE
+            }
+
             // Accept & Print Receipt
             btnAccept.setOnClickListener {
                 stopIncomingOrderSound()
                 dialog.dismiss()
 
-                // 1. Update status to preparing in Supabase
+                // Check driver selection
+                var chosenDriver: String? = null
+                if (isDelivery && spinnerDialogDriver.selectedItemPosition > 0) {
+                    chosenDriver = driverNamesList[spinnerDialogDriver.selectedItemPosition]
+                    order.driverName = chosenDriver
+                }
+
+                // 1. Update status to preparing in Supabase & driver if selected
                 supabaseManager.updateOrderPrintedAndStatus(order.id, true, "preparing") { success ->
+                    if (chosenDriver != null) {
+                        supabaseManager.assignDriverToOrder(order.id, chosenDriver)
+                    }
                     supabaseManager.notifyHyperzodStatusUpdate(order.orderNumber, order.hyperzodOrderId, "preparing")
                     runOnUiThread { refreshOrderList() }
                 }

@@ -3,8 +3,9 @@ import { usePOS } from '../context/POSContext';
 import { Play, Plus, Minus, Bell, Printer, ShoppingBag, X, PlusCircle, MinusCircle } from 'lucide-react';
 
 export default function NewOrderModal() {
-  const { activeIncomingOrder, setActiveIncomingOrder, acceptOrder, updateOrderStatus, availableMerchants, settings, sirenActive, stopSirenAlert } = usePOS();
+  const { activeIncomingOrder, setActiveIncomingOrder, acceptOrder, updateOrderStatus, assignOrderDriver, drivers, availableMerchants, settings, sirenActive, stopSirenAlert } = usePOS();
   const [prepTime, setPrepTime] = useState(25); // Default preparation time: 25 mins
+  const [selectedDriver, setSelectedDriver] = useState('');
 
   if (!activeIncomingOrder) return null;
 
@@ -216,7 +217,26 @@ export default function NewOrderModal() {
                 >
                   +20m
                 </button>
-              </div>
+              {/* Driver Selector for Delivery Orders */}
+              {(order.type || '').toLowerCase() === 'delivery' && (
+                <div className="w-full pt-2 border-t border-slate-100 flex flex-col items-center">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Assign Delivery Driver
+                  </label>
+                  <select
+                    value={selectedDriver}
+                    onChange={(e) => setSelectedDriver(e.target.value)}
+                    className="w-full max-w-xs bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm focus:outline-none focus:border-brand-orange"
+                  >
+                    <option value="">Unassigned (Claim via QR)</option>
+                    {(drivers || []).map((d) => (
+                      <option key={d.id} value={d.name}>
+                        🛵 {d.name} {d.phone ? `(${d.phone})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
           </div>
@@ -239,8 +259,11 @@ export default function NewOrderModal() {
           
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
               stopSirenAlert();
+              if (selectedDriver) {
+                await assignOrderDriver(order.id, selectedDriver, 15);
+              }
               acceptOrder(order.id, prepTime);
             }}
             className="flex-[2] py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 text-white rounded-2xl text-sm font-black transition-all flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/10"

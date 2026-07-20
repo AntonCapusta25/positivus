@@ -31,6 +31,12 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
   public final LinearLayout containerDialogItems;
 
   @NonNull
+  public final LinearLayout layoutDialogDriver;
+
+  @NonNull
+  public final Spinner spinnerDialogDriver;
+
+  @NonNull
   public final Spinner spinnerDialogPrepTime;
 
   @NonNull
@@ -53,7 +59,8 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
 
   private DialogIncomingOrderBinding(@NonNull LinearLayout rootView,
       @NonNull Button btnDialogAccept, @NonNull Button btnDialogDecline,
-      @NonNull LinearLayout containerDialogItems, @NonNull Spinner spinnerDialogPrepTime,
+      @NonNull LinearLayout containerDialogItems, @NonNull LinearLayout layoutDialogDriver,
+      @NonNull Spinner spinnerDialogDriver, @NonNull Spinner spinnerDialogPrepTime,
       @NonNull TextView txtDialogAddress, @NonNull TextView txtDialogCustomerName,
       @NonNull TextView txtDialogCustomerPhone, @NonNull TextView txtDialogOrderNo,
       @NonNull TextView txtDialogTimer, @NonNull TextView txtDialogTotal) {
@@ -61,6 +68,8 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
     this.btnDialogAccept = btnDialogAccept;
     this.btnDialogDecline = btnDialogDecline;
     this.containerDialogItems = containerDialogItems;
+    this.layoutDialogDriver = layoutDialogDriver;
+    this.spinnerDialogDriver = spinnerDialogDriver;
     this.spinnerDialogPrepTime = spinnerDialogPrepTime;
     this.txtDialogAddress = txtDialogAddress;
     this.txtDialogCustomerName = txtDialogCustomerName;
@@ -115,6 +124,18 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.layoutDialogDriver;
+      LinearLayout layoutDialogDriver = ViewBindings.findChildViewById(rootView, id);
+      if (layoutDialogDriver == null) {
+        break missingId;
+      }
+
+      id = R.id.spinnerDialogDriver;
+      Spinner spinnerDialogDriver = ViewBindings.findChildViewById(rootView, id);
+      if (spinnerDialogDriver == null) {
+        break missingId;
+      }
+
       id = R.id.spinnerDialogPrepTime;
       Spinner spinnerDialogPrepTime = ViewBindings.findChildViewById(rootView, id);
       if (spinnerDialogPrepTime == null) {
@@ -158,9 +179,9 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
       }
 
       return new DialogIncomingOrderBinding((LinearLayout) rootView, btnDialogAccept,
-          btnDialogDecline, containerDialogItems, spinnerDialogPrepTime, txtDialogAddress,
-          txtDialogCustomerName, txtDialogCustomerPhone, txtDialogOrderNo, txtDialogTimer,
-          txtDialogTotal);
+          btnDialogDecline, containerDialogItems, layoutDialogDriver, spinnerDialogDriver,
+          spinnerDialogPrepTime, txtDialogAddress, txtDialogCustomerName, txtDialogCustomerPhone,
+          txtDialogOrderNo, txtDialogTimer, txtDialogTotal);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

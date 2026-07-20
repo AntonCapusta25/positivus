@@ -23,6 +23,7 @@ data class Order(
     @SerializedName("print_requested_at") var printRequestedAt: String? = null,
     @SerializedName("merchant_id") val merchantId: String? = null,
     @SerializedName("customer_address") val customerAddress: String? = null,
+    @SerializedName("driver_name") var driverName: String? = null,
     @SerializedName("created_at") val createdAt: String
 )
 

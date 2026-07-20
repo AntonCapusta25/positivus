@@ -52,6 +52,7 @@ id drawerPane
 id headerBar
 id layoutCustomerDetails
 id layoutDetailItemsContainer
+id layoutDialogDriver
 id layoutDrawerManagementSub
 id layoutDrawerSettingsSub
 id layoutOrderDetail
@@ -68,6 +69,7 @@ id radioSoundNoisy
 id radioSoundQuiet
 id screenContainer
 id seekBarVolume
+id spinnerDialogDriver
 id spinnerDialogPrepTime
 id switchAutoPrint
 id switchDrawerAutoPrint

@@ -169,7 +169,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="12dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -181,6 +181,32 @@
 
         <Spinner
             android:id="@+id/spinnerDialogPrepTime"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="#F1F5F9" />
+    </LinearLayout>
+
+    <!-- Driver Selection Row (for Delivery orders) -->
+    <LinearLayout
+        android:id="@+id/layoutDialogDriver"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Assign Driver:"
+            android:textColor="#64748B"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerDialogDriver"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
