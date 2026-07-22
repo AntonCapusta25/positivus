@@ -1478,6 +1478,7 @@ class MainActivity : AppCompatActivity() {
 
             val txtOrderNo = dialogView.findViewById<TextView>(R.id.txtDialogOrderNo)
             val txtCustomerName = dialogView.findViewById<TextView>(R.id.txtDialogCustomerName)
+            val txtCustomerLoyalty = dialogView.findViewById<TextView>(R.id.txtDialogCustomerLoyalty)
             val txtCustomerPhone = dialogView.findViewById<TextView>(R.id.txtDialogCustomerPhone)
             val txtAddress = dialogView.findViewById<TextView>(R.id.txtDialogAddress)
             val txtTotal = dialogView.findViewById<TextView>(R.id.txtDialogTotal)
@@ -1489,6 +1490,28 @@ class MainActivity : AppCompatActivity() {
 
             txtOrderNo.text = "#${order.orderNumber}"
             txtCustomerName.text = "${order.customerName ?: "Customer"} (${order.type.uppercase()})"
+            
+            val orderCount = order.customerOrderCount ?: 1
+            if (orderCount > 1) {
+                txtCustomerLoyalty.text = "RETURNING (${orderCount}th order)"
+                txtCustomerLoyalty.setTextColor(Color.parseColor("#065F46"))
+                txtCustomerLoyalty.background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = dp(12).toFloat()
+                    setColor(Color.parseColor("#D1FAE5"))
+                    setStroke(dp(1), Color.parseColor("#A7F3D0"))
+                }
+            } else {
+                txtCustomerLoyalty.text = "NEW CUSTOMER"
+                txtCustomerLoyalty.setTextColor(Color.parseColor("#92400E"))
+                txtCustomerLoyalty.background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = dp(12).toFloat()
+                    setColor(Color.parseColor("#FEF3C7"))
+                    setStroke(dp(1), Color.parseColor("#FDE68A"))
+                }
+            }
+
             txtCustomerPhone.text = if (!order.customerPhone.isNullOrEmpty()) "📞 ${order.customerPhone}" else "No phone number"
             txtAddress.text = order.customerAddress ?: "No delivery address"
             txtTotal.text = String.format(Locale.US, "€%.2f", order.total)

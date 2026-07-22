@@ -43,6 +43,9 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
   public final TextView txtDialogAddress;
 
   @NonNull
+  public final TextView txtDialogCustomerLoyalty;
+
+  @NonNull
   public final TextView txtDialogCustomerName;
 
   @NonNull
@@ -61,9 +64,10 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
       @NonNull Button btnDialogAccept, @NonNull Button btnDialogDecline,
       @NonNull LinearLayout containerDialogItems, @NonNull LinearLayout layoutDialogDriver,
       @NonNull Spinner spinnerDialogDriver, @NonNull Spinner spinnerDialogPrepTime,
-      @NonNull TextView txtDialogAddress, @NonNull TextView txtDialogCustomerName,
-      @NonNull TextView txtDialogCustomerPhone, @NonNull TextView txtDialogOrderNo,
-      @NonNull TextView txtDialogTimer, @NonNull TextView txtDialogTotal) {
+      @NonNull TextView txtDialogAddress, @NonNull TextView txtDialogCustomerLoyalty,
+      @NonNull TextView txtDialogCustomerName, @NonNull TextView txtDialogCustomerPhone,
+      @NonNull TextView txtDialogOrderNo, @NonNull TextView txtDialogTimer,
+      @NonNull TextView txtDialogTotal) {
     this.rootView = rootView;
     this.btnDialogAccept = btnDialogAccept;
     this.btnDialogDecline = btnDialogDecline;
@@ -72,6 +76,7 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
     this.spinnerDialogDriver = spinnerDialogDriver;
     this.spinnerDialogPrepTime = spinnerDialogPrepTime;
     this.txtDialogAddress = txtDialogAddress;
+    this.txtDialogCustomerLoyalty = txtDialogCustomerLoyalty;
     this.txtDialogCustomerName = txtDialogCustomerName;
     this.txtDialogCustomerPhone = txtDialogCustomerPhone;
     this.txtDialogOrderNo = txtDialogOrderNo;
@@ -148,6 +153,12 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.txtDialogCustomerLoyalty;
+      TextView txtDialogCustomerLoyalty = ViewBindings.findChildViewById(rootView, id);
+      if (txtDialogCustomerLoyalty == null) {
+        break missingId;
+      }
+
       id = R.id.txtDialogCustomerName;
       TextView txtDialogCustomerName = ViewBindings.findChildViewById(rootView, id);
       if (txtDialogCustomerName == null) {
@@ -180,8 +191,8 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
 
       return new DialogIncomingOrderBinding((LinearLayout) rootView, btnDialogAccept,
           btnDialogDecline, containerDialogItems, layoutDialogDriver, spinnerDialogDriver,
-          spinnerDialogPrepTime, txtDialogAddress, txtDialogCustomerName, txtDialogCustomerPhone,
-          txtDialogOrderNo, txtDialogTimer, txtDialogTotal);
+          spinnerDialogPrepTime, txtDialogAddress, txtDialogCustomerLoyalty, txtDialogCustomerName,
+          txtDialogCustomerPhone, txtDialogOrderNo, txtDialogTimer, txtDialogTotal);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

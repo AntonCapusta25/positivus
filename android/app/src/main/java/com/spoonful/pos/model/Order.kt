@@ -24,6 +24,7 @@ data class Order(
     @SerializedName("merchant_id") val merchantId: String? = null,
     @SerializedName("customer_address") val customerAddress: String? = null,
     @SerializedName("driver_name") var driverName: String? = null,
+    @SerializedName("customer_order_count") val customerOrderCount: Int? = 1,
     @SerializedName("created_at") val createdAt: String
 )
 

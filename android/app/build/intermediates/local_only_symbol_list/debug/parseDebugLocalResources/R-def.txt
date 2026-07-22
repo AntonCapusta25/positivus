@@ -97,6 +97,7 @@ id txtDetailTimeVal
 id txtDetailTotal
 id txtDetailType
 id txtDialogAddress
+id txtDialogCustomerLoyalty
 id txtDialogCustomerName
 id txtDialogCustomerPhone
 id txtDialogOrderNo

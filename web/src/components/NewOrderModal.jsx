@@ -39,17 +39,17 @@ export default function NewOrderModal() {
       <div className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] animate-scale-up">
         
         {/* Glowing Orange Header Banner */}
-        <div className="bg-gradient-to-r from-brand-orange to-amber-500 text-white p-6 relative flex items-center justify-between shadow-md shrink-0">
+        <div className="bg-gradient-to-r from-brand-orange to-amber-500 text-white p-5 relative flex items-center justify-between shadow-md shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-white/20 rounded-2xl animate-bounce">
-              <Bell size={24} className="text-white fill-current" />
+            <div className="p-2 bg-white/20 rounded-xl">
+              <Bell size={20} className="text-white fill-current" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-orange-100 block">
-                Incoming Orderpad
+              <span className="text-[10px] uppercase font-black tracking-widest text-orange-100 block">
+                {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFUL'}
               </span>
-              <h2 className="text-xl font-black tracking-wide leading-tight">
-                NEW KITCHEN ORDER RECEIVED
+              <h2 className="text-lg font-black tracking-tight leading-none my-0.5">
+                New Order #{order.order_number || order.id.substring(0, 8).toUpperCase()}
               </h2>
             </div>
           </div>
@@ -58,9 +58,9 @@ export default function NewOrderModal() {
             {sirenActive && (
               <button
                 onClick={stopSirenAlert}
-                className="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider animate-pulse flex items-center space-x-1.5 border border-rose-500 shadow-md transition-all active:scale-95 shrink-0"
+                className="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider animate-pulse flex items-center space-x-1 border border-rose-500 shadow-md transition-all active:scale-95 shrink-0"
               >
-                <span>🚨 Mute Alarm</span>
+                <span>🚨 Mute</span>
               </button>
             )}
             <button 
@@ -69,29 +69,68 @@ export default function NewOrderModal() {
                 stopSirenAlert();
                 setActiveIncomingOrder(null);
               }}
-              className="p-2 hover:bg-white/10 rounded-full transition-all text-white/80 hover:text-white"
+              className="p-1.5 hover:bg-white/10 rounded-full transition-all text-white/80 hover:text-white"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
         {/* Scrollable Contents Grid */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
           
-          {/* Restaurant / Store Header info */}
-          <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
-            <div>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wide block">STORE</span>
-              <span className="font-extrabold text-slate-800 text-base">{activeMerchant.name || 'Spoonful'}</span>
+          {/* Customer Info Card & Loyalty Badge */}
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-base font-black text-slate-800">
+                  {order.customer_name || 'Customer'}
+                </span>
+                
+                {/* Loyalty Pill */}
+                {order.customer_order_count > 1 ? (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    ✨ Returning ({order.customer_order_count}th order)
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                    🔥 New Customer
+                  </span>
+                )}
+                
+                {/* Order Type Badge */}
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  (order.type || '').toLowerCase() === 'delivery'
+                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                    : (order.type || '').toLowerCase() === 'pickup'
+                      ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                      : 'bg-slate-100 text-slate-800 border border-slate-200'
+                }`}>
+                  {order.type || 'Dine-In'}
+                </span>
+              </div>
+              
+              {order.customer_phone && (
+                <p className="text-xs text-slate-500 font-bold flex items-center space-x-1">
+                  <span>📞 {order.customer_phone}</span>
+                </p>
+              )}
             </div>
-            <div className="text-right">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wide block">ORDER NUMBER</span>
-              <span className="font-mono font-black text-brand-orange text-base">{order.order_number || order.id.substring(0, 8).toUpperCase()}</span>
-            </div>
+
+            {/* Address (Only for delivery orders) */}
+            {(order.type || '').toLowerCase() === 'delivery' && order.customer_address && (
+              <div className="text-left md:text-right max-w-xs space-y-0.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                  Delivery Address
+                </span>
+                <p className="text-xs font-extrabold text-slate-700 leading-normal line-clamp-2">
+                  📍 {order.customer_address}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Items Summary & Customer Details Grid */}
+          {/* Items Summary & Prep Time Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Left Col: Order Items checklist */}
