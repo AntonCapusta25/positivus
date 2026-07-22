@@ -254,8 +254,8 @@ serve(async (req) => {
     const orderNumber = data.order_unique_id || data.order_id?.toString() || `#HZ-${Math.floor(1000 + Math.random() * 9000)}`;
     // Store the raw numeric order_id from Hyperzod so we can push status updates back
     const hyperzodOrderId = Number(data.order_id) || null;
-    const customerName = data.customer_name || data.customer?.name || "Guest Customer";
-    const customerPhone = data.customer_phone || data.customer?.phone || "";
+    const customerName = data.customer_name || data.customer?.name || data.user?.full_name || (data.user?.first_name ? `${data.user.first_name} ${data.user.last_name || ""}`.trim() : "") || "Guest Customer";
+    const customerPhone = data.customer_phone || data.customer?.phone || data.user?.mobile || data.user?.phone || "";
     const merchantId = data.merchant_id || "restaurant_1";
 
     // Map cart items

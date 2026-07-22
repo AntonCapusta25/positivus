@@ -1150,7 +1150,20 @@ export const POSProvider = ({ children }) => {
     }
 
     // Propagate acceptance back to Hyperzod via Edge Function to prevent status rollback
-    const matchedOrder = orders.find(o => o.id === orderId || o.order_number === orderId);
+    let matchedOrder = orders.find(o => o.id === orderId || o.order_number === orderId);
+    if (!matchedOrder) {
+      try {
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .maybeSingle();
+        matchedOrder = data;
+      } catch (err) {
+        console.error('Failed to fetch matched order from DB for accept propagation:', err);
+      }
+    }
+
     if (matchedOrder && matchedOrder.order_number) {
       try {
         console.log(`Propagating order acceptance to Hyperzod: Order ${matchedOrder.order_number}`);
