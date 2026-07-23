@@ -580,17 +580,24 @@ export default function DriverPortal() {
                     <span className="text-xs font-bold">Open Camera</span>
                   </button>
                   
-                  <button
-                    onClick={() => {
-                      // Trigger mock scan
-                      startCamera();
-                      simulateScan();
-                    }}
-                    className="bg-slate-900 border border-slate-800 text-slate-200 py-4 px-4 rounded-2xl flex flex-col items-center justify-center space-y-1 hover:bg-slate-850 transition-all"
-                  >
-                    <QrCode size={24} className="text-brand-orange" />
-                    <span className="text-xs font-bold">Demo Auto-Scan</span>
-                  </button>
+                  {activeOrder ? (
+                    <button
+                      onClick={handlePrintReceipt}
+                      className="bg-slate-900 border border-slate-800 text-slate-200 py-4 px-4 rounded-2xl flex flex-col items-center justify-center space-y-1 hover:bg-slate-850 transition-all cursor-pointer"
+                    >
+                      <span className="text-2xl">🖨️</span>
+                      <span className="text-xs font-bold text-white">Print Receipt</span>
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="bg-slate-950 border border-slate-900 text-slate-600 py-4 px-4 rounded-2xl flex flex-col items-center justify-center space-y-1 opacity-50 cursor-not-allowed"
+                      title="Please scan or load an order first to print receipt"
+                    >
+                      <span className="text-2xl">🖨️</span>
+                      <span className="text-xs font-bold">Print Receipt</span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="relative rounded-2xl border border-slate-800 overflow-hidden bg-black flex flex-col items-center">
@@ -785,15 +792,6 @@ export default function DriverPortal() {
                         <Navigation size={18} />
                         <span>Start Navigation</span>
                       </a>
-
-                      <button
-                        onClick={handlePrintReceipt}
-                        className="bg-slate-800 hover:bg-slate-700 text-white font-black py-3.5 px-4 rounded-xl text-sm flex items-center justify-center space-x-2 transition-all shadow-md shrink-0"
-                        title="Print Order Receipt at Restaurant"
-                      >
-                        <span>🖨️</span>
-                        <span>Print</span>
-                      </button>
 
                       
                       {activeOrder.status === 'ready' && (
