@@ -12,6 +12,7 @@ export default function DriverPortal() {
   const [activeSubTab, setActiveSubTab] = useState('my_tasks'); // my_tasks, offers
   const [loginError, setLoginError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [scannedNotice, setScannedNotice] = useState(null);
   
   // Camera scanning state
   const [showScanner, setShowScanner] = useState(false);
@@ -21,7 +22,7 @@ export default function DriverPortal() {
   const streamRef = useRef(null);
 
   // Map & routing states
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBIhUztE5lzk8jBoCJwSN2tPAK2HnCdu54';
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey,
   });
@@ -212,16 +213,71 @@ export default function DriverPortal() {
         .single();
       
       if (error) throw error;
+      
       setActiveOrder(data);
       setSelectedOrderId(data.order_number || data.id);
+      
+      // Auto-assign/claim order to driver if logged in
+      if (driverName) {
+        if (data.driver_name && data.driver_name !== driverName) {
+          setScannedNotice({
+            type: 'error',
+            message: `Order #${data.order_number || data.id.substring(0, 6)} is already claimed by ${data.driver_name}!`
+          });
+        } else {
+          const res = await assignOrderDriver(data.id, driverName, 15);
+          if (res.success) {
+            setScannedNotice({
+              type: 'success',
+              message: `Order #${data.order_number || data.id.substring(0, 6)} Scanned & Claimed Successfully!`
+            });
+            setTimeout(() => setScannedNotice(null), 4000);
+          } else {
+            setScannedNotice({
+              type: 'error',
+              message: res.error || "Failed to claim scanned order."
+            });
+          }
+        }
+      } else {
+        setScannedNotice({
+          type: 'warning',
+          message: `Order #${data.order_number || data.id.substring(0, 6)} loaded. Please log in to claim.`
+        });
+      }
     } catch (e) {
-      // Fallback: look up in orders array
       const matched = orders.find(o => o.id === orderId || o.order_number === orderId);
       if (matched) {
         setActiveOrder(matched);
         setSelectedOrderId(matched.order_number || matched.id);
+        
+        if (driverName) {
+          if (matched.driver_name && matched.driver_name !== driverName) {
+            setScannedNotice({
+              type: 'error',
+              message: `Order #${matched.order_number} is already claimed by ${matched.driver_name}!`
+            });
+          } else {
+            const res = await assignOrderDriver(matched.id, driverName, 15);
+            if (res.success) {
+              setScannedNotice({
+                type: 'success',
+                message: `Order #${matched.order_number} Scanned & Claimed!`
+              });
+              setTimeout(() => setScannedNotice(null), 4000);
+            } else {
+              setScannedNotice({
+                type: 'error',
+                message: res.error || "Failed to claim scanned order."
+              });
+            }
+          }
+        }
       } else {
-        alert("Order not found or invalid QR code.");
+        setScannedNotice({
+          type: 'error',
+          message: "Order not found or invalid QR code."
+        });
       }
     }
   };
@@ -377,6 +433,32 @@ export default function DriverPortal() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col items-center justify-between pb-8">
+      {/* Floating Scan Notice Overlay */}
+      {scannedNotice && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[200] w-full max-w-sm px-4 animate-bounce-in">
+          <div className={`border rounded-3xl p-5 shadow-2xl flex items-center space-x-3 backdrop-blur-md ${
+            scannedNotice.type === 'success' ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200' :
+            scannedNotice.type === 'error' ? 'bg-rose-950/90 border-rose-500/50 text-rose-200' :
+            'bg-amber-950/90 border-amber-500/50 text-amber-200'
+          }`}>
+            <span className="text-2xl">
+              {scannedNotice.type === 'success' ? '✅' : scannedNotice.type === 'error' ? '❌' : '⚠️'}
+            </span>
+            <div className="flex-1 min-w-0">
+              <span className="text-[10px] uppercase font-bold tracking-widest block opacity-75">
+                Scan Notice
+              </span>
+              <h4 className="font-extrabold text-sm text-white">
+                {scannedNotice.message}
+              </h4>
+            </div>
+            <button onClick={() => setScannedNotice(null)} className="text-white/60 hover:text-white font-bold text-xs px-2 py-1">
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile-optimized Container */}
       <div className="w-full max-w-md px-4 flex flex-col justify-start flex-1 py-6 space-y-6">
         
