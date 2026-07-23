@@ -477,7 +477,7 @@ export default function DriverPortal() {
         {/* Header */}
         <header className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center space-x-2">
-            <span className="text-xl">🛵</span>
+            <img src="/favicon.png" className="w-6 h-6 object-contain" alt="Spoonful Logo" />
             <div>
               <h1 className="text-base font-extrabold tracking-tight text-white leading-tight">SPOONFUL RUNNER</h1>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Driver Dispatch Portal</p>
@@ -657,9 +657,18 @@ export default function DriverPortal() {
             {activeOrder ? (
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl animate-fade-in">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div>
-                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Order Scanned</span>
-                    <h4 className="text-sm font-extrabold text-white">#{activeOrder.order_number || activeOrder.id.slice(0,8)}</h4>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => setActiveOrder(null)}
+                      className="w-8 h-8 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-base font-extrabold transition-all"
+                      title="Back to Tasks List"
+                    >
+                      ←
+                    </button>
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Order Scanned</span>
+                      <h4 className="text-sm font-extrabold text-white">#{activeOrder.order_number || activeOrder.id.slice(0, 8)}</h4>
+                    </div>
                   </div>
                   <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     activeOrder.status === 'completed' 
