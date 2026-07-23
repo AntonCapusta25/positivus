@@ -228,11 +228,11 @@ export default function DriverPortal() {
 
   const handleDriverLogin = async (e) => {
     e.preventDefault();
-    const name = e.target.driverNameInput.value.trim();
-    const passcode = e.target.driverPinInput.value.trim();
+    const email = e.target.driverEmailInput.value.trim();
+    const password = e.target.driverPasswordInput.value.trim();
 
-    if (!name || !passcode) {
-      setLoginError("Name and passcode are required.");
+    if (!email || !password) {
+      setLoginError("Email and password are required.");
       return;
     }
 
@@ -240,51 +240,37 @@ export default function DriverPortal() {
     setLoginError("");
 
     try {
-      // Query the Supabase drivers table
-      const { data, error } = await supabase
+      // 1. Authenticate with Supabase Auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        setLoginError(error.message);
+        setIsVerifying(false);
+        return;
+      }
+
+      // 2. Query the drivers table for a profile matching this user_id
+      const { data: driverData, error: driverErr } = await supabase
         .from('drivers')
         .select('*')
-        .eq('name', name)
-        .eq('passcode', passcode);
+        .eq('user_id', data.user.id);
 
-      if (error && (error.code === 'PGRST116' || error.message.includes('relation "drivers" does not exist'))) {
-        // Fallback to local storage drivers list
-        const localD = localStorage.getItem('pos_drivers');
-        const list = localD ? JSON.parse(localD) : [
-          { id: 'drv-1', name: 'John Doe', passcode: '1234' },
-          { id: 'drv-2', name: 'Jane Smith', passcode: '1234' },
-          { id: 'drv-3', name: 'Carlos V.', passcode: '1234' }
-        ];
+      if (driverErr) {
+        console.error("Failed to query driver profile:", driverErr.message);
+      }
 
-        const matched = list.find(d => d.name.toLowerCase() === name.toLowerCase() && d.passcode === passcode);
-        if (matched) {
-          setDriverName(matched.name);
-          localStorage.setItem('pos_driver_name', matched.name);
-          setSettings(prev => ({ ...prev, merchantId: matched.merchant_id || '6a0f03b4500ed5db150be1a1' }));
-        } else {
-          setLoginError("Invalid credentials (local fallback mismatch).");
-        }
-      } else if (data && data.length > 0) {
-        setDriverName(data[0].name);
-        localStorage.setItem('pos_driver_name', data[0].name);
-        setSettings(prev => ({ ...prev, merchantId: data[0].merchant_id }));
+      if (driverData && driverData.length > 0) {
+        const profile = driverData[0];
+        setDriverName(profile.name);
+        localStorage.setItem('pos_driver_name', profile.name);
+        setSettings(prev => ({ ...prev, merchantId: profile.merchant_id || '6a0f03b4500ed5db150be1a1' }));
       } else {
-        // Fallback to local storage drivers list as a secondary check if Supabase table is empty
-        const localD = localStorage.getItem('pos_drivers');
-        const list = localD ? JSON.parse(localD) : [
-          { id: 'drv-1', name: 'John Doe', passcode: '1234', merchant_id: '6a0f03b4500ed5db150be1a1' },
-          { id: 'drv-2', name: 'Jane Smith', passcode: '1234', merchant_id: '6a0f03b4500ed5db150be1a1' },
-          { id: 'drv-3', name: 'Carlos V.', passcode: '1234', merchant_id: '6a0f03b4500ed5db150be1a1' }
-        ];
-
-        const matched = list.find(d => d.name.toLowerCase() === name.toLowerCase() && d.passcode === passcode);
-        if (matched) {
-          setDriverName(matched.name);
-          localStorage.setItem('pos_driver_name', matched.name);
-          setSettings(prev => ({ ...prev, merchantId: matched.merchant_id || '6a0f03b4500ed5db150be1a1' }));
-        } else {
-          setLoginError("Incorrect driver name or PIN passcode.");
-        }
+        // Log out user since they are not a driver
+        await supabase.auth.signOut();
+        setLoginError("This credentials profile is not registered as a delivery driver.");
       }
     } catch (err) {
       console.error("Auth error:", err);
@@ -428,25 +414,24 @@ export default function DriverPortal() {
               )}
               
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Driver Name</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Email Address</label>
                 <input
-                  type="text"
-                  name="driverNameInput"
+                  type="email"
+                  name="driverEmailInput"
                   required
-                  placeholder="e.g. John Doe"
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange placeholder-slate-500 transition-all font-semibold"
+                  placeholder="driver@spoonful.com"
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-brand-orange placeholder-slate-500 transition-all font-bold"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">PIN Passcode</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Password</label>
                 <input
                   type="password"
-                  name="driverPinInput"
+                  name="driverPasswordInput"
                   required
-                  maxLength="4"
-                  placeholder="4-digit PIN"
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange placeholder-slate-500 transition-all font-semibold tracking-widest text-center text-lg font-mono"
+                  placeholder="••••••••"
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-brand-orange placeholder-slate-500 transition-all font-bold"
                 />
               </div>
 
@@ -475,7 +460,8 @@ export default function DriverPortal() {
                 </div>
               </div>
               <button
-                onClick={() => {
+                onClick={async () => {
+                  await supabase.auth.signOut();
                   setDriverName('');
                   localStorage.removeItem('pos_driver_name');
                   setActiveOrder(null);

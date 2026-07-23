@@ -1,6 +1,7 @@
 package com.spoonful.pos
 
 import android.graphics.Color
+import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -106,6 +107,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSoundsBack: TextView
     private lateinit var seekBarVolume: SeekBar
     private lateinit var txtSoundVolumeVal: TextView
+    private lateinit var btnSoundPlay: TextView
+    private lateinit var radioGroupSounds: RadioGroup
+    private lateinit var radioSoundQuiet: RadioButton
+    private lateinit var radioSoundDefault: RadioButton
+    private lateinit var radioSoundNoisy: RadioButton
+
+    private var isTestSoundPlaying = false
+    private var isPOSRegistered = false
+    private var posTerminalName = ""
+    private var posMachineId = ""
+    private lateinit var layoutOnboardingRegister: LinearLayout
 
     // Menu management views
     private lateinit var btnMenuBack: TextView
@@ -142,8 +154,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Load saved merchant ID
+        // Load saved merchant ID & POS status
         val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
+        isPOSRegistered = prefs.getBoolean("pos_registered", false)
+        posTerminalName = prefs.getString("pos_terminal_name", "") ?: ""
+        posMachineId = prefs.getString("pos_machine_id", "") ?: ""
+        val savedMerchantName = prefs.getString("pos_merchant_name", "Raj Curry House") ?: "Raj Curry House"
         merchantId = prefs.getString("merchant_id", "6a0f03b4500ed5db150be1a1") ?: "6a0f03b4500ed5db150be1a1"
         isAutoPrintEnabled = prefs.getBoolean("auto_print", false)
 
@@ -249,11 +265,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         bindViews()
-        txtDrawerActiveRestaurant.text = if (merchantId == "restaurant_1" || merchantId == "6a0f03b4500ed5db150be1a1") {
-            "Raj Curry House"
-        } else {
-            "Spoonful POS"
-        }
+        txtDrawerActiveRestaurant.text = savedMerchantName
 
         // Sync auto-print UI
         switchDrawerAutoPrint.isChecked = isAutoPrintEnabled
@@ -280,8 +292,82 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        // Start Supabase realtime connection
-        supabaseManager.start()
+        // Bind onboarding views
+        layoutOnboardingRegister = findViewById(R.id.layoutOnboardingRegister)
+        val editOnboardingCode = findViewById<android.widget.EditText>(R.id.editOnboardingCode)
+        val btnOnboardingSubmit = findViewById<android.widget.Button>(R.id.btnOnboardingSubmit)
+        val progressOnboarding = findViewById<android.widget.ProgressBar>(R.id.progressOnboarding)
+
+        if (isPOSRegistered) {
+            layoutOnboardingRegister.visibility = View.GONE
+            supabaseManager.start()
+        } else {
+            layoutOnboardingRegister.visibility = View.VISIBLE
+            drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+        }
+
+        // Onboarding linking action
+        btnOnboardingSubmit.setOnClickListener {
+            val code = editOnboardingCode.text.toString().trim().toUpperCase()
+            if (code.isEmpty()) {
+                Toast.makeText(this, "Please enter a linking code", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            progressOnboarding.visibility = View.VISIBLE
+            btnOnboardingSubmit.isEnabled = false
+
+            supabaseManager.verifyRegistrationCode(code) { machine ->
+                runOnUiThread {
+                    progressOnboarding.visibility = View.INVISIBLE
+                    btnOnboardingSubmit.isEnabled = true
+
+                    if (machine != null) {
+                        try {
+                            val machineId = machine.get("id").asString
+                            val terminalName = machine.get("name").asString
+                            val newMerchantId = machine.get("merchant_id").asString
+                            
+                            val merchantObj = machine.get("merchants")
+                            val merchantName = if (merchantObj != null && !merchantObj.isJsonNull) {
+                                merchantObj.asJsonObject.get("name")?.asString ?: "Spoonful"
+                            } else {
+                                "Spoonful"
+                            }
+
+                            // Save to SharedPreferences
+                            getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                                .putBoolean("pos_registered", true)
+                                .putString("pos_terminal_name", terminalName)
+                                .putString("pos_machine_id", machineId)
+                                .putString("pos_merchant_name", merchantName)
+                                .putString("merchant_id", newMerchantId)
+                                .apply()
+
+                            isPOSRegistered = true
+                            posTerminalName = terminalName
+                            posMachineId = machineId
+                            merchantId = newMerchantId
+
+                            txtDrawerActiveRestaurant.text = merchantName
+                            
+                            layoutOnboardingRegister.visibility = View.GONE
+                            drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED)
+                            
+                            supabaseManager.updateMerchantId(newMerchantId)
+                            supabaseManager.start()
+
+                            Toast.makeText(this, "POS Linked to $merchantName successfully!", Toast.LENGTH_LONG).show()
+                        } catch (e: Exception) {
+                            Log.e("MainActivity", "Failed to parse machine JSON fields", e)
+                            Toast.makeText(this, "Failed to link POS: invalid response data", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(this, "Invalid registration code or terminal is inactive.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -386,6 +472,11 @@ class MainActivity : AppCompatActivity() {
         btnSoundsBack = findViewById(R.id.btnSoundsBack)
         seekBarVolume = findViewById(R.id.seekBarVolume)
         txtSoundVolumeVal = findViewById(R.id.txtSoundVolumeVal)
+        btnSoundPlay = findViewById(R.id.btnSoundPlay)
+        radioGroupSounds = findViewById(R.id.radioGroupSounds)
+        radioSoundQuiet = findViewById(R.id.radioSoundQuiet)
+        radioSoundDefault = findViewById(R.id.radioSoundDefault)
+        radioSoundNoisy = findViewById(R.id.radioSoundNoisy)
     }
 
     // ─────────────────────────────────────────────
@@ -522,35 +613,69 @@ class MainActivity : AppCompatActivity() {
 
         btnDrawerSwitchRestaurant.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
-            Toast.makeText(this, "Loading restaurants...", Toast.LENGTH_SHORT).show()
-            supabaseManager.fetchMerchants { merchants ->
-                if (merchants.isEmpty()) {
-                    Toast.makeText(this, "Could not load restaurants", Toast.LENGTH_SHORT).show()
-                    return@fetchMerchants
-                }
-                val names = merchants.map { it.second }.toTypedArray()
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle("Select Restaurant")
-                    .setItems(names) { _, which ->
-                        val selected = merchants[which]
-                        val newId = selected.first
-                        val newName = selected.second
-                        
-                        getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
-                            .putString("merchant_id", newId)
-                            .apply()
-                            
-                        merchantId = newId
-                        txtDrawerActiveRestaurant.text = newName
-                        
-                        ordersList.clear()
-                        refreshOrderList()
-                        supabaseManager.updateMerchantId(newId)
-                        Toast.makeText(this, "Switched to $newName", Toast.LENGTH_SHORT).show()
+            
+            val infoMsg = "Store Context: ${txtDrawerActiveRestaurant.text}\n" +
+                          "Terminal Identity: $posTerminalName\n" +
+                          "Machine UUID: $posMachineId"
+                          
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("POS Terminal Settings")
+                .setMessage(infoMsg)
+                .setPositiveButton("Unlink Terminal") { _, _ ->
+                    val pinInput = android.widget.EditText(this).apply {
+                        inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                        gravity = android.view.Gravity.CENTER
+                        transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()
+                        filters = arrayOf(android.text.InputFilter.LengthFilter(4))
                     }
-                    .setNegativeButton("Cancel", null)
-                    .show()
-            }
+                    
+                    androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("Enter Restaurant Admin PIN")
+                        .setView(pinInput)
+                        .setPositiveButton("Verify") { _, _ ->
+                            val pin = pinInput.text.toString().trim()
+                            if (pin.isEmpty()) {
+                                Toast.makeText(this, "PIN cannot be empty", Toast.LENGTH_SHORT).show()
+                                return@setPositiveButton
+                            }
+                            
+                            supabaseManager.verifyAdminPIN(merchantId, pin) { isValid ->
+                                runOnUiThread {
+                                    if (isValid) {
+                                        getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                                            .putBoolean("pos_registered", false)
+                                            .putString("pos_terminal_name", "")
+                                            .putString("pos_machine_id", "")
+                                            .putString("pos_merchant_name", "Raj Curry House")
+                                            .putString("merchant_id", "6a0f03b4500ed5db150be1a1")
+                                            .apply()
+                                            
+                                        isPOSRegistered = false
+                                        posTerminalName = ""
+                                        posMachineId = ""
+                                        merchantId = "6a0f03b4500ed5db150be1a1"
+                                        
+                                        txtDrawerActiveRestaurant.text = "Spoonful"
+                                        ordersList.clear()
+                                        refreshOrderList()
+                                        
+                                        supabaseManager.stop()
+                                        
+                                        layoutOnboardingRegister.visibility = View.VISIBLE
+                                        drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+                                        
+                                        Toast.makeText(this@MainActivity, "Terminal unlinked successfully.", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(this@MainActivity, "Access Denied: Incorrect Admin PIN.", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+                .setNegativeButton("Close", null)
+                .show()
         }
 
         btnSubMenuManagement.setOnClickListener {
@@ -1137,13 +1262,61 @@ class MainActivity : AppCompatActivity() {
     private fun setupSoundsSettings() {
         btnSoundsBack.setOnClickListener { showScreen(Screen.ORDER_LIST) }
 
+        val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
+        val savedVolume = prefs.getInt("sound_volume", 100)
+        seekBarVolume.progress = savedVolume
+        txtSoundVolumeVal.text = "Volume $savedVolume%"
+
+        // Update environment presets check based on initial volume
+        when (savedVolume) {
+            30 -> radioSoundQuiet.isChecked = true
+            70 -> radioSoundDefault.isChecked = true
+            100 -> radioSoundNoisy.isChecked = true
+            else -> radioGroupSounds.clearCheck()
+        }
+
         seekBarVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                 txtSoundVolumeVal.text = "Volume $progress%"
+                if (fromUser) {
+                    radioGroupSounds.clearCheck()
+                    prefs.edit().putInt("sound_volume", progress).apply()
+                }
             }
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
+
+        radioGroupSounds.setOnCheckedChangeListener { _, checkedId ->
+            var targetVolume = -1
+            when (checkedId) {
+                R.id.radioSoundQuiet -> targetVolume = 30
+                R.id.radioSoundDefault -> targetVolume = 70
+                R.id.radioSoundNoisy -> targetVolume = 100
+            }
+            if (targetVolume != -1) {
+                seekBarVolume.progress = targetVolume
+                txtSoundVolumeVal.text = "Volume $targetVolume%"
+                prefs.edit().putInt("sound_volume", targetVolume).apply()
+            }
+        }
+
+        btnSoundPlay.setOnClickListener {
+            if (isTestSoundPlaying) {
+                stopIncomingOrderSound()
+            } else {
+                isTestSoundPlaying = true
+                btnSoundPlay.text = "⏹"
+                playIncomingOrderSound()
+                
+                // Auto stop after 4 seconds
+                handler.postDelayed({
+                    if (isTestSoundPlaying) {
+                        stopIncomingOrderSound()
+                    }
+                }, 4000)
+            }
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -1486,7 +1659,34 @@ class MainActivity : AppCompatActivity() {
             val containerItems = dialogView.findViewById<LinearLayout>(R.id.containerDialogItems)
             val btnAccept = dialogView.findViewById<Button>(R.id.btnDialogAccept)
             val btnDecline = dialogView.findViewById<Button>(R.id.btnDialogDecline)
-            val spinnerPrepTime = dialogView.findViewById<Spinner>(R.id.spinnerDialogPrepTime)
+            val btnPrepMinus = dialogView.findViewById<Button>(R.id.btnDialogPrepMinus)
+            val btnPrepPlus = dialogView.findViewById<Button>(R.id.btnDialogPrepPlus)
+            val txtPrepVal = dialogView.findViewById<TextView>(R.id.txtDialogPrepVal)
+            val btnPrepAdd5 = dialogView.findViewById<Button>(R.id.btnDialogPrepAdd5)
+            val btnPrepAdd10 = dialogView.findViewById<Button>(R.id.btnDialogPrepAdd10)
+            val btnPrepAdd15 = dialogView.findViewById<Button>(R.id.btnDialogPrepAdd15)
+            val btnPrepAdd20 = dialogView.findViewById<Button>(R.id.btnDialogPrepAdd20)
+
+            val layoutStep1Container = dialogView.findViewById<LinearLayout>(R.id.layoutStep1Container)
+            val layoutStep2Container = dialogView.findViewById<LinearLayout>(R.id.layoutStep2Container)
+            val btnBackStep2 = dialogView.findViewById<Button>(R.id.btnDialogBackStep2)
+            val btnConfirm = dialogView.findViewById<Button>(R.id.btnDialogConfirm)
+
+            var currentPrepTime = 30
+            
+            fun updatePrepTimeDisplay(newVal: Int) {
+                currentPrepTime = newVal.coerceIn(5, 120)
+                txtPrepVal.text = currentPrepTime.toString()
+            }
+
+            btnPrepMinus.setOnClickListener { updatePrepTimeDisplay(currentPrepTime - 5) }
+            btnPrepPlus.setOnClickListener { updatePrepTimeDisplay(currentPrepTime + 5) }
+            btnPrepAdd5.setOnClickListener { updatePrepTimeDisplay(currentPrepTime + 5) }
+            btnPrepAdd10.setOnClickListener { updatePrepTimeDisplay(currentPrepTime + 10) }
+            btnPrepAdd15.setOnClickListener { updatePrepTimeDisplay(currentPrepTime + 15) }
+            btnPrepAdd20.setOnClickListener { updatePrepTimeDisplay(currentPrepTime + 20) }
+
+            updatePrepTimeDisplay(25)
 
             txtOrderNo.text = "#${order.orderNumber}"
             txtCustomerName.text = "${order.customerName ?: "Customer"} (${order.type.uppercase()})"
@@ -1510,6 +1710,14 @@ class MainActivity : AppCompatActivity() {
                     setColor(Color.parseColor("#FEF3C7"))
                     setStroke(dp(1), Color.parseColor("#FDE68A"))
                 }
+            }
+            txtCustomerLoyalty.setPadding(dp(8), dp(3), dp(8), dp(3))
+
+            // Populate items list in the scroll view container
+            containerItems.removeAllViews()
+            order.items.forEachIndexed { i, item ->
+                if (i > 0) containerItems.addView(createItemDivider())
+                containerItems.addView(buildDetailItemRow(item))
             }
 
             txtCustomerPhone.text = if (!order.customerPhone.isNullOrEmpty()) "📞 ${order.customerPhone}" else "No phone number"
@@ -1555,8 +1763,19 @@ class MainActivity : AppCompatActivity() {
                 layoutDialogDriver.visibility = View.GONE
             }
 
-            // Accept & Print Receipt
+            // Wizard step transitions
             btnAccept.setOnClickListener {
+                layoutStep1Container.visibility = View.GONE
+                layoutStep2Container.visibility = View.VISIBLE
+            }
+
+            btnBackStep2.setOnClickListener {
+                layoutStep2Container.visibility = View.GONE
+                layoutStep1Container.visibility = View.VISIBLE
+            }
+
+            // Print & Confirm Order in Step 2
+            btnConfirm.setOnClickListener {
                 stopIncomingOrderSound()
                 dialog.dismiss()
 
@@ -1567,8 +1786,8 @@ class MainActivity : AppCompatActivity() {
                     order.driverName = chosenDriver
                 }
 
-                // 1. Update status to preparing in Supabase & driver if selected
-                supabaseManager.updateOrderPrintedAndStatus(order.id, true, "preparing") { success ->
+                // 1. Update status to preparing and set prep time in Supabase
+                supabaseManager.updateOrderPrintedAndStatus(order.id, true, "preparing", currentPrepTime) { success ->
                     if (chosenDriver != null) {
                         supabaseManager.assignDriverToOrder(order.id, chosenDriver)
                     }
@@ -1616,7 +1835,8 @@ class MainActivity : AppCompatActivity() {
             
             Thread {
                 try {
-                    toneGenerator = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 100)
+                    val savedVolume = getSharedPreferences("spoonful_prefs", MODE_PRIVATE).getInt("sound_volume", 100)
+                    toneGenerator = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, savedVolume)
                     var high = true
                     while (isSoundAlertPlaying) {
                         val tone = if (high) android.media.ToneGenerator.TONE_CDMA_HIGH_L else android.media.ToneGenerator.TONE_CDMA_MED_L
@@ -1639,6 +1859,15 @@ class MainActivity : AppCompatActivity() {
             toneGenerator?.stopTone()
             toneGenerator?.release()
             toneGenerator = null
+            
+            if (isTestSoundPlaying) {
+                isTestSoundPlaying = false
+                runOnUiThread {
+                    if (::btnSoundPlay.isInitialized) {
+                        btnSoundPlay.text = "▷"
+                    }
+                }
+            }
         } catch (e: Exception) {}
     }
 

@@ -73,128 +73,34 @@ async function sendPushNotifications(newOrder: any, supabase: any) {
   }
 }
 
-async function processOrderCoupons(orderNumber: string, customerEmail: string, paymentStatus: string, supabase: any) {
-  if (paymentStatus !== 'paid' || !customerEmail) return;
+async function processOrderCoupons(orderNumber: string, customerEmail: string, paymentStatus: string, customerPhone: string) {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
+  if (!SUPABASE_URL || !customerEmail) return;
+
+  console.log(`Forwarding coupon check to issue-coupons edge function for: ${customerEmail}`);
   try {
-    // 1. Prevent duplicate coupon issues for the same order_number
-    const { data: existing } = await supabase
-      .from("issued_coupons")
-      .select("id")
-      .eq("order_number", orderNumber)
-      .limit(1);
-
-    if (existing && existing.length > 0) {
-      console.log(`Coupons already issued for order ${orderNumber}. Skipping.`);
-      return;
-    }
-
-    // 2. Fetch customer selections
-    const cleanEmail = customerEmail.toLowerCase().trim();
-    const { data: selectionRecord, error: selError } = await supabase
-      .from("selected_coupons")
-      .select("*")
-      .eq("email", cleanEmail)
-      .single();
-
-    if (selError || !selectionRecord) {
-      console.log(`No pending coupons found for customer email: ${cleanEmail}`);
-      return;
-    }
-
-    const couponIds = selectionRecord.coupon_ids || [];
-    if (!Array.isArray(couponIds) || couponIds.length === 0) {
-      console.log(`Pending coupon IDs list is empty for: ${cleanEmail}`);
-      return;
-    }
-
-    // 3. Enforce maximum active coupons cap (max 200 coupons limit in database)
-    const { count, error: countError } = await supabase
-      .from("issued_coupons")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active");
-
-    if (countError) throw countError;
-
-    const currentActiveCount = count || 0;
-    if (currentActiveCount >= 200) {
-      console.warn(`Coupon issue aborted: active coupons limit (200) reached. Current: ${currentActiveCount}`);
-      return;
-    }
-
-    // Map of template details for standard coupons
-    const COUPON_METADATA: any = {
-      coupon_1: { title: "Free Priority Delivery", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80" },
-      coupon_2: { title: "10% Off Next Order", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" },
-      coupon_3: { title: "Free Mango Lassi", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80" },
-      coupon_4: { title: "Chef's Secret Sauce", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1589301760014-d929f39ce9b1?w=400&q=80" }
-    };
-
-    // 4. Generate & Insert Coupon Records
-    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(); // 14 days limit
-
-    // We only issue up to what the cap permits
-    const maxInsertCount = Math.min(couponIds.length, 200 - currentActiveCount);
-    const toInsert = [];
-    const emailCoupons = [];
-
-    for (let i = 0; i < maxInsertCount; i++) {
-      const code = couponIds[i];
-      const meta = COUPON_METADATA[code] || { title: "VIP Promo Offer", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" };
-      toInsert.push({
-        order_number: orderNumber,
-        customer_email: cleanEmail,
-        coupon_code: code,
-        title: meta.title,
-        discount_label: meta.discount_label,
-        image_url: meta.image_url,
-        expires_at: expiresAt,
-        status: "active"
-      });
-      emailCoupons.push(meta.title);
-    }
-
-    if (toInsert.length > 0) {
-      const { error: insError } = await supabase.from("issued_coupons").insert(toInsert);
-      if (insError) throw insError;
-      console.log(`Successfully issued ${toInsert.length} coupons to: ${cleanEmail}`);
-    }
-
-    // 5. Clean up temporary selections
-    await supabase.from("selected_coupons").delete().eq("email", cleanEmail);
-
-    // 6. Trigger external decoupled edge function for SendGrid email dispatch
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-
-    if (SUPABASE_URL) {
-      console.log(`Triggering decoupled send-coupon-email edge function for: ${cleanEmail}`);
-      try {
-        const emailRes = await fetch(`${SUPABASE_URL}/functions/v1/send-coupon-email`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            orderNumber: orderNumber,
-            customerEmail: cleanEmail,
-            couponTitles: emailCoupons
-          })
-        });
-        if (emailRes.ok) {
-          console.log("VIP coupons email edge function triggered successfully!");
-        } else {
-          console.error("Coupons email edge function returned error:", emailRes.status, await emailRes.text());
-        }
-      } catch (emailErr) {
-        console.error("Failed to trigger coupons email edge function:", emailErr);
-      }
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/issue-coupons`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        orderNumber,
+        customerEmail,
+        paymentStatus,
+        customerPhone
+      })
+    });
+    if (res.ok) {
+      console.log("Coupons edge function successfully triggered!");
     } else {
-      console.warn("SUPABASE_URL not configured. Skipping email edge function call.");
+      console.error("Coupons edge function returned error:", res.status, await res.text());
     }
   } catch (err) {
-    console.error("Error processing order coupons:", err);
+    console.error("Failed to forward request to coupons edge function:", err);
   }
 }
 
@@ -251,7 +157,7 @@ serve(async (req) => {
     const data = body.payload || body;
 
     // Normalization logic with fallbacks
-    const orderNumber = data.order_unique_id || data.order_id?.toString() || `#HZ-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderNumber = data.order_number || data.order_unique_id || data.order_id?.toString() || `#HZ-${Math.floor(1000 + Math.random() * 9000)}`;
     // Store the raw numeric order_id from Hyperzod so we can push status updates back
     const hyperzodOrderId = Number(data.order_id) || null;
     const customerName = data.customer_name || data.customer?.name || data.user?.full_name || (data.user?.first_name ? `${data.user.first_name} ${data.user.last_name || ""}`.trim() : "") || "Guest Customer";
@@ -259,19 +165,19 @@ serve(async (req) => {
     const merchantId = data.merchant_id || "restaurant_1";
 
     // Map cart items
-    const rawItems = data.cart_items || data.items || [];
+    const rawItems = data.cart?.cart_items || data.cart_items || data.items || [];
     const items = rawItems.map((item: any) => ({
       name: item.product_name || item.name || "Unknown Item",
       quantity: Number(item.quantity) || 1,
-      price: Number(item.product_price || item.price) || 0.0,
-      notes: item.item_note || item.notes || ""
+      price: Number(item.product_price || item.price || item.total_amount) || 0.0,
+      notes: item.product_instruction || item.item_note || item.notes || ""
     }));
 
-    const subtotal = Number(data.subtotal || data.sub_total_amount) || 0.0;
-    const tax = Number(data.tax) || 0.0;
-    const deliveryFee = Number(data.delivery_charges || data.delivery_fee) || 0.0;
-    const discount = Number(data.discount || data.discount_amount) || 0.0;
-    const total = Number(data.total_amount || data.total) || (subtotal + tax + deliveryFee - discount);
+    const subtotal = Number(data.cart?.sub_total_amount || data.subtotal || data.sub_total_amount) || 0.0;
+    const tax = Number(data.cart?.tax || data.tax) || 0.0;
+    const deliveryFee = Number(data.cart?.delivery_fee || data.delivery_charges || data.delivery_fee) || 0.0;
+    const discount = Number(data.cart?.discount_amount || data.discount || data.discount_amount) || 0.0;
+    const total = Number(data.order_amount || data.cart?.total_amount || data.total_amount || data.total) || (subtotal + tax + deliveryFee - discount);
 
     const type = (data.order_type || "dine_in").toLowerCase(); // delivery, pickup, dine_in
     let paymentMethod = "online";
@@ -382,12 +288,12 @@ serve(async (req) => {
     if (data.payment_status) updatePayload.payment_status = paymentStatus;
     if (data.customer_name || data.customer?.name) updatePayload.customer_name = customerName;
     if (data.customer_phone || data.customer?.phone) updatePayload.customer_phone = customerPhone;
-    if (data.cart_items || data.items) updatePayload.items = items;
-    if (data.subtotal || data.sub_total_amount) updatePayload.subtotal = subtotal;
-    if (data.tax) updatePayload.tax = tax;
-    if (data.delivery_charges || data.delivery_fee) updatePayload.delivery_fee = deliveryFee;
-    if (data.discount || data.discount_amount) updatePayload.discount = discount;
-    if (data.total_amount || data.total) updatePayload.total = total;
+    if (data.cart?.cart_items || data.cart_items || data.items) updatePayload.items = items;
+    if (data.cart?.sub_total_amount || data.subtotal || data.sub_total_amount) updatePayload.subtotal = subtotal;
+    if (data.cart?.tax || data.tax) updatePayload.tax = tax;
+    if (data.cart?.delivery_fee || data.delivery_charges || data.delivery_fee) updatePayload.delivery_fee = deliveryFee;
+    if (data.cart?.discount_amount || data.discount || data.discount_amount) updatePayload.discount = discount;
+    if (data.order_amount || data.cart?.total_amount || data.total_amount || data.total) updatePayload.total = total;
     if (data.delivery_address || data.address) updatePayload.customer_address = customerAddress;
     if (data.order_type) updatePayload.type = type;
 
@@ -483,9 +389,12 @@ serve(async (req) => {
     }
 
     // Process VIP Coupons selection
-    const customerEmail = data.customer_email || data.customer?.email || "";
+    let customerEmail = data.customer_email || data.customer?.email || "";
+    if (!customerEmail && customerPhone) {
+      customerEmail = `${customerPhone.replace(/[^a-zA-Z0-9]/g, "")}@spoonful.com`;
+    }
     if (finalOrderData && finalOrderData.length > 0) {
-      const couponPromise = processOrderCoupons(orderNumber, customerEmail, paymentStatus, supabase);
+      const couponPromise = processOrderCoupons(orderNumber, customerEmail, paymentStatus, customerPhone);
       if (typeof EdgeRuntime !== 'undefined') {
         // @ts-ignore
         EdgeRuntime.waitUntil(couponPromise);

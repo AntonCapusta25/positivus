@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Search, CheckCircle2, AlertTriangle, Clock, RefreshCw, Ticket } from 'lucide-react';
+import { Search, CheckCircle2, AlertTriangle, Clock, RefreshCw, Ticket, Plus, X } from 'lucide-react';
 
 export default function Coupons() {
   const [coupons, setCoupons] = useState([]);
@@ -8,6 +8,94 @@ export default function Coupons() {
   const [isLoading, setIsLoading] = useState(true);
   const [redeemingId, setRedeemingId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all'); // all, active, redeemed
+
+  // Create Coupon States
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newCouponCode, setNewCouponCode] = useState('coupon_1');
+  const [newCustomerEmail, setNewCustomerEmail] = useState('');
+  const [newOrderNumber, setNewOrderNumber] = useState('');
+  const [newExpiryDays, setNewExpiryDays] = useState(14);
+  const [newQuantity, setNewQuantity] = useState(1);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Custom Coupon custom field states (Yoga / Service / Outside Restaurant Contexts)
+  const [customTitle, setCustomTitle] = useState('');
+  const [customDiscountLabel, setCustomDiscountLabel] = useState('Select');
+  const [customImageUrl, setCustomImageUrl] = useState('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80');
+
+  const handleCreateCoupon = async (e) => {
+    e.preventDefault();
+    if (!newCustomerEmail.trim()) {
+      alert("Customer email is required.");
+      return;
+    }
+    setIsCreating(true);
+
+    const COUPON_METADATA = {
+      coupon_1: { title: "Free Priority Delivery", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80" },
+      coupon_2: { title: "10% Off Next Order", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" },
+      coupon_3: { title: "Free Mango Lassi", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80" },
+      coupon_4: { title: "Chef's Secret Sauce", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1589301760014-d929f39ce9b1?w=400&q=80" }
+    };
+
+    let meta;
+    let finalCouponCode = newCouponCode;
+    if (newCouponCode === 'custom') {
+      if (!customTitle.trim()) {
+        alert("Custom Coupon Title is required.");
+        setIsCreating(false);
+        return;
+      }
+      meta = {
+        title: customTitle.trim(),
+        discount_label: customDiscountLabel.trim() || 'Select',
+        image_url: customImageUrl.trim() || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80'
+      };
+      finalCouponCode = `custom_${Math.floor(1000 + Math.random() * 9000)}`;
+    } else {
+      meta = COUPON_METADATA[newCouponCode];
+    }
+
+    const days = Math.min(Number(newExpiryDays || 14), 14);
+    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+
+    try {
+      const qty = Math.max(1, Number(newQuantity || 1));
+      const toInsert = [];
+      for (let i = 0; i < qty; i++) {
+        toInsert.push({
+          order_number: newOrderNumber.trim() || null,
+          customer_email: newCustomerEmail.toLowerCase().trim(),
+          coupon_code: finalCouponCode,
+          title: meta.title,
+          discount_label: meta.discount_label,
+          image_url: meta.image_url,
+          expires_at: expiresAt,
+          status: 'active'
+        });
+      }
+
+      const { error } = await supabase
+        .from('issued_coupons')
+        .insert(toInsert);
+
+      if (error) throw error;
+
+      setIsCreateModalOpen(false);
+      setNewCustomerEmail('');
+      setNewOrderNumber('');
+      setNewExpiryDays(14);
+      setNewQuantity(1);
+      setCustomTitle('');
+      setCustomDiscountLabel('Select');
+      setCustomImageUrl('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80');
+      fetchCoupons();
+    } catch (err) {
+      alert("Failed to issue coupon: " + err.message);
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   async function fetchCoupons() {
     setIsLoading(true);
@@ -80,10 +168,10 @@ export default function Coupons() {
 
   // Calculate statistics
   const totalIssued = coupons.length;
-  const activeCount = coupons.filter(c => c.status === 'active').length;
+  const activeCount = coupons.filter(c => c.status === 'active' && new Date(c.expires_at) >= new Date()).length;
   const redeemedCount = coupons.filter(c => c.status === 'redeemed').length;
 
-  const isLimitReached = activeCount >= 200;
+  const isLimitReached = activeCount >= 1000;
 
   // Helper to determine expired status or time left
   const getExpirationText = (expiresAtStr, status) => {
@@ -125,13 +213,22 @@ export default function Coupons() {
             Manage, verify, and redeem customer loyalty coupons directly at the facility.
           </p>
         </div>
-        <button
-          onClick={fetchCoupons}
-          className="flex items-center gap-1.5 py-2 px-3.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer active:scale-95"
-        >
-          <RefreshCw size={14} />
-          <span>Refresh List</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-1.5 py-2 px-3.5 bg-brand-orange text-white hover:bg-opacity-95 rounded-xl text-xs font-bold shadow-md shadow-brand-orange/15 transition-all cursor-pointer active:scale-95 animate-fade-in"
+          >
+            <Plus size={14} />
+            <span>Issue VIP Coupon</span>
+          </button>
+          <button
+            onClick={fetchCoupons}
+            className="flex items-center gap-1.5 py-2 px-3.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer active:scale-95"
+          >
+            <RefreshCw size={14} />
+            <span>Refresh List</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards Row */}
@@ -148,7 +245,7 @@ export default function Coupons() {
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Active Coupons</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-slate-900">{activeCount}</span>
-              <span className="text-xs font-bold text-slate-400">/ 200 Max</span>
+              <span className="text-xs font-bold text-slate-400">/ 1000 Max</span>
             </div>
             {isLimitReached && (
               <span className="text-[9px] font-bold text-yellow-600 block mt-1">⚠️ Active limit reached!</span>
@@ -289,6 +386,146 @@ export default function Coupons() {
           </div>
         )}
       </div>
+
+      {/* Issue VIP Coupon Modal Overlay */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[160] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-100 max-w-md w-full shadow-2xl p-6 flex flex-col space-y-5 animate-scale-in">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Ticket className="text-brand-orange" size={20} />
+                <span>Issue VIP Coupon</span>
+              </h3>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="p-1 hover:bg-slate-50 text-slate-400 hover:text-slate-700 rounded-lg transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCoupon} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Customer Email Address</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. guest@spoonful.com"
+                  value={newCustomerEmail}
+                  onChange={(e) => setNewCustomerEmail(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Select Coupon Reward</label>
+                <select
+                  value={newCouponCode}
+                  onChange={(e) => setNewCouponCode(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all cursor-pointer"
+                >
+                  <option value="coupon_1">Free Priority Delivery</option>
+                  <option value="coupon_2">10% Off Next Order</option>
+                  <option value="coupon_3">Free Mango Lassi</option>
+                  <option value="coupon_4">Chef's Secret Sauce</option>
+                  <option value="custom">Custom Coupon (Yoga / Service / Outside Restaurant)</option>
+                </select>
+              </div>
+
+              {newCouponCode === 'custom' && (
+                <div className="space-y-3.5 border-l-2 border-brand-orange pl-3.5 animate-fade-in">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Custom Coupon Title</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Yoga Class - 25% Discount"
+                      value={customTitle}
+                      onChange={(e) => setCustomTitle(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Discount / Service Label</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 25% Off"
+                      value={customDiscountLabel}
+                      onChange={(e) => setCustomDiscountLabel(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Image URL (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="https://example.com/image.jpg"
+                      value={customImageUrl}
+                      onChange={(e) => setCustomImageUrl(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Expiry Period (Max 14 Days)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="14"
+                    required
+                    value={newExpiryDays}
+                    onChange={(e) => setNewExpiryDays(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Quantity to Issue</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={newQuantity}
+                    onChange={(e) => setNewQuantity(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Order # (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. TEST-1093"
+                  value={newOrderNumber}
+                  onChange={(e) => setNewOrderNumber(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
+                />
+              </div>
+
+              <div className="flex space-x-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreating}
+                  className="flex-1 py-2.5 bg-brand-orange hover:bg-opacity-95 text-white text-xs font-bold rounded-xl shadow-md shadow-brand-orange/15 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isCreating ? 'Issuing...' : 'Issue Coupon'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

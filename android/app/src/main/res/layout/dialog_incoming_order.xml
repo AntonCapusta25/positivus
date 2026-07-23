@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/dialog_rounded_bg"
-    android:padding="20dp">
+    android:padding="16dp">
 
     <!-- Top Badge Row -->
     <LinearLayout
@@ -51,220 +52,439 @@
             android:textColor="#0F172A"
             android:textSize="18sp"
             android:textStyle="bold" />
-
     </LinearLayout>
 
-    <!-- Customer Name & Order Type -->
+    <!-- Step 1: Review Container -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <TextView
-            android:id="@+id/txtDialogCustomerName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="John Doe"
-            android:textColor="#0F172A"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/txtDialogCustomerLoyalty"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="NEW CUSTOMER"
-            android:textColor="#B45309"
-            android:textSize="9dp"
-            android:textStyle="bold"
-            android:layout_marginStart="8dp"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="3dp"
-            android:gravity="center" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/txtDialogCustomerPhone"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="📞 +31 6 87196711"
-        android:textColor="#64748B"
-        android:textSize="13sp"
-        android:layout_marginTop="2dp" />
-
-    <!-- Address Box -->
-    <LinearLayout
+        android:id="@+id/layoutStep1Container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#F8FAFC"
-        android:padding="12dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="12dp">
+        android:visibility="visible">
+
+        <!-- Customer details Card container -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/section_rounded_bg"
+            android:padding="14dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="12dp">
+
+            <!-- Customer Name & Loyalty Badge Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+
+                <TextView
+                    android:id="@+id/txtDialogCustomerName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="John Doe"
+                    android:textColor="#0F172A"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtDialogCustomerLoyalty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="NEW CUSTOMER"
+                    android:textColor="#B45309"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="8dp"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:gravity="center" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/txtDialogCustomerPhone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📞 +31 6 87196711"
+                android:textColor="#475569"
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Divider line inside customer card -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E2E8F0"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Delivery Address section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="DELIVERY ADDRESS"
+                android:textColor="#94A3B8"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtDialogAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Deurningerstraat 91B, Enschede"
+                android:textColor="#334155"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Items List Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E2E8F0"
+            android:layout_marginBottom="10dp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="DELIVERY ADDRESS"
+            android:text="ORDER ITEMS"
             android:textColor="#94A3B8"
             android:textSize="10sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
 
-        <TextView
-            android:id="@+id/txtDialogAddress"
+        <!-- Items Scroll Container (with maxHeight to prevent pushing lower buttons offscreen) -->
+        <ScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Deurningerstraat 91B, Enschede"
-            android:textColor="#334155"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:layout_marginTop="2dp" />
-    </LinearLayout>
+            android:maxHeight="110dp">
 
-    <!-- Items List Divider -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#E2E8F0"
-        android:layout_marginBottom="10dp" />
+            <LinearLayout
+                android:id="@+id/containerDialogItems"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="ORDER ITEMS"
-        android:textColor="#94A3B8"
-        android:textSize="10sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="6dp" />
-
-    <!-- Items Scroll Container -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-
+        <!-- Total Amount Row -->
         <LinearLayout
-            android:id="@+id/containerDialogItems"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </ScrollView>
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="10dp"
+            android:layout_marginTop="8dp">
 
-    <!-- Total Amount Row -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingVertical="10dp"
-        android:layout_marginTop="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Total Amount"
+                android:textColor="#0F172A"
+                android:textSize="14sp"
+                android:textStyle="bold" />
 
-        <TextView
-            android:layout_width="wrap_content"
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/txtDialogTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="€24.50"
+                android:textColor="#D8581B"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Step 1 Buttons Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Total Amount"
-            android:textColor="#0F172A"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:weightSum="3"
+            android:layout_marginTop="12dp">
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnDialogDecline"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="DECLINE"
+                android:textColor="#64748B"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/btn_decline_bg"
+                android:stateListAnimator="@null" />
 
-        <TextView
-            android:id="@+id/txtDialogTotal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="€24.50"
-            android:textColor="#D8581B"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnDialogAccept"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="2"
+                android:layout_marginStart="10dp"
+                android:text="ACCEPT"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:background="@drawable/btn_accept_bg"
+                android:stateListAnimator="@null" />
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- Prep Time Selection Row -->
+    <!-- Step 2: Prepare & Print Container -->
     <LinearLayout
+        android:id="@+id/layoutStep2Container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="12dp">
+        android:orientation="vertical"
+        android:visibility="gone">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- Prep Time & Driver Card Container -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Target Prep Time:"
-            android:textColor="#64748B"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:background="@drawable/section_rounded_bg"
+            android:padding="16dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="16dp"
+            android:gravity="center_horizontal">
 
-        <Spinner
-            android:id="@+id/spinnerDialogPrepTime"
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:background="#F1F5F9" />
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ESTIMATED PREPARATION TIME"
+                android:textColor="#94A3B8"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="14dp" />
 
-    <!-- Driver Selection Row (for Delivery orders) -->
-    <LinearLayout
-        android:id="@+id/layoutDialogDriver"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
+            <!-- Clock Dial Adjuster Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="14dp">
 
-        <TextView
-            android:layout_width="wrap_content"
+                <!-- Minus Button -->
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnDialogPrepMinus"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:text="-"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#64748B"
+                    android:background="@drawable/circle_badge_bg"
+                    android:stateListAnimator="@null"
+                    android:gravity="center"
+                    android:padding="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:layout_marginEnd="24dp" />
+
+                <!-- Circular Clock Dial -->
+                <RelativeLayout
+                    android:layout_width="140dp"
+                    android:layout_height="140dp"
+                    android:background="@drawable/circle_dashed_orange"
+                    android:gravity="center">
+
+                    <!-- Text Value & Minutes Label stacked vertically -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:id="@+id/txtDialogPrepVal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="25"
+                            android:textColor="#0F172A"
+                            android:textSize="46sp"
+                            android:textStyle="bold"
+                            android:includeFontPadding="false" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="MINUTES"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="-6dp"
+                            android:includeFontPadding="false" />
+                    </LinearLayout>
+                </RelativeLayout>
+
+                <!-- Plus Button -->
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnDialogPrepPlus"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:text="+"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#64748B"
+                    android:background="@drawable/circle_badge_bg"
+                    android:stateListAnimator="@null"
+                    android:gravity="center"
+                    android:padding="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:layout_marginStart="24dp" />
+            </LinearLayout>
+
+            <!-- Speed Presets Chips Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="12dp">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnDialogPrepAdd5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:text="+5m"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#64748B"
+                    android:background="@drawable/btn_preset_bg"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:stateListAnimator="@null"
+                    android:layout_marginEnd="8dp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnDialogPrepAdd10"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:text="+10m"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#64748B"
+                    android:background="@drawable/btn_preset_bg"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:stateListAnimator="@null"
+                    android:layout_marginEnd="8dp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnDialogPrepAdd15"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:text="+15m"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#64748B"
+                    android:background="@drawable/btn_preset_bg"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:stateListAnimator="@null"
+                    android:layout_marginEnd="8dp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnDialogPrepAdd20"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:text="+20m"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#64748B"
+                    android:background="@drawable/btn_preset_bg"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:stateListAnimator="@null" />
+            </LinearLayout>
+
+            <!-- Driver Selection Row (nested inside section container for cleaner group layout!) -->
+            <LinearLayout
+                android:id="@+id/layoutDialogDriver"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:paddingTop="8dp"
+                android:layout_marginBottom="4dp">
+
+                <!-- Simple border top line -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#E2E8F0"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ASSIGN DELIVERY DRIVER"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <Spinner
+                    android:id="@+id/spinnerDialogDriver"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginHorizontal="12dp"
+                    android:background="@drawable/btn_preset_bg" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Step 2 Action Buttons Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Assign Driver:"
-            android:textColor="#64748B"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:weightSum="3">
 
-        <Spinner
-            android:id="@+id/spinnerDialogDriver"
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:background="#F1F5F9" />
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnDialogBackStep2"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="BACK"
+                android:textColor="#64748B"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/btn_decline_bg"
+                android:stateListAnimator="@null" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnDialogConfirm"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="2"
+                android:layout_marginStart="10dp"
+                android:text="PRINT &amp; CONFIRM"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:background="@drawable/btn_accept_bg"
+                android:stateListAnimator="@null" />
+        </LinearLayout>
     </LinearLayout>
-
-    <!-- Action Buttons Row -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="3">
-
-        <Button
-            android:id="@+id/btnDialogDecline"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="DECLINE"
-            android:textColor="#64748B"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:background="@drawable/btn_decline_bg"
-            android:stateListAnimator="@null" />
-
-        <Button
-            android:id="@+id/btnDialogAccept"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="2"
-            android:layout_marginStart="10dp"
-            android:text="ACCEPT &amp; PRINT"
-            android:textColor="#FFFFFF"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:background="@drawable/btn_accept_bg"
-            android:stateListAnimator="@null" />
-    </LinearLayout>
-
 </LinearLayout>

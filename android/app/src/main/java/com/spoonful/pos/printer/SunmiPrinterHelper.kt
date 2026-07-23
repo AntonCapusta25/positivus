@@ -115,7 +115,6 @@ class SunmiPrinterHelper(private val context: Context) {
 
     private fun sendText(service: IWoyouService, text: String) {
         val cleaned = text
-            .replace("€", "EUR")
             .replace("−", "-")
             .replace("—", "-")
             .replace("’", "'")
@@ -163,48 +162,59 @@ class SunmiPrinterHelper(private val context: Context) {
             val merchantStreet = if (isRajCurry) "Deurningerstraat91B" else ""
             val merchantPhone = if (isRajCurry) "053-3030011" else ""
 
-            // Header - Center Aligned, Large Font (28f)
+            // --- Center Aligned Top Section ---
             service.setAlignment(1, printCallback)
-            service.setFontSize(28f, printCallback)
-            val headerText = "Klantenbon\n$merchantName\n"
-            sendText(service, headerText)
-
-            // Reset formatting for Body
-            service.setAlignment(0, printCallback) // Left-aligned
-            service.setFontSize(24f, printCallback) // Standard font size
-
-            val bodyBuilder = java.lang.StringBuilder()
-            if (merchantCity.isNotEmpty()) bodyBuilder.append(merchantCity).append("\n")
-            if (merchantStreet.isNotEmpty()) bodyBuilder.append(merchantStreet).append("\n")
-            if (merchantPhone.isNotEmpty()) bodyBuilder.append(merchantPhone).append("\n")
             
-            bodyBuilder.append("--------------------------------\n")
+            // Header Title
+            service.setFontSize(28f, printCallback)
+            sendText(service, "Klantenbon\n$merchantName\n")
+            
+            // Header Details
+            service.setFontSize(24f, printCallback)
+            val headerBuilder = java.lang.StringBuilder()
+            if (merchantCity.isNotEmpty()) headerBuilder.append(merchantCity).append("\n")
+            if (merchantStreet.isNotEmpty()) headerBuilder.append(merchantStreet).append("\n")
+            if (merchantPhone.isNotEmpty()) headerBuilder.append(merchantPhone).append("\n")
+            headerBuilder.append("--------------------------------\n")
+            sendText(service, headerBuilder.toString())
 
-            // 2. Sequential / Short Order Identifier & Timestamps
+            // Sequential Order Identifier (Large Text)
             val seqNo = order.orderNumber.substringAfterLast("-").substringAfterLast("_")
-            bodyBuilder.append("Order: ").append(seqNo).append("\n")
-            bodyBuilder.append(formatDate(order.createdAt)).append("\n")
-            bodyBuilder.append("Pre order tijd:\n")
-            bodyBuilder.append(formatDate(order.createdAt)).append("\n")
+            service.setFontSize(32f, printCallback)
+            sendText(service, "$seqNo\n")
+
+            // Metadata & Order Type
+            service.setFontSize(24f, printCallback)
+            val metaBuilder = java.lang.StringBuilder()
+            metaBuilder.append(formatDate(order.createdAt)).append("\n")
+            metaBuilder.append("Pre order tijd:\n")
+            metaBuilder.append(formatDate(order.createdAt)).append("\n")
             
             val typeStr = when (order.type.lowercase(Locale.getDefault())) {
                 "pickup" -> "Afhalen"
                 "delivery" -> "Bezorgen"
                 else -> "Dine In"
             }
-            bodyBuilder.append(typeStr).append("\n")
-            bodyBuilder.append("--------------------------------\n")
+            metaBuilder.append(typeStr).append("\n")
+            metaBuilder.append("--------------------------------\n")
+            sendText(service, metaBuilder.toString())
 
-            // 3. Customer Address
+            // --- Left Aligned Body Section ---
+            service.setAlignment(0, printCallback)
+            val bodyBuilder = java.lang.StringBuilder()
+
+            // Customer Name
             if (!order.customerName.isNullOrEmpty()) {
                 val nameParts = order.customerName.split(" ")
                 for (part in nameParts) {
                     bodyBuilder.append(part).append("\n")
                 }
             }
+            // Customer Address
             if (!order.customerAddress.isNullOrEmpty()) {
                 bodyBuilder.append(order.customerAddress).append("\n")
             }
+            // Customer Phone
             if (!order.customerPhone.isNullOrEmpty()) {
                 bodyBuilder.append(order.customerPhone).append("\n")
             }
@@ -219,39 +229,38 @@ class SunmiPrinterHelper(private val context: Context) {
             bodyBuilder.append("--------------------------------\n")
             
             val courierText = if (order.type.lowercase(Locale.getDefault()) == "delivery") {
-                if (!order.driverName.isNullOrEmpty()) {
-                    "Courier: ${order.driverName}"
-                } else {
-                    "Courier: Unassigned (Claim via QR)"
-                }
+                val driver = if (!order.driverName.isNullOrEmpty()) order.driverName else "Spoonful"
+                "Courier: $driver ${order.orderNumber}"
             } else {
                 "Order: ${order.orderNumber}"
             }
             bodyBuilder.append(courierText).append("\n")
             bodyBuilder.append("--------------------------------\n")
 
-            // 4. Items Table
-            bodyBuilder.append("Artikel                 Stuk  Totaal\n")
+            // Items Table
+            bodyBuilder.append("Artikel             Stuk  Totaal\n")
             for (item in order.items) {
-                val qtyStr = "${item.quantity}x "
-                val nameStr = item.name
-                val priceVal = item.price * item.quantity
-                val priceStr = String.format(Locale.US, "%.2f", priceVal).replace(".", ",")
+                val qtyStr = "${item.quantity} " // 2 chars wide: "1 " or "10"
+                val unitPriceStr = String.format(Locale.US, "%.2f", item.price).replace(".", ",")
+                val totalPriceStr = String.format(Locale.US, "%.2f", item.price * item.quantity).replace(".", ",")
                 
-                val rightWidth = priceStr.length
-                val leftWidth = MAX_LINE_CHAR_58MM - rightWidth - 1 // 32 - length - 1
+                // Format unit price and total price to be right-aligned in their 6-char columns
+                val formattedUnit = unitPriceStr.padStart(6)
+                val formattedTotal = totalPriceStr.padStart(6)
                 
-                val itemPrefix = qtyStr + nameStr
-                if (itemPrefix.length <= leftWidth) {
-                    val spaces = " ".repeat(MAX_LINE_CHAR_58MM - itemPrefix.length - rightWidth)
-                    bodyBuilder.append(itemPrefix).append(spaces).append(priceStr).append("\n")
+                // Max length for item name on the first line is 18 characters
+                val name = item.name
+                if (name.length <= 18) {
+                    val spaces = " ".repeat(18 - name.length)
+                    bodyBuilder.append(qtyStr).append(name).append(spaces).append(formattedUnit).append(formattedTotal).append("\n")
                 } else {
+                    // Wrap the name
                     val chunks = mutableListOf<String>()
-                    var current = itemPrefix
-                    while (current.length > leftWidth) {
-                        var wrapIndex = current.lastIndexOf(' ', leftWidth)
-                        if (wrapIndex == -1 || wrapIndex < leftWidth / 2) {
-                            wrapIndex = leftWidth
+                    var current = name
+                    while (current.length > 18) {
+                        var wrapIndex = current.lastIndexOf(' ', 18)
+                        if (wrapIndex == -1 || wrapIndex < 9) {
+                            wrapIndex = 18
                         }
                         chunks.add(current.substring(0, wrapIndex).trimEnd())
                         current = current.substring(wrapIndex).trimStart()
@@ -260,13 +269,14 @@ class SunmiPrinterHelper(private val context: Context) {
                         chunks.add(current)
                     }
                     
-                    val firstLineText = chunks[0]
-                    val spaces = " ".repeat(MAX_LINE_CHAR_58MM - firstLineText.length - rightWidth)
-                    bodyBuilder.append(firstLineText).append(spaces).append(priceStr).append("\n")
+                    // First line has the quantity, first chunk of name, unit price, and total price
+                    val firstChunk = chunks[0]
+                    val spaces = " ".repeat(18 - firstChunk.length)
+                    bodyBuilder.append(qtyStr).append(firstChunk).append(spaces).append(formattedUnit).append(formattedTotal).append("\n")
                     
-                    val padSpaces = " ".repeat(qtyStr.length)
+                    // Subsequent lines only have the wrapped name chunks, indented by 2 spaces
                     for (i in 1 until chunks.size) {
-                        bodyBuilder.append(padSpaces).append(chunks[i]).append("\n")
+                        bodyBuilder.append("  ").append(chunks[i]).append("\n")
                     }
                 }
                 
@@ -277,10 +287,10 @@ class SunmiPrinterHelper(private val context: Context) {
             
             bodyBuilder.append("--------------------------------\n")
 
-            // 5. Calculations
-            val totalValStr = String.format(Locale.US, "%.2f", order.total).replace(".", ",")
-            val taxValStr = String.format(Locale.US, "%.2f", order.tax).replace(".", ",")
-            val nettoValStr = String.format(Locale.US, "%.2f", order.total - order.tax).replace(".", ",")
+            // Calculations
+            val totalValStr = String.format(Locale.US, "%.2f", order.total).replace(".", ",") + "€"
+            val taxValStr = String.format(Locale.US, "%.2f", order.tax).replace(".", ",") + "€"
+            val nettoValStr = String.format(Locale.US, "%.2f", order.total - order.tax).replace(".", ",") + "€"
 
             val totalLine1 = formatLine("Totaal", totalValStr, MAX_LINE_CHAR_58MM)
             val nettoLine = formatLine("Netto:", nettoValStr, MAX_LINE_CHAR_58MM)
@@ -294,25 +304,28 @@ class SunmiPrinterHelper(private val context: Context) {
             bodyBuilder.append(totalLine2).append("\n")
             bodyBuilder.append("--------------------------------\n")
 
-            // 6. Payment Info
+            // Payment Info
             val paymentSource = if (order.paymentMethod.lowercase(Locale.getDefault()) == "online") "Online" else "Cash"
-            bodyBuilder.append("Betaling ").append(merchantName).append(" ").append(paymentSource).append(" (Thuisbezorgd.nl)\n")
+            bodyBuilder.append("Betaling Spoonful ").append(paymentSource).append("\n")
             
-            bodyBuilder.append("================================\n")
-            bodyBuilder.append(merchantName).append(" Online\n")
-            bodyBuilder.append("================================\n")
-            
-            if (order.type.lowercase(Locale.getDefault()) == "delivery") {
-                bodyBuilder.append("Bezorging Claim QR Code\n")
-            } else {
-                bodyBuilder.append("Bestel via onze eigen webshop\n")
-            }
-
             // Flush Body block to printer in one AIDL IPC call
             sendText(service, bodyBuilder.toString())
 
-            // 7. QR code & spacing
+            // --- Center Aligned Footer Section ---
             service.setAlignment(1, printCallback)
+            val footerBuilder = java.lang.StringBuilder()
+            footerBuilder.append("================================\n")
+            footerBuilder.append(merchantName).append(" Online\n")
+            footerBuilder.append("================================\n")
+            
+            if (order.type.lowercase(Locale.getDefault()) == "delivery") {
+                footerBuilder.append("Bezorging Claim QR Code\n")
+            } else {
+                footerBuilder.append("Bestel via onze eigen webshop\n")
+            }
+            sendText(service, footerBuilder.toString())
+
+            // QR code & spacing
             if (order.type.lowercase(Locale.getDefault()) == "delivery") {
                 val driverParam = if (!order.driverName.isNullOrEmpty()) "&driver=" + java.net.URLEncoder.encode(order.driverName, "UTF-8") else ""
                 val driverUrl = "https://positivus-two-iota.vercel.app/driver?order_id=${order.id}$driverParam"

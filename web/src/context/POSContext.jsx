@@ -57,6 +57,26 @@ const initialMenuItems = [
 ];
 
 export const POSProvider = ({ children }) => {
+  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Monitor Supabase Auth state
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
+
   const [userRole, setUserRole] = useState(() => {
     return localStorage.getItem('pos_user_role') || 'admin';
   });
@@ -153,7 +173,6 @@ export const POSProvider = ({ children }) => {
 
       if (mListData.success && mListData.data && mListData.data.data) {
         const list = mListData.data.data || [];
-        setAvailableMerchants(list);
 
         // Sync database merchants table for all merchants
         const merchantsToUpsert = list.map(m => ({
@@ -172,19 +191,40 @@ export const POSProvider = ({ children }) => {
             .upsert(merchantsToUpsert, { onConflict: 'merchant_id' });
           if (error) console.error("Failed to upsert merchants to Supabase:", error.message);
         }
+      }
 
-        // If settings has no merchant or the current one is not in the list (e.g. legacy localStore), fallback to first
-        const isMerchantInList = list.some(m => m.id === settings.merchantId);
-        if ((!settings.merchantId || !isMerchantInList) && list.length > 0) {
-          activeId = list[0].id;
-          setSettings(prev => ({ ...prev, merchantId: activeId }));
-        }
+      // Fetch all merchants owned by this user or unowned legacy ones
+      let query = supabase.from('merchants').select('*');
+      if (authUser) {
+        query = query.or(`owner_id.eq.${authUser.id},owner_id.is.null`);
+      }
+      const { data: dbMerchants, error: dbErr } = await query.order('name', { ascending: true });
 
-        const merchantObj = list.find(m => m.id === activeId);
-        if (merchantObj) {
-          console.log("Merchant storefront details fetched:", merchantObj.name);
-          setRestaurantOpen(merchantObj.is_accepting_orders);
-        }
+      let finalMerchants = [];
+      if (!dbErr && dbMerchants) {
+        finalMerchants = dbMerchants.map(m => ({
+          id: m.merchant_id,
+          name: m.name,
+          is_open: m.is_open,
+          is_accepting_orders: m.is_accepting_orders,
+          slug: m.slug,
+          admin_pin: m.admin_pin || '1234',
+          raw_details: m.raw_details
+        }));
+        setAvailableMerchants(finalMerchants);
+      }
+
+      // If settings has no merchant or the current one is not in the list, fallback to first
+      const isMerchantInList = finalMerchants.some(m => m.id === settings.merchantId);
+      if ((!settings.merchantId || !isMerchantInList) && finalMerchants.length > 0) {
+        activeId = finalMerchants[0].id;
+        setSettings(prev => ({ ...prev, merchantId: activeId }));
+      }
+
+      const merchantObj = finalMerchants.find(m => m.id === activeId);
+      if (merchantObj) {
+        console.log("Merchant storefront details fetched:", merchantObj.name);
+        setRestaurantOpen(merchantObj.is_accepting_orders);
       }
 
       // 2. Fetch product categories for the active merchant
@@ -681,12 +721,10 @@ export const POSProvider = ({ children }) => {
     }
 
     // 2. Standard Merchant login check
-    const isSpoonful = merchantId === 'restaurant_1' || merchantId === '6a0f03b4500ed5db150be1a1';
-    const last4 = merchantId ? merchantId.slice(-4) : '';
-    const validPins = ['1234'];
-    if (last4) validPins.push(last4);
+    const merchantObj = availableMerchants.find(m => m.id === merchantId);
+    const expectedPin = merchantObj?.admin_pin || '1234';
 
-    if (cleanPin === '1234' || (isSpoonful && cleanPin === '1234') || validPins.includes(cleanPin)) {
+    if (cleanPin === expectedPin || (cleanPin === '1234' && !merchantObj)) {
       setUserRole('admin');
       setSuperadminName(null);
       localStorage.setItem('pos_user_role', 'admin');
@@ -709,6 +747,175 @@ export const POSProvider = ({ children }) => {
     localStorage.removeItem('pos_authenticated_merchant');
     localStorage.removeItem('pos_user_role');
     localStorage.removeItem('pos_superadmin_name');
+  };
+
+  const signUpUser = async (email, password, displayName, role = 'admin') => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: displayName,
+            role: role
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (role === 'driver') {
+        const { error: driverErr } = await supabase
+          .from('drivers')
+          .insert([{
+            user_id: data.user.id,
+            name: displayName,
+            passcode: '1234',
+            phone: ''
+          }]);
+        if (driverErr) console.error("Failed to create driver profile:", driverErr.message);
+      }
+
+      return { success: true, user: data.user };
+    } catch (e) {
+      console.error("Sign up failed:", e);
+      return { success: false, error: e.message };
+    }
+  };
+
+  const signInUser = async (email, password) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      const { data: driverData } = await supabase
+        .from('drivers')
+        .select('*')
+        .eq('user_id', data.user.id);
+
+      if (driverData && driverData.length > 0) {
+        setUserRole('driver');
+        localStorage.setItem('pos_user_role', 'driver');
+        localStorage.setItem('pos_driver_name', driverData[0].name);
+      } else {
+        setUserRole('admin');
+        localStorage.setItem('pos_user_role', 'admin');
+      }
+
+      await syncCatalogAndStorefront();
+      return { success: true, user: data.user };
+    } catch (e) {
+      console.error("Sign in failed:", e);
+      return { success: false, error: e.message };
+    }
+  };
+
+  const signOutUser = async () => {
+    try {
+      await supabase.auth.signOut();
+      logoutMerchant();
+      setAuthUser(null);
+    } catch (e) {
+      console.error("Sign out failed:", e);
+    }
+  };
+
+  const registerMerchant = async (merchantId, name, adminPin) => {
+    const cleanId = merchantId.trim().toLowerCase();
+    const cleanName = name.trim();
+    const cleanPin = adminPin.trim() || '1234';
+
+    if (!cleanId || !cleanName) {
+      return { success: false, error: 'Merchant ID and Name are required.' };
+    }
+
+    try {
+      const { error } = await supabase
+        .from('merchants')
+        .insert([{
+          merchant_id: cleanId,
+          name: cleanName,
+          admin_pin: cleanPin,
+          owner_id: authUser?.id || null,
+          is_open: true,
+          is_accepting_orders: true,
+          updated_at: new Date().toISOString()
+        }]);
+
+      if (error) throw error;
+
+      await syncCatalogAndStorefront();
+      return { success: true };
+    } catch (e) {
+      console.error("Failed to register merchant:", e);
+      return { success: false, error: e.message };
+    }
+  };
+
+  const registerPOSMachine = async (name, merchantId) => {
+    const cleanName = name.trim();
+    const targetMerchantId = merchantId || settings.merchantId;
+
+    if (!cleanName || !targetMerchantId) {
+      return { success: false, error: 'Terminal name is required.' };
+    }
+
+    // Generate POS-XXXXXX code
+    const registrationCode = `POS-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    try {
+      const { data, error } = await supabase
+        .from('pos_machines')
+        .insert([{
+          name: cleanName,
+          merchant_id: targetMerchantId,
+          registration_code: registrationCode,
+          status: 'active'
+        }])
+        .select();
+
+      if (error) throw error;
+      return { success: true, code: registrationCode, machine: data?.[0] };
+    } catch (e) {
+      console.error("Failed to register POS machine:", e);
+      return { success: false, error: e.message };
+    }
+  };
+
+  const fetchPOSMachines = async (merchantId) => {
+    const targetMerchantId = merchantId || settings.merchantId;
+    try {
+      const { data, error } = await supabase
+        .from('pos_machines')
+        .select('*')
+        .eq('merchant_id', targetMerchantId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (e) {
+      console.error("Failed to fetch POS machines:", e);
+      return { success: false, error: e.message };
+    }
+  };
+
+  const deletePOSMachine = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('pos_machines')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (e) {
+      console.error("Failed to delete POS machine:", e);
+      return { success: false, error: e.message };
+    }
   };
 
   const createDriver = async (name, passcode, phone) => {
@@ -1503,6 +1710,11 @@ ${deliveryQRSection}========================================
 
   return (
     <POSContext.Provider value={{
+      authUser,
+      authLoading,
+      signUpUser,
+      signInUser,
+      signOutUser,
       orders,
       supabaseConnected,
       restaurantOpen,
@@ -1535,7 +1747,11 @@ ${deliveryQRSection}========================================
       userRole,
       setUserRole,
       superadminName,
-      setSuperadminName
+      setSuperadminName,
+      registerMerchant,
+      registerPOSMachine,
+      fetchPOSMachines,
+      deletePOSMachine
     }}>
       {children}
     </POSContext.Provider>

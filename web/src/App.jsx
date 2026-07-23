@@ -440,180 +440,183 @@ function MainLayout() {
 }
 
 
-function PinLockscreen() {
-  const { availableMerchants, loginMerchant, settings, setSettings } = usePOS();
-  const [selectedMerchant, setSelectedMerchant] = useState('');
-  const [selectedSubMerchant, setSelectedSubMerchant] = useState('');
-  const [pin, setPin] = useState('');
+function AuthScreen() {
+  const { signUpUser, signInUser, authLoading } = usePOS();
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [role, setRole] = useState('admin'); // admin or driver
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [shake, setShake] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Set default selected merchant once available
-  useEffect(() => {
-    if (availableMerchants.length > 0) {
-      const found = availableMerchants.find(m => m.id === 'restaurant_1' || m.id === '6a0f03b4500ed5db150be1a1') || availableMerchants[0];
-      setSelectedMerchant(found.id);
-      setSelectedSubMerchant(found.id);
-    } else {
-      setSelectedMerchant(settings.merchantId || 'restaurant_1');
-      setSelectedSubMerchant(settings.merchantId || 'restaurant_1');
-    }
-  }, [availableMerchants]);
-
-  const handleKeyPress = (num) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setErrorMsg('');
-    if (pin.length < 4) {
-      const nextPin = pin + num;
-      setPin(nextPin);
-      if (nextPin.length === 4) {
-        // Automatic confirm
-        const res = loginMerchant(selectedMerchant, nextPin);
-        if (res.success) {
-          // If superadmin, lock onto the chosen submerchant restaurant initial context
-          if (selectedMerchant === 'superadmin_autoflow' || selectedMerchant === 'superadmin_raj') {
-            setSettings(prev => ({ ...prev, merchantId: selectedSubMerchant }));
-            localStorage.setItem('pos_authenticated_merchant', selectedSubMerchant);
-          }
-        } else {
-          setShake(true);
-          setErrorMsg(res.error);
-          setPin('');
-          setTimeout(() => setShake(false), 500);
-        }
+    setSuccessMsg('');
+    setIsLoading(true);
+
+    if (isRegisterMode) {
+      const res = await signUpUser(email, password, displayName, role);
+      setIsLoading(false);
+      if (res.success) {
+        setSuccessMsg(role === 'driver' 
+          ? "Driver account registered successfully! You can now log in." 
+          : "Registration successful! You can now log in and manage your restaurants."
+        );
+        setIsRegisterMode(false);
+      } else {
+        setErrorMsg(res.error || "Failed to register account.");
+      }
+    } else {
+      const res = await signInUser(email, password);
+      setIsLoading(false);
+      if (!res.success) {
+        setErrorMsg(res.error || "Failed to sign in. Check email and password.");
       }
     }
   };
 
-  const handleBackspace = () => {
-    setPin(prev => prev.slice(0, -1));
-  };
-
-  const handleClear = () => {
-    setPin('');
-    setErrorMsg('');
-  };
-
-  // Clean merchant option list containing only valid store profiles
-  const merchantOptions = availableMerchants.length > 0 ? availableMerchants : [
-    { id: 'restaurant_1', name: 'Raj Curry House' }
-  ];
-
-  const isSuperadminOption = false;
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen w-screen bg-slate-950">
+        <div className="text-white text-xs font-bold uppercase tracking-widest animate-pulse">
+          Loading Spoonful Terminal...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen w-screen bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 font-sans p-4">
-      <div className="w-full max-w-sm bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col space-y-6">
+      <div className="w-full max-w-sm bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col space-y-6 animate-fade-in">
         
         {/* Title Logo */}
         <div className="text-center space-y-2 flex flex-col items-center">
-          <img src="/favicon.png" alt="Spoonful Logo" className="w-16 h-16 rounded-2xl object-cover shadow-lg shadow-black/25 mb-1 animate-pulse" />
-          <h2 className="text-xl font-black text-white tracking-tight uppercase">Spoonful Terminal</h2>
-          <p className="text-xs text-slate-400 font-medium">Select your restaurant and input passcode to login</p>
+          <img src="/favicon.png" alt="Spoonful Logo" className="w-16 h-16 rounded-2xl object-cover shadow-lg shadow-black/25 mb-1" />
+          <h2 className="text-xl font-black text-white tracking-tight uppercase">Spoonful Auth</h2>
+          <p className="text-xs text-slate-400 font-medium">
+            {isRegisterMode ? "Create your unified credentials profile" : "Log in with your standard credentials"}
+          </p>
         </div>
 
-        {/* Dropdown Select store */}
-        <div className="space-y-1">
-          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
-            Store / User Profile
-          </label>
-          <div className="relative">
-            <select
-              value={selectedMerchant}
-              onChange={(e) => setSelectedMerchant(e.target.value)}
-              className="w-full bg-slate-850 hover:bg-slate-800 border border-slate-700/80 text-white rounded-xl pl-3 pr-8 py-3 text-xs font-extrabold focus:outline-none focus:ring-1 focus:ring-brand-orange cursor-pointer appearance-none transition-all"
-            >
-              {merchantOptions.map(m => (
-                <option key={m.id} value={m.id} className="bg-slate-900 text-white">
-                  {m.name || m.id}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Conditionally render Sub-Merchant Selector for Superadmins */}
-        {isSuperadminOption && (
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
-              Select Initial Restaurant
-            </label>
-            <div className="relative">
-              <select
-                value={selectedSubMerchant}
-                onChange={(e) => setSelectedSubMerchant(e.target.value)}
-                className="w-full bg-slate-850 hover:bg-slate-800 border border-slate-700/80 text-white rounded-xl pl-3 pr-8 py-3 text-xs font-extrabold focus:outline-none focus:ring-1 focus:ring-brand-orange cursor-pointer appearance-none transition-all"
-              >
-                {availableMerchants.map(m => (
-                  <option key={m.id} value={m.id} className="bg-slate-900 text-white">
-                    {m.name || m.id}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                </svg>
-              </div>
-            </div>
+        {errorMsg && (
+          <div className="p-3.5 bg-rose-500/10 border border-rose-500/25 text-rose-450 text-xs font-bold rounded-2xl text-center">
+            {errorMsg}
           </div>
         )}
 
-        {/* PIN Indicators */}
-        <div className="flex flex-col items-center space-y-3">
-          <div className={`flex space-x-3.5 ${shake ? 'animate-shake' : ''}`}>
-            {[0, 1, 2, 3].map((idx) => (
-              <div
-                key={idx}
-                className={`w-4.5 h-4.5 rounded-full border-2 transition-all duration-150 ${
-                  pin.length > idx 
-                    ? 'bg-brand-orange border-brand-orange scale-110 shadow-lg shadow-brand-orange/30' 
-                    : 'border-slate-700 bg-transparent'
-                }`}
-              />
-            ))}
+        {successMsg && (
+          <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-450 text-xs font-bold rounded-2xl text-center">
+            {successMsg}
           </div>
-          {errorMsg ? (
-            <p className="text-xs font-semibold text-rose-500 animate-pulse">{errorMsg}</p>
-          ) : (
-            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Default Pin: 1234</p>
-          )}
-        </div>
+        )}
 
-        {/* Keypad Grid */}
-        <div className="grid grid-cols-3 gap-2.5 max-w-[280px] mx-auto w-full">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-            <button
-              key={num}
-              onClick={() => handleKeyPress(num.toString())}
-              className="h-14 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-2xl text-xl font-bold transition-all active:scale-95"
-            >
-              {num}
-            </button>
-          ))}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {isRegisterMode && (
+            <>
+              {/* Role Select */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                  Access Profile Role
+                </label>
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setRole('admin')}
+                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all border ${
+                      role === 'admin' 
+                        ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/10' 
+                        : 'bg-slate-800/80 text-slate-450 border-slate-700/80 hover:text-white'
+                    }`}
+                  >
+                    Restaurant Admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole('driver')}
+                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all border ${
+                      role === 'driver' 
+                        ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/10' 
+                        : 'bg-slate-800/80 text-slate-450 border-slate-700/80 hover:text-white'
+                    }`}
+                  >
+                    Delivery Driver
+                  </button>
+                </div>
+              </div>
+
+              {/* Full Name */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                  Full Display Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Mario Rossi"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full bg-slate-850 border border-slate-700/80 text-white rounded-xl px-4 py-3 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Email Address */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+              Email Address
+            </label>
+            <input
+              type="email"
+              required
+              placeholder="admin@spoonful.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-slate-850 border border-slate-700/80 text-white rounded-xl px-4 py-3 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange"
+            />
+          </div>
+
+          {/* Password */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              minLength="6"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-slate-850 border border-slate-700/80 text-white rounded-xl px-4 py-3 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange"
+            />
+          </div>
+
+          {/* Submit */}
           <button
-            onClick={handleClear}
-            className="h-14 bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-white rounded-2xl text-sm font-extrabold transition-all active:scale-95"
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3 bg-brand-orange hover:bg-opacity-95 text-white font-bold rounded-xl text-xs transition-all shadow-md shadow-brand-orange/20 active:scale-95 disabled:bg-slate-750 disabled:text-slate-500"
           >
-            CLEAR
+            {isLoading ? "Processing..." : (isRegisterMode ? "REGISTER ACCOUNT" : "SIGN IN TERMINAL")}
           </button>
-          <button
-            onClick={() => handleKeyPress('0')}
-            className="h-14 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-2xl text-xl font-bold transition-all active:scale-95"
-          >
-            0
-          </button>
-          <button
-            onClick={handleBackspace}
-            className="h-14 bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-white rounded-2xl text-lg font-bold flex items-center justify-center transition-all active:scale-95"
-          >
-            ⌫
-          </button>
-        </div>
+        </form>
+
+        {/* Mode Switcher Link */}
+        <button
+          type="button"
+          onClick={() => {
+            setIsRegisterMode(!isRegisterMode);
+            setErrorMsg('');
+            setSuccessMsg('');
+          }}
+          className="text-xs font-bold text-slate-400 hover:text-white transition-all text-center block w-full underline"
+        >
+          {isRegisterMode ? "Already have an account? Sign In" : "Need a corporate context? Create Account"}
+        </button>
 
       </div>
     </div>
@@ -623,7 +626,7 @@ function PinLockscreen() {
 import DriverPortal from './components/DriverPortal';
 
 function AppContent() {
-  const { authenticatedMerchantId, activeDriverOffer, setActiveDriverOffer, assignOrderDriver } = usePOS();
+  const { authUser, authLoading, activeDriverOffer, setActiveDriverOffer, assignOrderDriver } = usePOS();
   const hostname = window.location.hostname.toLowerCase();
   const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
   const isDriver = import.meta.env.VITE_APP_MODE === 'driver' || hostname.startsWith('driver.') || hostname.startsWith('courier.') || hostname.startsWith('delivery.') || path === '/driver' || path === '/drivers';
@@ -637,6 +640,20 @@ function AppContent() {
       alert("Failed to claim: " + e.message);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen w-screen bg-slate-950">
+        <div className="text-white text-xs font-bold uppercase tracking-widest animate-pulse">
+          Loading Spoonful Terminal...
+        </div>
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return <AuthScreen />;
+  }
 
   if (isDriver) {
     return (
@@ -684,7 +701,7 @@ function AppContent() {
 
   return (
     <>
-      {!authenticatedMerchantId ? <PinLockscreen /> : <MainLayout />}
+      <MainLayout />
       <NewOrderModal />
     </>
   );

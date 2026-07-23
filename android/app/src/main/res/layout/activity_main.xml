@@ -1240,6 +1240,82 @@
                     </LinearLayout>
                 </ScrollView>
             </LinearLayout>
+            <!-- 5. POS DEVICE REGISTRATION / ONBOARDING -->
+            <LinearLayout
+                android:id="@+id/layoutOnboardingRegister"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#F8FAFC"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🍽️"
+                    android:textSize="64sp"
+                    android:layout_marginBottom="16dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="POS Device Onboarding"
+                    android:textColor="#0F172A"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Enter the POS linking code generated from your web store dashboard to bind this terminal."
+                    android:textColor="#475569"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:layout_marginBottom="32dp"
+                    android:maxWidth="340dp"/>
+
+                <!-- Registration Code input -->
+                <EditText
+                    android:id="@+id/editOnboardingCode"
+                    android:layout_width="260dp"
+                    android:layout_height="54dp"
+                    android:background="@drawable/section_rounded_bg"
+                    android:hint="POS-XXXXXX"
+                    android:textColorHint="#94A3B8"
+                    android:textColor="#0F172A"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:inputType="textCapCharacters"
+                    android:singleLine="true"
+                    android:maxLength="10"
+                    android:layout_marginBottom="24dp"
+                    android:paddingHorizontal="16dp"/>
+
+                <!-- Button -->
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnOnboardingSubmit"
+                    android:layout_width="260dp"
+                    android:layout_height="50dp"
+                    android:background="@drawable/btn_accept_selector"
+                    android:text="LINK POS TERMINAL"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Loader -->
+                <ProgressBar
+                    android:id="@+id/progressOnboarding"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="invisible"/>
+
+            </LinearLayout>
+
         </FrameLayout>
     </LinearLayout>
 

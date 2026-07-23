@@ -3,8 +3,37 @@ import { usePOS } from '../context/POSContext';
 import { Volume2, Printer, Sliders, Play, Save, RotateCcw, Zap } from 'lucide-react';
 
 export default function Settings() {
-  const { settings, setSettings, triggerTestPrint, playAlertSound, availableMerchants, createTestOrder, logoutMerchant } = usePOS();
+  const { 
+    settings, 
+    setSettings, 
+    triggerTestPrint, 
+    playAlertSound, 
+    availableMerchants, 
+    createTestOrder, 
+    signOutUser,
+    fetchPOSMachines,
+    registerPOSMachine,
+    deletePOSMachine
+  } = usePOS();
+  
   const [isPlacingTestOrder, setIsPlacingTestOrder] = React.useState(false);
+  const [posMachines, setPosMachines] = React.useState([]);
+  const [newPOSName, setNewPOSName] = React.useState('');
+  const [isRegisteringPOS, setIsRegisteringPOS] = React.useState(false);
+  const [generatedPOSCode, setGeneratedPOSCode] = React.useState('');
+
+  const loadTerminals = React.useCallback(async () => {
+    const res = await fetchPOSMachines(settings.merchantId);
+    if (res.success) {
+      setPosMachines(res.data || []);
+    }
+  }, [fetchPOSMachines, settings.merchantId]);
+
+  React.useEffect(() => {
+    if (settings.merchantId) {
+      loadTerminals();
+    }
+  }, [settings.merchantId, loadTerminals]);
 
   const handleCreateTestOrder = async () => {
     setIsPlacingTestOrder(true);
@@ -14,6 +43,30 @@ export default function Settings() {
       alert(`Success! Test order placed on Hyperzod. Order ID: ${result.orderId}.\nIt will sync to Supabase shortly.`);
     } else {
       alert(`Failed to place test order: ${result.error}`);
+    }
+  };
+
+  const handleRegisterPOS = async (e) => {
+    e.preventDefault();
+    setIsRegisteringPOS(true);
+    const res = await registerPOSMachine(newPOSName, settings.merchantId);
+    setIsRegisteringPOS(false);
+    if (res.success) {
+      setGeneratedPOSCode(res.code);
+      setNewPOSName('');
+      loadTerminals();
+    } else {
+      alert("Failed to register POS terminal: " + res.error);
+    }
+  };
+
+  const handleDeletePOS = async (id) => {
+    if (!window.confirm("Are you sure you want to revoke this POS terminal? It will be disconnected immediately.")) return;
+    const res = await deletePOSMachine(id);
+    if (res.success) {
+      loadTerminals();
+    } else {
+      alert("Failed to delete POS terminal: " + res.error);
     }
   };
 
@@ -95,7 +148,7 @@ export default function Settings() {
               </div>
               <button
                 type="button"
-                onClick={logoutMerchant}
+                onClick={signOutUser}
                 className="w-full mt-2.5 py-2 border border-slate-200 hover:bg-slate-100 text-rose-500 hover:text-rose-600 font-bold rounded-lg text-xs transition-all"
               >
                 Sign Out / Lock Terminal
@@ -128,6 +181,76 @@ export default function Settings() {
               <p className="text-[10px] text-slate-400 text-center">
                 Places a real order on Hyperzod sandbox API to test end-to-end sync.
               </p>
+            </div>
+          </div>
+
+          {/* POS Terminal Management Card */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+            <h3 className="font-bold text-slate-800 flex items-center space-x-2">
+              <Sliders size={18} className="text-brand-orange" />
+              <span>POS Terminals</span>
+            </h3>
+
+            {/* List */}
+            {posMachines.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-2">
+                No active POS machines linked to this restaurant.
+              </p>
+            ) : (
+              <div className="border border-slate-100 rounded-xl divide-y divide-slate-50 overflow-hidden max-h-[160px] overflow-y-auto">
+                {posMachines.map(pm => (
+                  <div key={pm.id} className="p-3 flex items-center justify-between text-xs hover:bg-slate-50 transition-all">
+                    <div>
+                      <span className="font-bold text-slate-700 block">{pm.name}</span>
+                      <span className="text-[10px] font-mono text-slate-450">Code: <b className="text-brand-orange">{pm.registration_code}</b></span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePOS(pm.id)}
+                      className="text-slate-400 hover:text-rose-500 font-extrabold px-2 py-0.5 rounded-lg hover:bg-rose-50 transition-all text-sm"
+                      title="Revoke device access"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Generator Form */}
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-3">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Link New POS Terminal</span>
+              {generatedPOSCode ? (
+                <div className="p-3 bg-amber-50 border border-amber-200 text-center rounded-xl space-y-1">
+                  <span className="text-[9px] font-black text-amber-800 uppercase tracking-widest block">USE CODE ON onboarding SCREEN</span>
+                  <span className="text-lg font-black text-brand-orange tracking-wider select-all">{generatedPOSCode}</span>
+                  <button
+                    type="button"
+                    onClick={() => setGeneratedPOSCode('')}
+                    className="text-[9px] font-bold text-amber-700 hover:text-amber-900 block mx-auto underline mt-0.5"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleRegisterPOS} className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Counter Sunmi"
+                    value={newPOSName}
+                    onChange={(e) => setNewPOSName(e.target.value)}
+                    className="flex-1 bg-white border border-slate-200 focus:border-brand-orange rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none text-slate-800"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isRegisteringPOS}
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs whitespace-nowrap active:scale-95 transition-all"
+                  >
+                    {isRegisteringPOS ? 'Linking...' : 'Link Device'}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
 

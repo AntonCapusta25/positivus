@@ -1,0 +1,13 @@
+# Supabase configuration file
+
+[functions.hyperzod-webhook]
+verify_jwt = false
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[auth]
+enable_signup = true
+
+[auth.email]
+enable_confirmations = false
