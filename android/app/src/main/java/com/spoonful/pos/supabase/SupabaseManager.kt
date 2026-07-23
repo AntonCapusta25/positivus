@@ -927,6 +927,104 @@ class SupabaseManager(
         isRealtimeActive = false
     }
 
+    fun linkDeviceWithCode(
+        code: String,
+        callback: (success: Boolean, merchantId: String?, merchantName: String?, ownerId: String?) -> Unit
+    ) {
+        val cleanCode = code.trim().uppercase()
+        if (cleanCode.isEmpty()) {
+            mainHandler.post { callback(false, null, null, null) }
+            return
+        }
+
+        val url = "$supabaseUrl/rest/v1/pos_machines?registration_code=eq.$cleanCode&select=*"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .get()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "linkDeviceWithCode network fail", e)
+                mainHandler.post { callback(false, null, null, null) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        mainHandler.post { callback(false, null, null, null) }
+                        return
+                    }
+                    val body = response.body?.string() ?: ""
+                    try {
+                        val array = JsonParser.parseString(body).asJsonArray
+                        if (array.size() > 0) {
+                            val machine = array.get(0).asJsonObject
+                            val mId = machine.get("merchant_id").asString
+                            
+                            fetchMerchantDetails(mId) { mName, oId ->
+                                if (mName != null) {
+                                    mainHandler.post { callback(true, mId, mName, oId) }
+                                } else {
+                                    mainHandler.post { callback(false, null, null, null) }
+                                }
+                            }
+                        } else {
+                            mainHandler.post { callback(false, null, null, null) }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Parse link code response failed: $body", e)
+                        mainHandler.post { callback(false, null, null, null) }
+                    }
+                }
+            }
+        })
+    }
+
+    private fun fetchMerchantDetails(
+        mId: String,
+        callback: (merchantName: String?, ownerId: String?) -> Unit
+    ) {
+        val url = "$supabaseUrl/rest/v1/merchants?merchant_id=eq.$mId&select=*"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .get()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                callback(null, null)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        callback(null, null)
+                        return
+                    }
+                    val body = response.body?.string() ?: ""
+                    try {
+                        val array = JsonParser.parseString(body).asJsonArray
+                        if (array.size() > 0) {
+                            val merchant = array.get(0).asJsonObject
+                            val name = merchant.get("name").asString
+                            val ownerId = merchant.get("owner_id")?.asString ?: ""
+                            callback(name, ownerId)
+                        } else {
+                            callback(null, null)
+                        }
+                    } catch (e: Exception) {
+                        callback(null, null)
+                    }
+                }
+            }
+        })
+    }
+
     fun isRealtimeConnected(): Boolean {
         return isRealtimeActive
     }

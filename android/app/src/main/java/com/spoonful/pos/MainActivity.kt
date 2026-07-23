@@ -387,6 +387,56 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val editOnboardingCode = findViewById<android.widget.EditText>(R.id.editOnboardingCode)
+        val btnOnboardingLinkCode = findViewById<android.widget.Button>(R.id.btnOnboardingLinkCode)
+
+        btnOnboardingLinkCode.setOnClickListener {
+            val code = editOnboardingCode.text.toString().trim()
+            if (code.isEmpty()) {
+                Toast.makeText(this, "Please enter a registration code", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            progressOnboarding.visibility = View.VISIBLE
+            btnOnboardingLogin.isEnabled = false
+            btnOnboardingLinkCode.isEnabled = false
+
+            supabaseManager.linkDeviceWithCode(code) { success, mId, mName, oId ->
+                runOnUiThread {
+                    progressOnboarding.visibility = View.INVISIBLE
+                    btnOnboardingLogin.isEnabled = true
+                    btnOnboardingLinkCode.isEnabled = true
+
+                    if (success && mId != null && mName != null) {
+                        getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                            .putBoolean("pos_registered", true)
+                            .putString("pos_terminal_name", "Sunmi Handheld")
+                            .putString("pos_machine_id", "local_machine_${System.currentTimeMillis()}")
+                            .putString("pos_merchant_name", mName)
+                            .putString("merchant_id", mId)
+                            .putString("pos_owner_id", oId ?: "")
+                            .apply()
+
+                        isPOSRegistered = true
+                        posTerminalName = "Sunmi Handheld"
+                        posMachineId = "local_machine_${System.currentTimeMillis()}"
+                        posOwnerId = oId ?: ""
+                        merchantId = mId
+
+                        txtDrawerActiveRestaurant.text = mName
+                        layoutOnboardingRegister.visibility = View.GONE
+                        drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED)
+                        
+                        supabaseManager.updateMerchantId(mId)
+                        supabaseManager.start()
+                        Toast.makeText(this@MainActivity, "Linked to $mName successfully!", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(this@MainActivity, "Failed to link: Invalid or inactive code", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+
     }
 
     override fun onDestroy() {
@@ -596,13 +646,17 @@ class MainActivity : AppCompatActivity() {
             val isSupabaseConnected = supabaseManager.isRealtimeConnected()
             val isPrinterConnected = printerHelper.isPrinterConnected()
 
+            val infoMsg = "• Supabase Database: ${if (isSupabaseConnected) "CONNECTED ✓" else "DISCONNECTED ✗"}\n" +
+                          "• Sunmi Internal Printer: ${if (isPrinterConnected) "CONNECTED ✓" else "DISCONNECTED ✗"}\n\n" +
+                          "── POS Terminal Specs ──\n" +
+                          "• Restaurant Context: ${txtDrawerActiveRestaurant.text}\n" +
+                          "• Restaurant ID: $merchantId\n" +
+                          "• Terminal Name: $posTerminalName\n" +
+                          "• Machine UUID: $posMachineId"
+
             androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Connectivity Status")
-                .setMessage(
-                    "• Supabase Database Realtime: ${if (isSupabaseConnected) "CONNECTED ✓" else "DISCONNECTED ✗"}\n" +
-                    "• Sunmi Internal Printer: ${if (isPrinterConnected) "CONNECTED ✓" else "DISCONNECTED ✗"}\n" +
-                    "• Target Restaurant ID: $merchantId"
-                )
+                .setTitle("Connectivity & POS Machine Settings")
+                .setMessage(infoMsg)
                 .setPositiveButton("Close", null)
                 .show()
         }

@@ -266,10 +266,10 @@ export const POSProvider = ({ children }) => {
       const prodRes = await fetch(`${HYPERZOD_BASE_URL}/merchant/v1/catalog/product/list?merchant_id=${activeId}`, { headers });
       const prodData = await prodRes.json();
 
-      if (catData.success && prodData.success) {
-        const rawCategories = Array.isArray(catData.data) ? catData.data : (catData.data?.data || []);
-        const rawProducts = Array.isArray(prodData.data) ? prodData.data : (prodData.data?.data || []);
+      const rawCategories = catData.success ? (Array.isArray(catData.data) ? catData.data : (catData.data?.data || [])) : [];
+      const rawProducts = prodData.success ? (Array.isArray(prodData.data) ? prodData.data : (prodData.data?.data || [])) : [];
 
+      if (catData.success && prodData.success && rawProducts.length > 0) {
         console.log(`Self-healing catalog sync for merchant ${activeId}: ${rawCategories.length} categories, ${rawProducts.length} items.`);
 
         // Upsert to Supabase products table
@@ -311,6 +311,34 @@ export const POSProvider = ({ children }) => {
         }).filter(c => c.items.length > 0);
 
         setMenuItems(mappedMenuItems);
+      } else {
+        console.warn(`Hyperzod catalog fetch returned 0 items or failed (catSuccess: ${catData.success}, prodSuccess: ${prodData.success}). Falling back to Supabase products.`);
+        // Fallback to local Supabase database products table
+        const { data: dbProducts, error: dbErr } = await supabase
+          .from('products')
+          .select('*')
+          .eq('merchant_id', activeId);
+
+        if (!dbErr && dbProducts && dbProducts.length > 0) {
+          const categoriesMap = new Map();
+          dbProducts.forEach(p => {
+            const catId = p.category_id || 'uncategorized';
+            const catName = p.category_name || 'Uncategorized';
+            if (!categoriesMap.has(catId)) {
+              categoriesMap.set(catId, { id: catId, name: catName, items: [] });
+            }
+            categoriesMap.get(catId).items.push({
+              id: p.product_id,
+              name: p.name,
+              price: Number(p.price || 0),
+              inStock: p.in_stock !== false
+            });
+          });
+          const mappedMenuItems = Array.from(categoriesMap.values()).filter(c => c.items.length > 0);
+          setMenuItems(mappedMenuItems);
+        } else {
+          setMenuItems([]);
+        }
       }
     } catch (e) {
       console.error("Self-healing background catalog sync failed:", e);
@@ -910,22 +938,18 @@ export const POSProvider = ({ children }) => {
       return { success: false, error: 'Terminal name is required.' };
     }
 
-    // Generate POS-XXXXXX code
-    const registrationCode = `POS-${Math.floor(100000 + Math.random() * 900000)}`;
-
     try {
       const { data, error } = await supabase
         .from('pos_machines')
         .insert([{
           name: cleanName,
           merchant_id: targetMerchantId,
-          registration_code: registrationCode,
           status: 'active'
         }])
         .select();
 
       if (error) throw error;
-      return { success: true, code: registrationCode, machine: data?.[0] };
+      return { success: true, code: data?.[0]?.registration_code, machine: data?.[0] };
     } catch (e) {
       console.error("Failed to register POS machine:", e);
       return { success: false, error: e.message };

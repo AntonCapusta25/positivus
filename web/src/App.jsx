@@ -233,7 +233,7 @@ function MainLayout() {
             </button>
           </div>
 
-          {userRole === 'superadmin' && (
+          {availableMerchants.length > 1 && (
             <div className="px-5 py-3.5 bg-slate-900/50 border-b border-slate-800 shrink-0">
               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
                 Switch Restaurant Context
@@ -345,7 +345,7 @@ function MainLayout() {
               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-0.5">
                 Logged In Store
               </label>
-              {userRole === 'superadmin' ? (
+              {availableMerchants.length > 1 ? (
                 <select
                   value={settings.merchantId}
                   onChange={(e) => setSettings(prev => ({ ...prev, merchantId: e.target.value }))}

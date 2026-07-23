@@ -1368,7 +1368,6 @@
                     android:layout_marginBottom="16dp"
                     android:paddingHorizontal="16dp"/>
 
-                <!-- Login Button -->
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnOnboardingLogin"
                     android:layout_width="260dp"
@@ -1376,6 +1375,40 @@
                     android:background="@drawable/btn_accept_bg"
                     android:text="LOGIN WITH ACCOUNT"
                     android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="16dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="— OR —"
+                    android:textColor="#94A3B8"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="12dp"/>
+
+                <EditText
+                    android:id="@+id/editOnboardingCode"
+                    android:layout_width="260dp"
+                    android:layout_height="54dp"
+                    android:background="@drawable/section_rounded_bg"
+                    android:hint="Registration Code (POS-xxxxxx)"
+                    android:textColorHint="#94A3B8"
+                    android:textColor="#0F172A"
+                    android:textSize="16sp"
+                    android:gravity="center"
+                    android:inputType="textCapCharacters"
+                    android:singleLine="true"
+                    android:layout_marginBottom="16dp"
+                    android:paddingHorizontal="16dp"/>
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnOnboardingLinkCode"
+                    android:layout_width="260dp"
+                    android:layout_height="50dp"
+                    android:background="@drawable/btn_preset_bg"
+                    android:text="LINK VIA CODE"
+                    android:textColor="#1E293B"
                     android:textStyle="bold"
                     android:textSize="14sp"
                     android:layout_marginBottom="16dp"/>
