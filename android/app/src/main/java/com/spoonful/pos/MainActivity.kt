@@ -151,6 +151,18 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var timerRunnable: Runnable
     private var merchantId = "6a0f03b4500ed5db150be1a1"
+    private val merchantNamesMap = HashMap<String, String>()
+
+    private fun fetchAndCacheMerchants() {
+        supabaseManager.fetchMerchants { list ->
+            runOnUiThread {
+                for (pair in list) {
+                    merchantNamesMap[pair.first] = pair.second
+                }
+                refreshOrderList()
+            }
+        }
+    }
 
     // --- Helpers ---
     private fun dp(value: Int) = (value * resources.displayMetrics.density + 0.5f).toInt()
@@ -169,6 +181,8 @@ class MainActivity : AppCompatActivity() {
         merchantId = prefs.getString("merchant_id", "6a0f03b4500ed5db150be1a1") ?: "6a0f03b4500ed5db150be1a1"
         isAutoPrintEnabled = prefs.getBoolean("auto_print", false)
 
+        // Seed initial saved name in cache
+        merchantNamesMap[merchantId] = savedMerchantName
 
         printerHelper = SunmiPrinterHelper(this)
         supabaseManager = SupabaseManager(
@@ -272,6 +286,7 @@ class MainActivity : AppCompatActivity() {
 
         bindViews()
         txtDrawerActiveRestaurant.text = savedMerchantName
+        fetchAndCacheMerchants()
 
         // Sync auto-print UI
         switchDrawerAutoPrint.isChecked = isAutoPrintEnabled
@@ -359,6 +374,8 @@ class MainActivity : AppCompatActivity() {
                                     posMachineId = "local_machine_${System.currentTimeMillis()}"
                                     posOwnerId = userId
                                     merchantId = selectedMerchantId
+                                    merchantNamesMap[selectedMerchantId] = selectedMerchantName
+                                    fetchAndCacheMerchants()
 
                                     txtDrawerActiveRestaurant.text = selectedMerchantName
                                     layoutOnboardingRegister.visibility = View.GONE
@@ -422,6 +439,8 @@ class MainActivity : AppCompatActivity() {
                         posMachineId = "local_machine_${System.currentTimeMillis()}"
                         posOwnerId = oId ?: ""
                         merchantId = mId
+                        merchantNamesMap[mId] = mName
+                        fetchAndCacheMerchants()
 
                         txtDrawerActiveRestaurant.text = mName
                         layoutOnboardingRegister.visibility = View.GONE
@@ -831,6 +850,7 @@ class MainActivity : AppCompatActivity() {
                                                 .apply()
 
                                             merchantId = selectedMerchantId
+                                            merchantNamesMap[selectedMerchantId] = selectedMerchantName
                                             txtDrawerActiveRestaurant.text = selectedMerchantName
                                             
                                             supabaseManager.updateMerchantId(selectedMerchantId)
@@ -1101,6 +1121,17 @@ class MainActivity : AppCompatActivity() {
                 marginEnd = dp(8)
             }
         }
+
+        // Store Name Badge
+        val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonful"
+        val storeTxt = TextView(this).apply {
+            text = resolvedName.uppercase()
+            setTextColor(Color.parseColor("#D8581B"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 9f)
+            setTypeface(null, Typeface.BOLD)
+            setPadding(0, 0, 0, dp(1))
+        }
+        infoLayout.addView(storeTxt)
 
         // First name only
         val firstName = order.customerName?.split(" ")?.firstOrNull() ?: "Customer"
@@ -1404,7 +1435,8 @@ class MainActivity : AppCompatActivity() {
         // Address & order info
         val address = order.customerAddress ?: (order.customerName ?: "No address")
         txtDetailAddress.text = address
-        txtDetailOrderCode.text = "#${order.orderNumber.takeLast(6)}"
+        val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonful"
+        txtDetailOrderCode.text = "$resolvedName • #${order.orderNumber.takeLast(6)}"
         val typeIcon = when (order.type.lowercase()) {
             "delivery" -> "🛵 Delivery"
             "pickup" -> "🏃 Pickup"
@@ -2225,7 +2257,8 @@ class MainActivity : AppCompatActivity() {
 
             updatePrepTimeDisplay(25)
 
-            txtOrderNo.text = "#${order.orderNumber}"
+            val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonful"
+            txtOrderNo.text = "$resolvedName • #${order.orderNumber}"
             txtCustomerName.text = "${order.customerName ?: "Customer"} (${order.type.uppercase()})"
             
             val orderCount = order.customerOrderCount ?: 1
