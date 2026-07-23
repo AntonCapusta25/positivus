@@ -214,17 +214,8 @@ export const POSProvider = ({ children }) => {
         if (resolvedRole === 'superadmin') {
           // Superadmin manages all merchants
         } else {
-          // Admin / Driver only manages their owned merchant (or claims legacy ones if they don't own any)
-          const { data: ownedList } = await supabase
-            .from('merchants')
-            .select('merchant_id')
-            .eq('owner_id', userObj.id);
-          
-          if (ownedList && ownedList.length > 0) {
-            query = query.eq('owner_id', userObj.id);
-          } else {
-            query = query.or(`owner_id.eq.${userObj.id},owner_id.is.null`);
-          }
+          // Admin / Driver only manages their owned merchant or unclaimed ones
+          query = query.or(`owner_id.eq.${userObj.id},owner_id.is.null`);
         }
       }
       const { data: dbMerchants, error: dbErr } = await query.order('name', { ascending: true });
@@ -238,6 +229,7 @@ export const POSProvider = ({ children }) => {
           is_accepting_orders: m.is_accepting_orders,
           slug: m.slug,
           admin_pin: m.admin_pin || '1234',
+          owner_id: m.owner_id,
           raw_details: m.raw_details
         }));
         setAvailableMerchants(finalMerchants);
@@ -255,6 +247,16 @@ export const POSProvider = ({ children }) => {
       if (merchantObj) {
         console.log("Merchant storefront details fetched:", merchantObj.name);
         setRestaurantOpen(merchantObj.is_accepting_orders);
+
+        // Auto-claim unowned merchant if logged-in user is admin
+        if (userObj && resolvedRole === 'admin' && !merchantObj.owner_id) {
+          console.log(`Auto-claiming unowned merchant ${activeId} for admin ${userObj.id}`);
+          await supabase
+            .from('merchants')
+            .update({ owner_id: userObj.id, updated_at: new Date().toISOString() })
+            .eq('merchant_id', activeId);
+          merchantObj.owner_id = userObj.id;
+        }
       }
 
       // Resolve actual Hyperzod ID from slug or custom ID mismatch
@@ -1337,18 +1339,22 @@ export const POSProvider = ({ children }) => {
   };
 
   const toggleItemStock = async (categoryId, itemId) => {
-    let currentStockState = true;
     const activeMerchantId = settings.merchantId || HYPERZOD_MERCHANT_ID;
+
+    // Resolve current stock state synchronously from current state
+    const category = menuItems.find(c => c.id === categoryId);
+    const item = category?.items.find(i => i.id === itemId);
+    if (!item) {
+      console.warn("Item not found in menuItems.");
+      return;
+    }
+    const currentStockState = !item.inStock;
 
     setMenuItems(prev => prev.map(cat => {
       if (cat.id !== categoryId) return cat;
       return {
         ...cat,
-        items: cat.items.map(item => {
-          if (item.id !== itemId) return item;
-          currentStockState = !item.inStock;
-          return { ...item, inStock: currentStockState };
-        })
+        items: cat.items.map(i => i.id === itemId ? { ...i, inStock: currentStockState } : i)
       };
     }));
 
