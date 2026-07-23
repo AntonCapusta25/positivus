@@ -662,10 +662,6 @@ function AppContent() {
     );
   }
 
-  if (!authUser) {
-    return <AuthScreen />;
-  }
-
   if (isDriver) {
     return (
       <>
@@ -708,6 +704,10 @@ function AppContent() {
         )}
       </>
     );
+  }
+
+  if (!authUser) {
+    return <AuthScreen />;
   }
 
   return (

@@ -2022,9 +2022,9 @@ class MainActivity : AppCompatActivity() {
                         )
                     }
 
-                    val driverName = driver.get("name")?.asString ?: "Unnamed Driver"
-                    val nameTxt = TextView(this@MainActivity).apply {
-                        text = driverName
+                    val driverEmail = driver.get("name")?.asString ?: "No Email"
+                    val emailTxt = TextView(this@MainActivity).apply {
+                        text = driverEmail
                         setTextColor(Color.parseColor("#0F172A"))
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
                         setTypeface(null, Typeface.BOLD)
@@ -2042,7 +2042,7 @@ class MainActivity : AppCompatActivity() {
                         ).apply { topMargin = dp(4) }
                     }
 
-                    textLayout.addView(nameTxt)
+                    textLayout.addView(emailTxt)
                     textLayout.addView(detailsTxt)
 
                     val deleteBtn = TextView(this@MainActivity).apply {
@@ -2059,7 +2059,7 @@ class MainActivity : AppCompatActivity() {
                         if (driverId.isNotEmpty()) {
                             androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
                                 .setTitle("Remove Driver")
-                                .setMessage("Are you sure you want to remove $driverName?")
+                                .setMessage("Are you sure you want to remove $driverEmail?")
                                 .setPositiveButton("Remove") { _, _ ->
                                     supabaseManager.deleteDriver(driverId) { success ->
                                         runOnUiThread {
@@ -2092,9 +2092,9 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(24), dp(16), dp(24), dp(8))
         }
 
-        val nameInput = android.widget.EditText(this).apply {
-            hint = "Driver Name"
-            inputType = android.text.InputType.TYPE_CLASS_TEXT
+        val emailInput = android.widget.EditText(this).apply {
+            hint = "Driver Email Address"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
             isSingleLine = true
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -2123,7 +2123,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        formLayout.addView(nameInput)
+        formLayout.addView(emailInput)
         formLayout.addView(phoneInput)
         formLayout.addView(passcodeInput)
 
@@ -2131,22 +2131,22 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Add New Driver")
             .setView(formLayout)
             .setPositiveButton("Create") { _, _ ->
-                val name = nameInput.text.toString().trim()
+                val email = emailInput.text.toString().trim()
                 val phone = phoneInput.text.toString().trim()
                 val passcode = passcodeInput.text.toString().trim()
 
-                if (name.isEmpty() || passcode.isEmpty()) {
-                    Toast.makeText(this, "Name and Passcode are required", Toast.LENGTH_SHORT).show()
+                if (email.isEmpty() || passcode.isEmpty()) {
+                    Toast.makeText(this, "Email and Passcode are required", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
 
-                supabaseManager.createDriver(name, phone, passcode) { success ->
+                supabaseManager.createDriver(email, phone, passcode) { success ->
                     runOnUiThread {
                         if (success) {
                             Toast.makeText(this@MainActivity, "Driver created successfully!", Toast.LENGTH_SHORT).show()
                             loadDriversManagementScreen()
                         } else {
-                            Toast.makeText(this@MainActivity, "Failed to create driver: Name may already exist", Toast.LENGTH_LONG).show()
+                            Toast.makeText(this@MainActivity, "Failed to create driver: Email may already exist", Toast.LENGTH_LONG).show()
                         }
                     }
                 }
