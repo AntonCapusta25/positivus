@@ -339,6 +339,8 @@ class MainActivity : AppCompatActivity() {
                                     val selectedMerchantId = merchant.get("merchant_id").asString
                                     val selectedMerchantName = merchant.get("name").asString
                                     
+                                    supabaseManager.claimMerchant(selectedMerchantId, userId) { _ -> }
+
                                     getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
                                         .putBoolean("pos_registered", true)
                                         .putString("pos_terminal_name", "Sunmi Handheld")
@@ -370,6 +372,8 @@ class MainActivity : AppCompatActivity() {
                                             val selectedMerchantId = selectedMerchant.get("merchant_id").asString
                                             val selectedMerchantName = selectedMerchant.get("name").asString
                                             
+                                            supabaseManager.claimMerchant(selectedMerchantId, userId) { _ -> }
+
                                             getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
                                                 .putBoolean("pos_registered", true)
                                                 .putString("pos_terminal_name", "Sunmi Handheld")

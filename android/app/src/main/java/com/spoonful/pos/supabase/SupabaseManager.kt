@@ -475,7 +475,7 @@ class SupabaseManager(
             mainHandler.post { onComplete(emptyList()) }
             return
         }
-        val url = "$supabaseUrl/rest/v1/merchants?owner_id=eq.$ownerId&select=merchant_id,name,admin_pin"
+        val url = "$supabaseUrl/rest/v1/merchants?or=(owner_id.eq.$ownerId,owner_id.is.null)&select=merchant_id,name,admin_pin"
         val request = Request.Builder()
             .url(url)
             .addHeader("apikey", supabaseKey)
@@ -512,6 +512,35 @@ class SupabaseManager(
         })
     }
 
+    fun claimMerchant(merchantId: String, ownerId: String, onComplete: (Boolean) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/merchants?merchant_id=eq.$merchantId"
+        val payload = JsonObject().apply {
+            addProperty("owner_id", ownerId)
+        }
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(payload).toRequestBody(mediaType)
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .addHeader("Content-Type", "application/json")
+            .patch(requestBody)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, "claimMerchant network fail", e)
+                mainHandler.post { onComplete(false) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    mainHandler.post { onComplete(response.isSuccessful) }
+                }
+            }
+        })
+    }
+
     fun login(email: String, password: String, onResult: (JsonObject?) -> Unit) {
         val url = "$supabaseUrl/auth/v1/token?grant_type=password"
         val payload = JsonObject().apply {
@@ -535,7 +564,8 @@ class SupabaseManager(
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     if (!response.isSuccessful) {
-                        Log.e(TAG, "login error code: ${response.code}")
+                        val errBody = response.body?.string() ?: ""
+                        Log.e(TAG, "login error code: ${response.code}, body: $errBody")
                         mainHandler.post { onResult(null) }
                         return
                     }
