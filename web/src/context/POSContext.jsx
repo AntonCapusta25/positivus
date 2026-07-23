@@ -243,9 +243,8 @@ export const POSProvider = ({ children }) => {
         setAvailableMerchants(finalMerchants);
       }
 
-      // If forceRedirect is true, or settings has no merchant, or current merchant not in list
-      const isMerchantInList = finalMerchants.some(m => m.id === activeId);
-      if ((forceRedirect || !activeId || !isMerchantInList) && finalMerchants.length > 0) {
+      // Only redirect on explicit forceRedirect (like login) or if no merchant is selected
+      if ((forceRedirect || !activeId) && finalMerchants.length > 0) {
         activeId = finalMerchants[0].id;
         setSettings(prev => ({ ...prev, merchantId: activeId }));
         setAuthenticatedMerchantId(activeId);
@@ -258,12 +257,19 @@ export const POSProvider = ({ children }) => {
         setRestaurantOpen(merchantObj.is_accepting_orders);
       }
 
+      // Resolve actual Hyperzod ID from slug or custom ID mismatch
+      let hyperzodMerchantId = activeId;
+      const matchingMerchant = finalMerchants.find(m => m.slug === activeId || m.id === activeId);
+      if (matchingMerchant) {
+        hyperzodMerchantId = matchingMerchant.id;
+      }
+
       // 2. Fetch product categories for the active merchant
-      const catRes = await fetch(`${HYPERZOD_BASE_URL}/merchant/v1/catalog/product-category/list?merchant_id=${activeId}`, { headers });
+      const catRes = await fetch(`${HYPERZOD_BASE_URL}/merchant/v1/catalog/product-category/list?merchant_id=${hyperzodMerchantId}`, { headers });
       const catData = await catRes.json();
 
       // 3. Fetch products list for the active merchant
-      const prodRes = await fetch(`${HYPERZOD_BASE_URL}/merchant/v1/catalog/product/list?merchant_id=${activeId}`, { headers });
+      const prodRes = await fetch(`${HYPERZOD_BASE_URL}/merchant/v1/catalog/product/list?merchant_id=${hyperzodMerchantId}`, { headers });
       const prodData = await prodRes.json();
 
       const rawCategories = catData.success ? (Array.isArray(catData.data) ? catData.data : (catData.data?.data || [])) : [];
@@ -1481,6 +1487,11 @@ export const POSProvider = ({ children }) => {
       console.log("Triggering test order on Hyperzod for active merchant...");
       
       const activeMerchantId = settings.merchantId || HYPERZOD_MERCHANT_ID;
+      let hyperzodMerchantId = activeMerchantId;
+      const matchingMerchant = availableMerchants.find(m => m.slug === activeMerchantId || m.id === activeMerchantId);
+      if (matchingMerchant) {
+        hyperzodMerchantId = matchingMerchant.id;
+      }
       
       const headers = {
         'X-API-KEY': HYPERZOD_API_KEY,
@@ -1490,7 +1501,7 @@ export const POSProvider = ({ children }) => {
       };
       
       // 1. Fetch products list to pick the first one
-      const prodRes = await fetch(`${HYPERZOD_BASE_URL}/merchant/v1/catalog/product/list?merchant_id=${activeMerchantId}`, { headers });
+      const prodRes = await fetch(`${HYPERZOD_BASE_URL}/merchant/v1/catalog/product/list?merchant_id=${hyperzodMerchantId}`, { headers });
       const prodData = await prodRes.json();
       if (!prodData.success) {
         throw new Error('Failed to fetch products: ' + JSON.stringify(prodData));
