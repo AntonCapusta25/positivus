@@ -826,6 +826,61 @@ class SupabaseManager(
         })
     }
 
+    fun createDriver(name: String, phone: String, passcode: String, onComplete: (Boolean) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/drivers"
+        val payload = JsonObject().apply {
+            addProperty("merchant_id", merchantId)
+            addProperty("name", name)
+            addProperty("phone", phone)
+            addProperty("passcode", passcode)
+        }
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(payload).toRequestBody(mediaType)
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .addHeader("Content-Type", "application/json")
+            .post(requestBody)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "createDriver network fail", e)
+                mainHandler.post { onComplete(false) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    mainHandler.post { onComplete(response.isSuccessful) }
+                }
+            }
+        })
+    }
+
+    fun deleteDriver(driverId: String, onComplete: (Boolean) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/drivers?id=eq.$driverId"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .delete()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "deleteDriver network fail", e)
+                mainHandler.post { onComplete(false) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    mainHandler.post { onComplete(response.isSuccessful) }
+                }
+            }
+        })
+    }
+
     /**
      * Assign a driver and estimated delivery duration to an order
      */

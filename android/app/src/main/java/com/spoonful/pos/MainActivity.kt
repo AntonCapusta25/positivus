@@ -94,6 +94,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnDrawerSwitchRestaurant: LinearLayout
     private lateinit var txtDrawerActiveRestaurant: TextView
     private lateinit var btnSubMenuManagement: TextView
+    private lateinit var btnSubDriversManagement: TextView
+    private lateinit var layoutSettingsDrivers: LinearLayout
+    private lateinit var btnDriversBack: TextView
+    private lateinit var driversContainer: LinearLayout
 
     // Receipts settings views
     private lateinit var btnReceiptsBack: TextView
@@ -130,7 +134,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var switchDrawerAutoPrint: com.google.android.material.switchmaterial.SwitchMaterial
 
     // --- State ---
-    private enum class Screen { ORDER_LIST, ORDER_DETAIL, SETTINGS_RECEIPTS, SETTINGS_SOUNDS, SETTINGS_MENU }
+    private enum class Screen { ORDER_LIST, ORDER_DETAIL, SETTINGS_RECEIPTS, SETTINGS_SOUNDS, SETTINGS_MENU, DRIVERS_MANAGEMENT }
     private var currentScreen = Screen.ORDER_LIST
     private var currentTab = "prepare" // "prepare", "handover", "done"
     private var selectedOrder: Order? = null
@@ -433,6 +437,8 @@ class MainActivity : AppCompatActivity() {
             currentScreen == Screen.ORDER_DETAIL -> showScreen(Screen.ORDER_LIST)
             currentScreen == Screen.SETTINGS_RECEIPTS -> showScreen(Screen.ORDER_LIST)
             currentScreen == Screen.SETTINGS_SOUNDS -> showScreen(Screen.ORDER_LIST)
+            currentScreen == Screen.SETTINGS_MENU -> showScreen(Screen.ORDER_LIST)
+            currentScreen == Screen.DRIVERS_MANAGEMENT -> showScreen(Screen.ORDER_LIST)
             else -> super.onBackPressed()
         }
     }
@@ -469,6 +475,9 @@ class MainActivity : AppCompatActivity() {
         layoutSettingsReceipts = findViewById(R.id.layoutSettingsReceipts)
         layoutSettingsSounds = findViewById(R.id.layoutSettingsSounds)
         layoutSettingsMenu = findViewById(R.id.layoutSettingsMenu)
+        layoutSettingsDrivers = findViewById(R.id.layoutSettingsDrivers)
+        btnDriversBack = findViewById(R.id.btnDriversBack)
+        driversContainer = findViewById(R.id.driversContainer)
 
         btnMenuBack = findViewById(R.id.btnMenuBack)
         menuItemsContainer = findViewById(R.id.menuItemsContainer)
@@ -511,6 +520,7 @@ class MainActivity : AppCompatActivity() {
         btnDrawerSwitchRestaurant = findViewById(R.id.btnDrawerSwitchRestaurant)
         txtDrawerActiveRestaurant = findViewById(R.id.txtDrawerActiveRestaurant)
         btnSubMenuManagement = findViewById(R.id.btnSubMenuManagement)
+        btnSubDriversManagement = findViewById(R.id.btnSubDriversManagement)
 
         btnReceiptsBack = findViewById(R.id.btnReceiptsBack)
         btnReceiptsMinus = findViewById(R.id.btnReceiptsMinus)
@@ -539,6 +549,7 @@ class MainActivity : AppCompatActivity() {
         layoutSettingsReceipts.visibility = if (screen == Screen.SETTINGS_RECEIPTS) View.VISIBLE else View.GONE
         layoutSettingsSounds.visibility = if (screen == Screen.SETTINGS_SOUNDS) View.VISIBLE else View.GONE
         layoutSettingsMenu.visibility = if (screen == Screen.SETTINGS_MENU) View.VISIBLE else View.GONE
+        layoutSettingsDrivers.visibility = if (screen == Screen.DRIVERS_MANAGEMENT) View.VISIBLE else View.GONE
     }
 
     // ─────────────────────────────────────────────
@@ -944,6 +955,15 @@ class MainActivity : AppCompatActivity() {
         btnSubMenuManagement.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             loadMenuManagementScreen()
+        }
+
+        btnSubDriversManagement.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            loadDriversManagementScreen()
+        }
+
+        btnDriversBack.setOnClickListener {
+            showScreen(Screen.ORDER_LIST)
         }
 
         btnDrawerAutoPrintToggle.setOnClickListener {
@@ -1898,6 +1918,241 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun loadDriversManagementScreen() {
+        driversContainer.removeAllViews()
+        val loadingTxt = TextView(this).apply {
+            text = "Loading drivers..."
+            setTextColor(Color.parseColor("#64748B"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(40) }
+        }
+        driversContainer.addView(loadingTxt)
+
+        showScreen(Screen.DRIVERS_MANAGEMENT)
+
+        supabaseManager.fetchDrivers { drivers ->
+            runOnUiThread {
+                driversContainer.removeAllViews()
+
+                // "Add New Driver" Card Button
+                val addCard = androidx.cardview.widget.CardView(this@MainActivity).apply {
+                    radius = dp(12).toFloat()
+                    cardElevation = dp(1).toFloat()
+                    useCompatPadding = true
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { bottomMargin = dp(16) }
+                }
+                val addRow = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    setPadding(dp(16), dp(16), dp(16), dp(16))
+                    background = getDrawable(R.drawable.section_rounded_bg)
+                    isClickable = true
+                    isFocusable = true
+                }
+                val addIcon = TextView(this@MainActivity).apply {
+                    text = "➕"
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { marginEnd = dp(12) }
+                }
+                val addText = TextView(this@MainActivity).apply {
+                    text = "ADD NEW DELIVERY DRIVER"
+                    setTextColor(Color.parseColor("#D8581B"))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                    setTypeface(null, Typeface.BOLD)
+                }
+                addRow.addView(addIcon)
+                addRow.addView(addText)
+                addCard.addView(addRow)
+                driversContainer.addView(addCard)
+
+                addRow.setOnClickListener {
+                    showCreateDriverDialog()
+                }
+
+                if (drivers.isEmpty()) {
+                    val emptyTxt = TextView(this@MainActivity).apply {
+                        text = "No drivers found for this restaurant."
+                        setTextColor(Color.parseColor("#64748B"))
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                        gravity = Gravity.CENTER
+                        layoutParams = LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        ).apply { topMargin = dp(24) }
+                    }
+                    driversContainer.addView(emptyTxt)
+                    return@runOnUiThread
+                }
+
+                for (driver in drivers) {
+                    val card = androidx.cardview.widget.CardView(this@MainActivity).apply {
+                        radius = dp(12).toFloat()
+                        cardElevation = dp(1).toFloat()
+                        useCompatPadding = true
+                        layoutParams = LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        ).apply { bottomMargin = dp(8) }
+                    }
+
+                    val row = LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.CENTER_VERTICAL
+                        setPadding(dp(16), dp(16), dp(16), dp(16))
+                    }
+
+                    val textLayout = LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.VERTICAL
+                        layoutParams = LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f
+                        )
+                    }
+
+                    val driverName = driver.get("name")?.asString ?: "Unnamed Driver"
+                    val nameTxt = TextView(this@MainActivity).apply {
+                        text = driverName
+                        setTextColor(Color.parseColor("#0F172A"))
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                        setTypeface(null, Typeface.BOLD)
+                    }
+
+                    val phone = driver.get("phone")?.asString ?: "No phone"
+                    val passcode = driver.get("passcode")?.asString ?: "1234"
+                    val detailsTxt = TextView(this@MainActivity).apply {
+                        text = "Phone: $phone  |  Passcode: $passcode"
+                        setTextColor(Color.parseColor("#64748B"))
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                        layoutParams = LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        ).apply { topMargin = dp(4) }
+                    }
+
+                    textLayout.addView(nameTxt)
+                    textLayout.addView(detailsTxt)
+
+                    val deleteBtn = TextView(this@MainActivity).apply {
+                        text = "🗑️"
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+                        setPadding(dp(8), dp(8), dp(8), dp(8))
+                        background = getDrawable(R.drawable.btn_preset_bg)
+                        isClickable = true
+                        isFocusable = true
+                    }
+
+                    deleteBtn.setOnClickListener {
+                        val driverId = driver.get("id")?.asString ?: ""
+                        if (driverId.isNotEmpty()) {
+                            androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                                .setTitle("Remove Driver")
+                                .setMessage("Are you sure you want to remove $driverName?")
+                                .setPositiveButton("Remove") { _, _ ->
+                                    supabaseManager.deleteDriver(driverId) { success ->
+                                        runOnUiThread {
+                                            if (success) {
+                                                Toast.makeText(this@MainActivity, "Driver removed", Toast.LENGTH_SHORT).show()
+                                                loadDriversManagementScreen()
+                                            } else {
+                                                Toast.makeText(this@MainActivity, "Failed to remove driver", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }
+                                }
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                        }
+                    }
+
+                    row.addView(textLayout)
+                    row.addView(deleteBtn)
+                    card.addView(row)
+                    driversContainer.addView(card)
+                }
+            }
+        }
+    }
+
+    private fun showCreateDriverDialog() {
+        val formLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(16), dp(24), dp(8))
+        }
+
+        val nameInput = android.widget.EditText(this).apply {
+            hint = "Driver Name"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            isSingleLine = true
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(12) }
+        }
+
+        val phoneInput = android.widget.EditText(this).apply {
+            hint = "Phone Number (e.g. +31612345678)"
+            inputType = android.text.InputType.TYPE_CLASS_PHONE
+            isSingleLine = true
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(12) }
+        }
+
+        val passcodeInput = android.widget.EditText(this).apply {
+            hint = "App Login Passcode (4 digits)"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            isSingleLine = true
+            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        formLayout.addView(nameInput)
+        formLayout.addView(phoneInput)
+        formLayout.addView(passcodeInput)
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Add New Driver")
+            .setView(formLayout)
+            .setPositiveButton("Create") { _, _ ->
+                val name = nameInput.text.toString().trim()
+                val phone = phoneInput.text.toString().trim()
+                val passcode = passcodeInput.text.toString().trim()
+
+                if (name.isEmpty() || passcode.isEmpty()) {
+                    Toast.makeText(this, "Name and Passcode are required", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                supabaseManager.createDriver(name, phone, passcode) { success ->
+                    runOnUiThread {
+                        if (success) {
+                            Toast.makeText(this@MainActivity, "Driver created successfully!", Toast.LENGTH_SHORT).show()
+                            loadDriversManagementScreen()
+                        } else {
+                            Toast.makeText(this@MainActivity, "Failed to create driver: Name may already exist", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun showIncomingOrderDialog(order: Order) {

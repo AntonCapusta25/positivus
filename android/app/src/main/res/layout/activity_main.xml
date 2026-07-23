@@ -1240,6 +1240,65 @@
                     </LinearLayout>
                 </ScrollView>
             </LinearLayout>
+
+            <!-- 6. DELIVERY DRIVERS MANAGEMENT VIEW -->
+            <LinearLayout
+                android:id="@+id/layoutSettingsDrivers"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:background="#F4F5F8"
+                android:visibility="gone">
+
+                <!-- Header Bar -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:background="#FFFFFF"
+                    android:elevation="2dp">
+
+                    <TextView
+                        android:id="@+id/btnDriversBack"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:gravity="center"
+                        android:text="←"
+                        android:textColor="#1E1E24"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Delivery Drivers Management"
+                        android:textColor="#1E1E24"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginStart="8dp"/>
+                </LinearLayout>
+
+                <!-- Scrollable Drivers List -->
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:id="@+id/driversContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <!-- Dynamic driver card rows will be added here -->
+                    </LinearLayout>
+                </ScrollView>
+            </LinearLayout>
+
             <!-- 5. POS DEVICE REGISTRATION / ONBOARDING -->
             <LinearLayout
                 android:id="@+id/layoutOnboardingRegister"
@@ -1613,7 +1672,7 @@
                         android:id="@+id/btnSubTodaySales"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="View today's sales - 3 orders"
+                        android:text="• Orders for today"
                         android:textColor="#475569"
                         android:textSize="13sp"
                         android:paddingStart="60dp"
@@ -1625,7 +1684,19 @@
                         android:id="@+id/btnSubMenuManagement"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Take item off menu - 0 items off"
+                        android:text="• Menu"
+                        android:textColor="#475569"
+                        android:textSize="13sp"
+                        android:paddingStart="60dp"
+                        android:paddingEnd="16dp"
+                        android:paddingVertical="12dp"
+                        android:background="?attr/selectableItemBackground"/>
+
+                    <TextView
+                        android:id="@+id/btnSubDriversManagement"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="• Delivery drivers management"
                         android:textColor="#475569"
                         android:textSize="13sp"
                         android:paddingStart="60dp"
