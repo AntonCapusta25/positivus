@@ -117,6 +117,7 @@ class MainActivity : AppCompatActivity() {
     private var isPOSRegistered = false
     private var posTerminalName = ""
     private var posMachineId = ""
+    private var posOwnerId = ""
     private lateinit var layoutOnboardingRegister: LinearLayout
 
     // Menu management views
@@ -159,6 +160,7 @@ class MainActivity : AppCompatActivity() {
         isPOSRegistered = prefs.getBoolean("pos_registered", false)
         posTerminalName = prefs.getString("pos_terminal_name", "") ?: ""
         posMachineId = prefs.getString("pos_machine_id", "") ?: ""
+        posOwnerId = prefs.getString("pos_owner_id", "") ?: ""
         val savedMerchantName = prefs.getString("pos_merchant_name", "Raj Curry House") ?: "Raj Curry House"
         merchantId = prefs.getString("merchant_id", "6a0f03b4500ed5db150be1a1") ?: "6a0f03b4500ed5db150be1a1"
         isAutoPrintEnabled = prefs.getBoolean("auto_print", false)
@@ -334,6 +336,11 @@ class MainActivity : AppCompatActivity() {
                             } else {
                                 "Spoonful"
                             }
+                            val ownerId = if (merchantObj != null && !merchantObj.isJsonNull) {
+                                merchantObj.asJsonObject.get("owner_id")?.asString ?: ""
+                            } else {
+                                ""
+                            }
 
                             // Save to SharedPreferences
                             getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
@@ -342,11 +349,13 @@ class MainActivity : AppCompatActivity() {
                                 .putString("pos_machine_id", machineId)
                                 .putString("pos_merchant_name", merchantName)
                                 .putString("merchant_id", newMerchantId)
+                                .putString("pos_owner_id", ownerId)
                                 .apply()
 
                             isPOSRegistered = true
                             posTerminalName = terminalName
                             posMachineId = machineId
+                            posOwnerId = ownerId
                             merchantId = newMerchantId
 
                             txtDrawerActiveRestaurant.text = merchantName
@@ -614,68 +623,281 @@ class MainActivity : AppCompatActivity() {
         btnDrawerSwitchRestaurant.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             
-            val infoMsg = "Store Context: ${txtDrawerActiveRestaurant.text}\n" +
-                          "Terminal Identity: $posTerminalName\n" +
-                          "Machine UUID: $posMachineId"
-                          
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("POS Terminal Settings")
-                .setMessage(infoMsg)
-                .setPositiveButton("Unlink Terminal") { _, _ ->
-                    val pinInput = android.widget.EditText(this).apply {
+            if (posOwnerId.isEmpty()) {
+                val infoMsg = "Store Context: ${txtDrawerActiveRestaurant.text}\n" +
+                              "Terminal Identity: $posTerminalName\n" +
+                              "Machine UUID: $posMachineId"
+                              
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("POS Terminal Settings")
+                    .setMessage(infoMsg)
+                    .setPositiveButton("Unlink Terminal") { _, _ ->
+                        val pinInputUnlink = android.widget.EditText(this).apply {
+                            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                            gravity = android.view.Gravity.CENTER
+                            transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()
+                            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+                        }
+                        
+                        androidx.appcompat.app.AlertDialog.Builder(this)
+                            .setTitle("Enter Restaurant Admin PIN")
+                            .setView(pinInputUnlink)
+                            .setPositiveButton("Verify") { _, _ ->
+                                val pin = pinInputUnlink.text.toString().trim()
+                                if (pin.isEmpty()) {
+                                    Toast.makeText(this, "PIN cannot be empty", Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                
+                                supabaseManager.verifyAdminPIN(merchantId, pin) { isValid ->
+                                    runOnUiThread {
+                                        if (isValid) {
+                                            getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                                                .putBoolean("pos_registered", false)
+                                                .putString("pos_terminal_name", "")
+                                                .putString("pos_machine_id", "")
+                                                .putString("pos_merchant_name", "Raj Curry House")
+                                                .putString("merchant_id", "6a0f03b4500ed5db150be1a1")
+                                                .putString("pos_owner_id", "")
+                                                .apply()
+                                                
+                                            isPOSRegistered = false
+                                            posTerminalName = ""
+                                            posMachineId = ""
+                                            posOwnerId = ""
+                                            merchantId = "6a0f03b4500ed5db150be1a1"
+                                            
+                                            txtDrawerActiveRestaurant.text = "Spoonful"
+                                            ordersList.clear()
+                                            refreshOrderList()
+                                            
+                                            supabaseManager.stop()
+                                            
+                                            layoutOnboardingRegister.visibility = View.VISIBLE
+                                            drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+                                            
+                                            Toast.makeText(this@MainActivity, "Terminal unlinked successfully.", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(this@MainActivity, "Access Denied: Incorrect Admin PIN.", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                }
+                            }
+                            .setNegativeButton("Cancel", null)
+                            .show()
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+            val progressDialog = android.app.ProgressDialog(this).apply {
+                setMessage("Checking permissions...")
+                setCancelable(false)
+                show()
+            }
+
+            supabaseManager.fetchOwnerMerchants(posOwnerId) { merchants ->
+                progressDialog.dismiss()
+                if (merchants.size > 1) {
+                    val layout = android.widget.LinearLayout(this@MainActivity).apply {
+                        orientation = android.widget.LinearLayout.VERTICAL
+                        setPadding(dp(16), dp(12), dp(16), dp(12))
+                    }
+
+                    val labelStore = android.widget.TextView(this@MainActivity).apply {
+                        text = "Select Restaurant Context"
+                        textSize = 12f
+                        setTextColor(Color.GRAY)
+                        setPadding(0, 0, 0, dp(4))
+                    }
+                    layout.addView(labelStore)
+
+                    val storeNames = merchants.map { it.get("name")?.asString ?: "Unnamed Store" }.toTypedArray()
+                    val spinner = android.widget.Spinner(this@MainActivity).apply {
+                        adapter = android.widget.ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, storeNames)
+                    }
+                    layout.addView(spinner)
+
+                    val labelPin = android.widget.TextView(this@MainActivity).apply {
+                        text = "Enter Store Admin PIN"
+                        textSize = 12f
+                        setTextColor(Color.GRAY)
+                        setPadding(0, dp(12), 0, dp(4))
+                    }
+                    layout.addView(labelPin)
+
+                    val pinInput = android.widget.EditText(this@MainActivity).apply {
                         inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
                         gravity = android.view.Gravity.CENTER
                         transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()
                         filters = arrayOf(android.text.InputFilter.LengthFilter(4))
                     }
-                    
-                    androidx.appcompat.app.AlertDialog.Builder(this)
-                        .setTitle("Enter Restaurant Admin PIN")
-                        .setView(pinInput)
-                        .setPositiveButton("Verify") { _, _ ->
-                            val pin = pinInput.text.toString().trim()
-                            if (pin.isEmpty()) {
-                                Toast.makeText(this, "PIN cannot be empty", Toast.LENGTH_SHORT).show()
-                                return@setPositiveButton
-                            }
-                            
-                            supabaseManager.verifyAdminPIN(merchantId, pin) { isValid ->
-                                runOnUiThread {
-                                    if (isValid) {
-                                        getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
-                                            .putBoolean("pos_registered", false)
-                                            .putString("pos_terminal_name", "")
-                                            .putString("pos_machine_id", "")
-                                            .putString("pos_merchant_name", "Raj Curry House")
-                                            .putString("merchant_id", "6a0f03b4500ed5db150be1a1")
-                                            .apply()
+                    layout.addView(pinInput)
+
+                    androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                        .setTitle("Superadmin POS Controls")
+                        .setView(layout)
+                        .setPositiveButton("Switch Context") { _, _ ->
+                            val selectedIdx = spinner.selectedItemPosition
+                            if (selectedIdx >= 0) {
+                                val selectedMerchant = merchants[selectedIdx]
+                                val selectedMerchantId = selectedMerchant.get("merchant_id").asString
+                                val selectedMerchantName = selectedMerchant.get("name").asString
+                                val pin = pinInput.text.toString().trim()
+
+                                if (pin.isEmpty()) {
+                                    Toast.makeText(this@MainActivity, "PIN cannot be empty", Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+
+                                supabaseManager.verifyAdminPIN(selectedMerchantId, pin) { isValid ->
+                                    runOnUiThread {
+                                        if (isValid) {
+                                            getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                                                .putString("pos_merchant_name", selectedMerchantName)
+                                                .putString("merchant_id", selectedMerchantId)
+                                                .apply()
+
+                                            merchantId = selectedMerchantId
+                                            txtDrawerActiveRestaurant.text = selectedMerchantName
                                             
-                                        isPOSRegistered = false
-                                        posTerminalName = ""
-                                        posMachineId = ""
-                                        merchantId = "6a0f03b4500ed5db150be1a1"
-                                        
-                                        txtDrawerActiveRestaurant.text = "Spoonful"
-                                        ordersList.clear()
-                                        refreshOrderList()
-                                        
-                                        supabaseManager.stop()
-                                        
-                                        layoutOnboardingRegister.visibility = View.VISIBLE
-                                        drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
-                                        
-                                        Toast.makeText(this@MainActivity, "Terminal unlinked successfully.", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        Toast.makeText(this@MainActivity, "Access Denied: Incorrect Admin PIN.", Toast.LENGTH_LONG).show()
+                                            supabaseManager.updateMerchantId(selectedMerchantId)
+                                            ordersList.clear()
+                                            refreshOrderList()
+                                            
+                                            Toast.makeText(this@MainActivity, "Switched context to $selectedMerchantName", Toast.LENGTH_LONG).show()
+                                        } else {
+                                            Toast.makeText(this@MainActivity, "Invalid Admin PIN for selected store.", Toast.LENGTH_LONG).show()
+                                        }
                                     }
                                 }
                             }
                         }
+                        .setNeutralButton("Unlink Terminal") { _, _ ->
+                            val pinInputUnlink = android.widget.EditText(this@MainActivity).apply {
+                                inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                                gravity = android.view.Gravity.CENTER
+                                transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()
+                                filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+                            }
+                            
+                            androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                                .setTitle("Enter Restaurant Admin PIN")
+                                .setView(pinInputUnlink)
+                                .setPositiveButton("Verify") { _, _ ->
+                                    val pin = pinInputUnlink.text.toString().trim()
+                                    if (pin.isEmpty()) {
+                                        Toast.makeText(this@MainActivity, "PIN cannot be empty", Toast.LENGTH_SHORT).show()
+                                        return@setPositiveButton
+                                    }
+                                    
+                                    supabaseManager.verifyAdminPIN(merchantId, pin) { isValid ->
+                                        runOnUiThread {
+                                            if (isValid) {
+                                                getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                                                    .putBoolean("pos_registered", false)
+                                                    .putString("pos_terminal_name", "")
+                                                    .putString("pos_machine_id", "")
+                                                    .putString("pos_merchant_name", "Raj Curry House")
+                                                    .putString("merchant_id", "6a0f03b4500ed5db150be1a1")
+                                                    .putString("pos_owner_id", "")
+                                                    .apply()
+                                                    
+                                                isPOSRegistered = false
+                                                posTerminalName = ""
+                                                posMachineId = ""
+                                                posOwnerId = ""
+                                                merchantId = "6a0f03b4500ed5db150be1a1"
+                                                
+                                                txtDrawerActiveRestaurant.text = "Spoonful"
+                                                ordersList.clear()
+                                                refreshOrderList()
+                                                
+                                                supabaseManager.stop()
+                                                
+                                                layoutOnboardingRegister.visibility = View.VISIBLE
+                                                drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+                                                
+                                                Toast.makeText(this@MainActivity, "Terminal unlinked successfully.", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(this@MainActivity, "Access Denied: Incorrect Admin PIN.", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                    }
+                                }
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                } else {
+                    val infoMsg = "Store Context: ${txtDrawerActiveRestaurant.text}\n" +
+                                  "Terminal Identity: $posTerminalName\n" +
+                                  "Machine UUID: $posMachineId"
+                                  
+                    androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                        .setTitle("POS Terminal Settings")
+                        .setMessage(infoMsg)
+                        .setPositiveButton("Unlink Terminal") { _, _ ->
+                            val pinInputUnlink = android.widget.EditText(this@MainActivity).apply {
+                                inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                                gravity = android.view.Gravity.CENTER
+                                transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()
+                                filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+                            }
+                            
+                            androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                                .setTitle("Enter Restaurant Admin PIN")
+                                .setView(pinInputUnlink)
+                                .setPositiveButton("Verify") { _, _ ->
+                                    val pin = pinInputUnlink.text.toString().trim()
+                                    if (pin.isEmpty()) {
+                                        Toast.makeText(this@MainActivity, "PIN cannot be empty", Toast.LENGTH_SHORT).show()
+                                        return@setPositiveButton
+                                    }
+                                    
+                                    supabaseManager.verifyAdminPIN(merchantId, pin) { isValid ->
+                                        runOnUiThread {
+                                            if (isValid) {
+                                                getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                                                    .putBoolean("pos_registered", false)
+                                                    .putString("pos_terminal_name", "")
+                                                    .putString("pos_machine_id", "")
+                                                    .putString("pos_merchant_name", "Raj Curry House")
+                                                    .putString("merchant_id", "6a0f03b4500ed5db150be1a1")
+                                                    .putString("pos_owner_id", "")
+                                                    .apply()
+                                                    
+                                                isPOSRegistered = false
+                                                posTerminalName = ""
+                                                posMachineId = ""
+                                                posOwnerId = ""
+                                                merchantId = "6a0f03b4500ed5db150be1a1"
+                                                
+                                                txtDrawerActiveRestaurant.text = "Spoonful"
+                                                ordersList.clear()
+                                                refreshOrderList()
+                                                
+                                                supabaseManager.stop()
+                                                
+                                                layoutOnboardingRegister.visibility = View.VISIBLE
+                                                drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+                                                
+                                                Toast.makeText(this@MainActivity, "Terminal unlinked successfully.", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(this@MainActivity, "Access Denied: Incorrect Admin PIN.", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                    }
+                                }
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                        }
                         .setNegativeButton("Cancel", null)
                         .show()
                 }
-                .setNegativeButton("Close", null)
-                .show()
+            }
         }
 
         btnSubMenuManagement.setOnClickListener {

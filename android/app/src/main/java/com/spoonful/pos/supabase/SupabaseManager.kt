@@ -431,7 +431,7 @@ class SupabaseManager(
     }
 
     fun verifyRegistrationCode(code: String, onResult: (JsonObject?) -> Unit) {
-        val url = "$supabaseUrl/rest/v1/pos_machines?registration_code=eq.$code&select=id,name,merchant_id,merchants(name)"
+        val url = "$supabaseUrl/rest/v1/pos_machines?registration_code=eq.$code&select=id,name,merchant_id,merchants(name,owner_id)"
         val request = Request.Builder()
             .url(url)
             .addHeader("apikey", supabaseKey)
@@ -464,6 +464,48 @@ class SupabaseManager(
                     } catch (e: Exception) {
                         Log.e(TAG, "verifyRegistrationCode parse fail", e)
                         mainHandler.post { onResult(null) }
+                    }
+                }
+            }
+        })
+    }
+
+    fun fetchOwnerMerchants(ownerId: String, onComplete: (List<JsonObject>) -> Unit) {
+        if (ownerId.isEmpty()) {
+            mainHandler.post { onComplete(emptyList()) }
+            return
+        }
+        val url = "$supabaseUrl/rest/v1/merchants?owner_id=eq.$ownerId&select=merchant_id,name,admin_pin"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .get()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, "fetchOwnerMerchants network fail", e)
+                mainHandler.post { onComplete(emptyList()) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        mainHandler.post { onComplete(emptyList()) }
+                        return
+                    }
+                    try {
+                        val bodyStr = response.body?.string() ?: "[]"
+                        val jsonArray = JsonParser.parseString(bodyStr).asJsonArray
+                        val list = mutableListOf<JsonObject>()
+                        for (i in 0 until jsonArray.size()) {
+                            list.add(jsonArray.get(i).asJsonObject)
+                        }
+                        mainHandler.post { onComplete(list) }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "fetchOwnerMerchants parse fail", e)
+                        mainHandler.post { onComplete(emptyList()) }
                     }
                 }
             }
