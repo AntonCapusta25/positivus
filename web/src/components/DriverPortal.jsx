@@ -5,7 +5,7 @@ import { Camera, MapPin, Clock, CheckCircle2, Navigation, Shield, ArrowRight, Us
 import { useJsApiLoader, GoogleMap, Marker, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
 
 export default function DriverPortal() {
-  const { orders, updateOrderStatus, availableMerchants, settings, setSettings, assignOrderDriver } = usePOS();
+  const { orders, updateOrderStatus, availableMerchants, settings, setSettings, assignOrderDriver, triggerTestPrint } = usePOS();
   const [driverName, setDriverName] = useState(() => localStorage.getItem('pos_driver_name') || '');
   const [selectedOrderId, setSelectedOrderId] = useState('');
   const [activeOrder, setActiveOrder] = useState(null);
@@ -409,6 +409,18 @@ export default function DriverPortal() {
     setActiveOrder(prev => ({ ...prev, status }));
   };
 
+  const handlePrintReceipt = async () => {
+    if (!activeOrder) return;
+    try {
+      setScannedNotice({ type: 'warning', message: 'Sending print request to restaurant...' });
+      await triggerTestPrint(activeOrder);
+      setScannedNotice({ type: 'success', message: 'Print request sent successfully!' });
+      setTimeout(() => setScannedNotice(null), 3000);
+    } catch (e) {
+      setScannedNotice({ type: 'error', message: 'Failed to trigger print: ' + e.message });
+    }
+  };
+
   // Clean up camera on unmount
   useEffect(() => {
     return () => {
@@ -773,6 +785,15 @@ export default function DriverPortal() {
                         <Navigation size={18} />
                         <span>Start Navigation</span>
                       </a>
+
+                      <button
+                        onClick={handlePrintReceipt}
+                        className="bg-slate-800 hover:bg-slate-700 text-white font-black py-3.5 px-4 rounded-xl text-sm flex items-center justify-center space-x-2 transition-all shadow-md shrink-0"
+                        title="Print Order Receipt at Restaurant"
+                      >
+                        <span>🖨️</span>
+                        <span>Print</span>
+                      </button>
 
                       
                       {activeOrder.status === 'ready' && (
