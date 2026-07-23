@@ -730,7 +730,59 @@ class SupabaseManager(
 
             override fun onResponse(call: Call, response: Response) {
                 response.use {
-                    mainHandler.post { onComplete(response.isSuccessful) }
+                    if (response.isSuccessful) {
+                        triggerHyperzodProductSync(productId, inStock)
+                        mainHandler.post { onComplete(true) }
+                    } else {
+                        mainHandler.post { onComplete(false) }
+                    }
+                }
+            }
+        })
+    }
+
+    private fun triggerHyperzodProductSync(productId: String, inStock: Boolean) {
+        val url = "$supabaseUrl/functions/v1/hyperzod-sync"
+        
+        val recordJson = JsonObject().apply {
+            addProperty("product_id", productId)
+            addProperty("in_stock", inStock)
+            addProperty("merchant_id", merchantId)
+        }
+        
+        val oldRecordJson = JsonObject().apply {
+            addProperty("in_stock", !inStock)
+        }
+        
+        val payload = JsonObject().apply {
+            addProperty("table", "products")
+            addProperty("type", "UPDATE")
+            add("record", recordJson)
+            add("old_record", oldRecordJson)
+        }
+        
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(payload).toRequestBody(mediaType)
+        
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Content-Type", "application/json")
+            .post(requestBody)
+            .build()
+            
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "Failed to invoke hyperzod-sync function", e)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Successfully invoked hyperzod-sync function for product $productId")
+                    } else {
+                        Log.e(TAG, "hyperzod-sync failed: ${response.code}")
+                    }
                 }
             }
         })
