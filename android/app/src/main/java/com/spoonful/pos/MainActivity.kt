@@ -338,7 +338,7 @@ class MainActivity : AppCompatActivity() {
 
                                 if (merchants.isEmpty()) {
                                     Toast.makeText(this@MainActivity, "No restaurants found for this account", Toast.LENGTH_LONG).show()
-                                } else if (merchants.size == 1) {
+                                } else {
                                     val merchant = merchants[0]
                                     val selectedMerchantId = merchant.get("merchant_id").asString
                                     val selectedMerchantName = merchant.get("name").asString
@@ -366,42 +366,7 @@ class MainActivity : AppCompatActivity() {
                                     
                                     supabaseManager.updateMerchantId(selectedMerchantId)
                                     supabaseManager.start()
-                                    Toast.makeText(this@MainActivity, "Logged in and linked successfully!", Toast.LENGTH_LONG).show()
-                                } else {
-                                    val storeNames = merchants.map { it.get("name")?.asString ?: "Unnamed Store" }.toTypedArray()
-                                    androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
-                                        .setTitle("Select Store Context")
-                                        .setItems(storeNames) { _, which ->
-                                            val selectedMerchant = merchants[which]
-                                            val selectedMerchantId = selectedMerchant.get("merchant_id").asString
-                                            val selectedMerchantName = selectedMerchant.get("name").asString
-                                            
-                                            supabaseManager.claimMerchant(selectedMerchantId, userId) { _ -> }
-
-                                            getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
-                                                .putBoolean("pos_registered", true)
-                                                .putString("pos_terminal_name", "Sunmi Handheld")
-                                                .putString("pos_machine_id", "local_machine_${System.currentTimeMillis()}")
-                                                .putString("pos_merchant_name", selectedMerchantName)
-                                                .putString("merchant_id", selectedMerchantId)
-                                                .putString("pos_owner_id", userId)
-                                                .apply()
-
-                                            isPOSRegistered = true
-                                            posTerminalName = "Sunmi Handheld"
-                                            posMachineId = "local_machine_${System.currentTimeMillis()}"
-                                            posOwnerId = userId
-                                            merchantId = selectedMerchantId
-
-                                            txtDrawerActiveRestaurant.text = selectedMerchantName
-                                            layoutOnboardingRegister.visibility = View.GONE
-                                            drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED)
-                                            
-                                            supabaseManager.updateMerchantId(selectedMerchantId)
-                                            supabaseManager.start()
-                                            Toast.makeText(this@MainActivity, "Linked to $selectedMerchantName successfully!", Toast.LENGTH_LONG).show()
-                                        }
-                                        .show()
+                                    Toast.makeText(this@MainActivity, "Logged in and linked to $selectedMerchantName successfully!", Toast.LENGTH_LONG).show()
                                 }
                             }
                         }

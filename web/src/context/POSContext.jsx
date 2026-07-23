@@ -162,7 +162,7 @@ export const POSProvider = ({ children }) => {
   }, [menuItems]);
 
   // Self-healing startup catalog and storefront sync with Hyperzod
-  const syncCatalogAndStorefront = async () => {
+  const syncCatalogAndStorefront = async (overrideUser = null, overrideRole = null, forceRedirect = false) => {
     if (!HYPERZOD_API_KEY || !HYPERZOD_TENANT_ID) {
       console.warn("Hyperzod API Key/Tenant not set, skipping catalog pull.");
       return;
@@ -182,6 +182,8 @@ export const POSProvider = ({ children }) => {
       const mListRes = await fetch(`${HYPERZOD_BASE_URL}/admin/v1/merchant/list`, { headers });
       const mListData = await mListRes.json();
       
+      const userObj = overrideUser || authUser;
+      const resolvedRole = overrideRole || userRole;
       let activeId = settings.merchantId || HYPERZOD_MERCHANT_ID;
 
       if (mListData.success && mListData.data && mListData.data.data) {
@@ -208,20 +210,20 @@ export const POSProvider = ({ children }) => {
 
       // Fetch all merchants owned by this user or unowned legacy ones
       let query = supabase.from('merchants').select('*');
-      if (authUser) {
-        if (userRole === 'superadmin') {
+      if (userObj) {
+        if (resolvedRole === 'superadmin') {
           // Superadmin manages all merchants
         } else {
           // Admin / Driver only manages their owned merchant (or claims legacy ones if they don't own any)
           const { data: ownedList } = await supabase
             .from('merchants')
             .select('merchant_id')
-            .eq('owner_id', authUser.id);
+            .eq('owner_id', userObj.id);
           
           if (ownedList && ownedList.length > 0) {
-            query = query.eq('owner_id', authUser.id);
+            query = query.eq('owner_id', userObj.id);
           } else {
-            query = query.or(`owner_id.eq.${authUser.id},owner_id.is.null`);
+            query = query.or(`owner_id.eq.${userObj.id},owner_id.is.null`);
           }
         }
       }
@@ -241,11 +243,13 @@ export const POSProvider = ({ children }) => {
         setAvailableMerchants(finalMerchants);
       }
 
-      // If settings has no merchant or the current one is not in the list, fallback to first
-      const isMerchantInList = finalMerchants.some(m => m.id === settings.merchantId);
-      if ((!settings.merchantId || !isMerchantInList) && finalMerchants.length > 0) {
+      // If forceRedirect is true, or settings has no merchant, or current merchant not in list
+      const isMerchantInList = finalMerchants.some(m => m.id === activeId);
+      if ((forceRedirect || !activeId || !isMerchantInList) && finalMerchants.length > 0) {
         activeId = finalMerchants[0].id;
         setSettings(prev => ({ ...prev, merchantId: activeId }));
+        setAuthenticatedMerchantId(activeId);
+        localStorage.setItem('pos_authenticated_merchant', activeId);
       }
 
       const merchantObj = finalMerchants.find(m => m.id === activeId);
@@ -819,6 +823,8 @@ export const POSProvider = ({ children }) => {
 
       if (error) throw error;
 
+      const role = data.user.user_metadata?.role || 'admin';
+
       const { data: driverData } = await supabase
         .from('drivers')
         .select('*')
@@ -829,11 +835,11 @@ export const POSProvider = ({ children }) => {
         localStorage.setItem('pos_user_role', 'driver');
         localStorage.setItem('pos_driver_name', driverData[0].name);
       } else {
-        setUserRole('admin');
-        localStorage.setItem('pos_user_role', 'admin');
+        setUserRole(role);
+        localStorage.setItem('pos_user_role', role);
       }
 
-      await syncCatalogAndStorefront();
+      await syncCatalogAndStorefront(data.user, role, true);
       return { success: true, user: data.user };
     } catch (e) {
       console.error("Sign in failed:", e);

@@ -233,6 +233,23 @@ function MainLayout() {
             </button>
           </div>
 
+          {userRole === 'superadmin' && (
+            <div className="px-5 py-3.5 bg-slate-900/50 border-b border-slate-800 shrink-0">
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                Switch Restaurant Context
+              </label>
+              <select
+                value={settings.merchantId}
+                onChange={(e) => setSettings(prev => ({ ...prev, merchantId: e.target.value }))}
+                className="bg-slate-800 text-white text-xs font-bold rounded-xl border border-slate-700 px-3 py-2.5 focus:outline-none cursor-pointer w-full"
+              >
+                {availableMerchants.map(m => (
+                  <option key={m.id} value={m.id}>{m.name || m.id}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Nav items */}
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {navItems.map(({ id, icon: Icon, label, badge }) => (
