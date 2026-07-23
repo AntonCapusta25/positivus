@@ -296,9 +296,10 @@ class MainActivity : AppCompatActivity() {
 
         // Bind onboarding views
         layoutOnboardingRegister = findViewById(R.id.layoutOnboardingRegister)
-        val editOnboardingCode = findViewById<android.widget.EditText>(R.id.editOnboardingCode)
-        val btnOnboardingSubmit = findViewById<android.widget.Button>(R.id.btnOnboardingSubmit)
         val progressOnboarding = findViewById<android.widget.ProgressBar>(R.id.progressOnboarding)
+        val editOnboardingEmail = findViewById<android.widget.EditText>(R.id.editOnboardingEmail)
+        val editOnboardingPassword = findViewById<android.widget.EditText>(R.id.editOnboardingPassword)
+        val btnOnboardingLogin = findViewById<android.widget.Button>(R.id.btnOnboardingLogin)
 
         if (isPOSRegistered) {
             layoutOnboardingRegister.visibility = View.GONE
@@ -308,75 +309,111 @@ class MainActivity : AppCompatActivity() {
             drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
         }
 
-        // Onboarding linking action
-        btnOnboardingSubmit.setOnClickListener {
-            val code = editOnboardingCode.text.toString().trim().toUpperCase()
-            if (code.isEmpty()) {
-                Toast.makeText(this, "Please enter a linking code", Toast.LENGTH_SHORT).show()
+        // Onboarding direct login action
+        btnOnboardingLogin.setOnClickListener {
+            val email = editOnboardingEmail.text.toString().trim()
+            val password = editOnboardingPassword.text.toString().trim()
+            if (email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "Please enter email and password", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             progressOnboarding.visibility = View.VISIBLE
-            btnOnboardingSubmit.isEnabled = false
+            btnOnboardingLogin.isEnabled = false
 
-            supabaseManager.verifyRegistrationCode(code) { machine ->
-                runOnUiThread {
-                    progressOnboarding.visibility = View.INVISIBLE
-                    btnOnboardingSubmit.isEnabled = true
+            supabaseManager.login(email, password) { authResult ->
+                if (authResult != null) {
+                    try {
+                        val userObj = authResult.getAsJsonObject("user")
+                        val userId = userObj.get("id").asString
+                        
+                        supabaseManager.fetchOwnerMerchants(userId) { merchants ->
+                            runOnUiThread {
+                                progressOnboarding.visibility = View.INVISIBLE
+                                btnOnboardingLogin.isEnabled = true
 
-                    if (machine != null) {
-                        try {
-                            val machineId = machine.get("id").asString
-                            val terminalName = machine.get("name").asString
-                            val newMerchantId = machine.get("merchant_id").asString
-                            
-                            val merchantObj = machine.get("merchants")
-                            val merchantName = if (merchantObj != null && !merchantObj.isJsonNull) {
-                                merchantObj.asJsonObject.get("name")?.asString ?: "Spoonful"
-                            } else {
-                                "Spoonful"
+                                if (merchants.isEmpty()) {
+                                    Toast.makeText(this@MainActivity, "No restaurants found for this account", Toast.LENGTH_LONG).show()
+                                } else if (merchants.size == 1) {
+                                    val merchant = merchants[0]
+                                    val selectedMerchantId = merchant.get("merchant_id").asString
+                                    val selectedMerchantName = merchant.get("name").asString
+                                    
+                                    getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                                        .putBoolean("pos_registered", true)
+                                        .putString("pos_terminal_name", "Sunmi Handheld")
+                                        .putString("pos_machine_id", "local_machine_${System.currentTimeMillis()}")
+                                        .putString("pos_merchant_name", selectedMerchantName)
+                                        .putString("merchant_id", selectedMerchantId)
+                                        .putString("pos_owner_id", userId)
+                                        .apply()
+
+                                    isPOSRegistered = true
+                                    posTerminalName = "Sunmi Handheld"
+                                    posMachineId = "local_machine_${System.currentTimeMillis()}"
+                                    posOwnerId = userId
+                                    merchantId = selectedMerchantId
+
+                                    txtDrawerActiveRestaurant.text = selectedMerchantName
+                                    layoutOnboardingRegister.visibility = View.GONE
+                                    drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED)
+                                    
+                                    supabaseManager.updateMerchantId(selectedMerchantId)
+                                    supabaseManager.start()
+                                    Toast.makeText(this@MainActivity, "Logged in and linked successfully!", Toast.LENGTH_LONG).show()
+                                } else {
+                                    val storeNames = merchants.map { it.get("name")?.asString ?: "Unnamed Store" }.toTypedArray()
+                                    androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                                        .setTitle("Select Store Context")
+                                        .setItems(storeNames) { _, which ->
+                                            val selectedMerchant = merchants[which]
+                                            val selectedMerchantId = selectedMerchant.get("merchant_id").asString
+                                            val selectedMerchantName = selectedMerchant.get("name").asString
+                                            
+                                            getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                                                .putBoolean("pos_registered", true)
+                                                .putString("pos_terminal_name", "Sunmi Handheld")
+                                                .putString("pos_machine_id", "local_machine_${System.currentTimeMillis()}")
+                                                .putString("pos_merchant_name", selectedMerchantName)
+                                                .putString("merchant_id", selectedMerchantId)
+                                                .putString("pos_owner_id", userId)
+                                                .apply()
+
+                                            isPOSRegistered = true
+                                            posTerminalName = "Sunmi Handheld"
+                                            posMachineId = "local_machine_${System.currentTimeMillis()}"
+                                            posOwnerId = userId
+                                            merchantId = selectedMerchantId
+
+                                            txtDrawerActiveRestaurant.text = selectedMerchantName
+                                            layoutOnboardingRegister.visibility = View.GONE
+                                            drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED)
+                                            
+                                            supabaseManager.updateMerchantId(selectedMerchantId)
+                                            supabaseManager.start()
+                                            Toast.makeText(this@MainActivity, "Linked to $selectedMerchantName successfully!", Toast.LENGTH_LONG).show()
+                                        }
+                                        .show()
+                                }
                             }
-                            val ownerId = if (merchantObj != null && !merchantObj.isJsonNull) {
-                                merchantObj.asJsonObject.get("owner_id")?.asString ?: ""
-                            } else {
-                                ""
-                            }
-
-                            // Save to SharedPreferences
-                            getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
-                                .putBoolean("pos_registered", true)
-                                .putString("pos_terminal_name", terminalName)
-                                .putString("pos_machine_id", machineId)
-                                .putString("pos_merchant_name", merchantName)
-                                .putString("merchant_id", newMerchantId)
-                                .putString("pos_owner_id", ownerId)
-                                .apply()
-
-                            isPOSRegistered = true
-                            posTerminalName = terminalName
-                            posMachineId = machineId
-                            posOwnerId = ownerId
-                            merchantId = newMerchantId
-
-                            txtDrawerActiveRestaurant.text = merchantName
-                            
-                            layoutOnboardingRegister.visibility = View.GONE
-                            drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED)
-                            
-                            supabaseManager.updateMerchantId(newMerchantId)
-                            supabaseManager.start()
-
-                            Toast.makeText(this, "POS Linked to $merchantName successfully!", Toast.LENGTH_LONG).show()
-                        } catch (e: Exception) {
-                            android.util.Log.e("MainActivity", "Failed to parse machine JSON fields", e)
-                            Toast.makeText(this, "Failed to link POS: invalid response data", Toast.LENGTH_SHORT).show()
                         }
-                    } else {
-                        Toast.makeText(this, "Invalid registration code or terminal is inactive.", Toast.LENGTH_LONG).show()
+                    } catch (e: Exception) {
+                        runOnUiThread {
+                            progressOnboarding.visibility = View.INVISIBLE
+                            btnOnboardingLogin.isEnabled = true
+                            Toast.makeText(this@MainActivity, "Failed to parse account info", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    runOnUiThread {
+                        progressOnboarding.visibility = View.INVISIBLE
+                        btnOnboardingLogin.isEnabled = true
+                        Toast.makeText(this@MainActivity, "Invalid email/password or network error.", Toast.LENGTH_LONG).show()
                     }
                 }
             }
         }
+
     }
 
     override fun onDestroy() {

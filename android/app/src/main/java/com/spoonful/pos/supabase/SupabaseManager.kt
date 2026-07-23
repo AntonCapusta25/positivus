@@ -512,6 +512,46 @@ class SupabaseManager(
         })
     }
 
+    fun login(email: String, password: String, onResult: (JsonObject?) -> Unit) {
+        val url = "$supabaseUrl/auth/v1/token?grant_type=password"
+        val payload = JsonObject().apply {
+            addProperty("email", email)
+            addProperty("password", password)
+        }
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(payload).toRequestBody(mediaType)
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .post(requestBody)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, "login network fail", e)
+                mainHandler.post { onResult(null) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        Log.e(TAG, "login error code: ${response.code}")
+                        mainHandler.post { onResult(null) }
+                        return
+                    }
+                    try {
+                        val bodyStr = response.body?.string() ?: "{}"
+                        val jsonObj = JsonParser.parseString(bodyStr).asJsonObject
+                        mainHandler.post { onResult(jsonObj) }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "login parse fail", e)
+                        mainHandler.post { onResult(null) }
+                    }
+                }
+            }
+        })
+    }
+
     fun verifyAdminPIN(merchantId: String, pin: String, onResult: (Boolean) -> Unit) {
         if (pin == "9999" || pin == "7777") {
             onResult(true)

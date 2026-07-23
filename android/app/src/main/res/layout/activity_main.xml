@@ -1261,7 +1261,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="POS Device Onboarding"
+                    android:text="POS Terminal Login"
                     android:textColor="#0F172A"
                     android:textSize="24sp"
                     android:textStyle="bold"
@@ -1270,38 +1270,52 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Enter the POS linking code generated from your web store dashboard to bind this terminal."
+                    android:text="Log in using your corporate dashboard credentials to link this terminal."
                     android:textColor="#475569"
                     android:textSize="14sp"
                     android:gravity="center"
                     android:layout_marginBottom="32dp"
                     android:maxWidth="340dp"/>
 
-                <!-- Registration Code input -->
+                <!-- Email Input -->
                 <EditText
-                    android:id="@+id/editOnboardingCode"
+                    android:id="@+id/editOnboardingEmail"
                     android:layout_width="260dp"
                     android:layout_height="54dp"
                     android:background="@drawable/section_rounded_bg"
-                    android:hint="POS-XXXXXX"
+                    android:hint="Admin Email"
                     android:textColorHint="#94A3B8"
                     android:textColor="#0F172A"
-                    android:textStyle="bold"
-                    android:textSize="18sp"
+                    android:textSize="16sp"
                     android:gravity="center"
-                    android:inputType="textCapCharacters"
+                    android:inputType="textEmailAddress"
                     android:singleLine="true"
-                    android:maxLength="10"
-                    android:layout_marginBottom="24dp"
+                    android:layout_marginBottom="12dp"
                     android:paddingHorizontal="16dp"/>
 
-                <!-- Button -->
+                <!-- Password Input -->
+                <EditText
+                    android:id="@+id/editOnboardingPassword"
+                    android:layout_width="260dp"
+                    android:layout_height="54dp"
+                    android:background="@drawable/section_rounded_bg"
+                    android:hint="Password"
+                    android:textColorHint="#94A3B8"
+                    android:textColor="#0F172A"
+                    android:textSize="16sp"
+                    android:gravity="center"
+                    android:inputType="textPassword"
+                    android:singleLine="true"
+                    android:layout_marginBottom="16dp"
+                    android:paddingHorizontal="16dp"/>
+
+                <!-- Login Button -->
                 <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btnOnboardingSubmit"
+                    android:id="@+id/btnOnboardingLogin"
                     android:layout_width="260dp"
                     android:layout_height="50dp"
                     android:background="@drawable/btn_accept_bg"
-                    android:text="LINK POS TERMINAL"
+                    android:text="LOGIN WITH ACCOUNT"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="14sp"
@@ -1312,7 +1326,8 @@
                     android:id="@+id/progressOnboarding"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:visibility="invisible"/>
+                    android:visibility="invisible"
+                    android:layout_marginBottom="16dp"/>
 
             </LinearLayout>
 
