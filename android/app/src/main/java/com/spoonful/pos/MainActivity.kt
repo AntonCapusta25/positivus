@@ -359,7 +359,7 @@ class MainActivity : AppCompatActivity() {
 
                             Toast.makeText(this, "POS Linked to $merchantName successfully!", Toast.LENGTH_LONG).show()
                         } catch (e: Exception) {
-                            Log.e("MainActivity", "Failed to parse machine JSON fields", e)
+                            android.util.Log.e("MainActivity", "Failed to parse machine JSON fields", e)
                             Toast.makeText(this, "Failed to link POS: invalid response data", Toast.LENGTH_SHORT).show()
                         }
                     } else {

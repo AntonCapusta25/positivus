@@ -64,11 +64,24 @@ export const POSProvider = ({ children }) => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthUser(session?.user ?? null);
+      if (session?.user) {
+        const role = session.user.user_metadata?.role || 'admin';
+        setUserRole(role);
+        localStorage.setItem('pos_user_role', role);
+      }
       setAuthLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthUser(session?.user ?? null);
+      if (session?.user) {
+        const role = session.user.user_metadata?.role || 'admin';
+        setUserRole(role);
+        localStorage.setItem('pos_user_role', role);
+      } else {
+        setUserRole('admin');
+        localStorage.removeItem('pos_user_role');
+      }
       setAuthLoading(false);
     });
 
@@ -196,7 +209,21 @@ export const POSProvider = ({ children }) => {
       // Fetch all merchants owned by this user or unowned legacy ones
       let query = supabase.from('merchants').select('*');
       if (authUser) {
-        query = query.or(`owner_id.eq.${authUser.id},owner_id.is.null`);
+        if (userRole === 'superadmin') {
+          // Superadmin manages all merchants
+        } else {
+          // Admin / Driver only manages their owned merchant (or claims legacy ones if they don't own any)
+          const { data: ownedList } = await supabase
+            .from('merchants')
+            .select('merchant_id')
+            .eq('owner_id', authUser.id);
+          
+          if (ownedList && ownedList.length > 0) {
+            query = query.eq('owner_id', authUser.id);
+          } else {
+            query = query.or(`owner_id.eq.${authUser.id},owner_id.is.null`);
+          }
+        }
       }
       const { data: dbMerchants, error: dbErr } = await query.order('name', { ascending: true });
 
@@ -834,6 +861,19 @@ export const POSProvider = ({ children }) => {
     }
 
     try {
+      if (userRole === 'admin' && authUser) {
+        const { data: existingOwned, error: existErr } = await supabase
+          .from('merchants')
+          .select('merchant_id')
+          .eq('owner_id', authUser.id);
+        
+        if (existErr) throw existErr;
+        
+        if (existingOwned && existingOwned.length > 0) {
+          return { success: false, error: 'As a standard Admin, you are only allowed to manage a single restaurant. To manage multiple, please upgrade to a Corporate Superadmin profile.' };
+        }
+      }
+
       const { error } = await supabase
         .from('merchants')
         .insert([{

@@ -521,28 +521,39 @@ function AuthScreen() {
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
                   Access Profile Role
                 </label>
-                <div className="flex space-x-2">
+                <div className="flex space-x-1.5">
                   <button
                     type="button"
                     onClick={() => setRole('admin')}
-                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all border ${
+                    className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all border ${
                       role === 'admin' 
                         ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/10' 
                         : 'bg-slate-800/80 text-slate-450 border-slate-700/80 hover:text-white'
                     }`}
                   >
-                    Restaurant Admin
+                    Admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole('superadmin')}
+                    className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all border ${
+                      role === 'superadmin' 
+                        ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/10' 
+                        : 'bg-slate-800/80 text-slate-450 border-slate-700/80 hover:text-white'
+                    }`}
+                  >
+                    Superadmin
                   </button>
                   <button
                     type="button"
                     onClick={() => setRole('driver')}
-                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all border ${
+                    className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all border ${
                       role === 'driver' 
                         ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/10' 
                         : 'bg-slate-800/80 text-slate-450 border-slate-700/80 hover:text-white'
                     }`}
                   >
-                    Delivery Driver
+                    Driver
                   </button>
                 </div>
               </div>

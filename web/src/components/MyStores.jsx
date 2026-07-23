@@ -16,7 +16,8 @@ export default function MyStores() {
     registerMerchant,
     registerPOSMachine,
     fetchPOSMachines,
-    deletePOSMachine
+    deletePOSMachine,
+    userRole
   } = usePOS();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -243,14 +244,20 @@ export default function MyStores() {
               className="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-3 text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-sm text-slate-700 transition-all"
             />
           </div>
-          <button
-            onClick={() => setIsRegisterModalOpen(true)}
-            className="bg-brand-orange hover:bg-opacity-95 text-white font-bold px-5 py-3 rounded-2xl text-xs flex items-center gap-2 shadow-sm transition-all whitespace-nowrap active:scale-95"
-            title="Register new restaurant location"
-          >
-            <Plus size={14} />
-            <span>Register Store</span>
-          </button>
+          {userRole === 'superadmin' || availableMerchants.length === 0 ? (
+            <button
+              onClick={() => setIsRegisterModalOpen(true)}
+              className="bg-brand-orange hover:bg-opacity-95 text-white font-bold px-5 py-3 rounded-2xl text-xs flex items-center gap-2 shadow-sm transition-all whitespace-nowrap active:scale-95"
+              title="Register new restaurant location"
+            >
+              <Plus size={14} />
+              <span>Register Store</span>
+            </button>
+          ) : (
+            <div className="bg-slate-50 border border-slate-205 text-slate-500 font-bold px-4.5 py-3 rounded-2xl text-[10px] uppercase tracking-wider select-none">
+              🔒 Admin (Single Store Limit)
+            </div>
+          )}
         </div>
 
         <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">

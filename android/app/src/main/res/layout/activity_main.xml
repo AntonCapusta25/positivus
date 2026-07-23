@@ -1300,7 +1300,7 @@
                     android:id="@+id/btnOnboardingSubmit"
                     android:layout_width="260dp"
                     android:layout_height="50dp"
-                    android:background="@drawable/btn_accept_selector"
+                    android:background="@drawable/btn_accept_bg"
                     android:text="LINK POS TERMINAL"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
