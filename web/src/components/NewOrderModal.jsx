@@ -12,7 +12,7 @@ export default function NewOrderModal() {
   if (!activeIncomingOrder) return null;
 
   const order = activeIncomingOrder;
-  const activeMerchant = availableMerchants.find(m => m.id === order.merchant_id) || { name: 'Spoonful' };
+  const activeMerchant = (availableMerchants || []).find(m => m.id === order.merchant_id || m.slug === order.merchant_id || m.raw_details?.id === order.merchant_id) || { name: 'Spoonful' };
 
   // Parse items
   let parsedItems = [];
@@ -85,6 +85,9 @@ export default function NewOrderModal() {
               {/* Customer Info Card & Loyalty Badge */}
               <div className="bg-slate-50 p-4 rounded-xl sm:rounded-2xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
                 <div className="space-y-1">
+                  <div className="text-[9px] font-extrabold text-brand-orange uppercase tracking-widest mb-1 block">
+                    Store: {activeMerchant.name || 'Spoonful'}
+                  </div>
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <span className="text-base font-black text-slate-800">
                       {order.customer_name || 'Customer'}

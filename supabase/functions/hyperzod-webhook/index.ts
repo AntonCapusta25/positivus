@@ -27,12 +27,25 @@ async function sendPushNotifications(newOrder: any, supabase: any) {
       VAPID_PRIVATE_KEY
     );
 
+    // Fetch merchant display name from Supabase merchants table
+    let merchantName = "Spoonful";
+    try {
+      const { data: merchantData } = await supabase
+        .from("merchants")
+        .select("name")
+        .eq("merchant_id", newOrder.merchant_id)
+        .single();
+      if (merchantData && merchantData.name) {
+        merchantName = merchantData.name;
+      }
+    } catch (dbErr) {
+      console.warn("Failed to fetch merchant name for push notification:", dbErr);
+    }
+
     // Fetch all active device subscriptions registered for push notifications
     const { data: subs, error: subsError } = await supabase
       .from("push_subscriptions")
       .select("*");
-
-
 
     if (subsError) {
       console.error("Failed to query push subscriptions:", subsError);
@@ -44,9 +57,9 @@ async function sendPushNotifications(newOrder: any, supabase: any) {
       return;
     }
 
-    console.log(`Sending Web Push notifications to ${subs.length} devices for merchant ${newOrder.merchant_id}...`);
+    console.log(`Sending Web Push notifications to ${subs.length} devices for merchant ${merchantName}...`);
     const payload = JSON.stringify({
-      title: "New Kitchen Order!",
+      title: `${merchantName} - New Kitchen Order!`,
       body: `Order #${newOrder.order_number} for €${Number(newOrder.total).toFixed(2)} (${newOrder.type})`,
       url: `/?incoming_order_id=${newOrder.id}`
     });

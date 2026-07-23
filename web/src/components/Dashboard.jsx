@@ -18,7 +18,7 @@ const parseItems = (items) => {
 };
 
 export default function Dashboard() {
-  const { orders, updateOrderStatus, updateOrderPrinted, triggerTestPrint, setActiveIncomingOrder, assignOrderDriver, settings, drivers } = usePOS();
+  const { orders, updateOrderStatus, updateOrderPrinted, triggerTestPrint, setActiveIncomingOrder, assignOrderDriver, settings, drivers, availableMerchants } = usePOS();
   const [activeTab, setActiveTab] = useState('prepare'); // prepare, handover, done
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [showMobileDetail, setShowMobileDetail] = useState(false);
@@ -175,6 +175,8 @@ export default function Dashboard() {
               const colorInfo = getAgeColor(elapsed);
               const itemsArray = parseItems(order.items);
               const itemCount = itemsArray.reduce((s, i) => s + (i.quantity || 1), 0);
+              const merchantObj = (availableMerchants || []).find(m => m.id === order.merchant_id || m.slug === order.merchant_id || m.raw_details?.id === order.merchant_id);
+              const merchantName = merchantObj?.name || 'Spoonful';
 
               return (
                 <div
@@ -203,9 +205,14 @@ export default function Dashboard() {
                   {/* Order info details */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-bold text-slate-800 truncate">
-                        {order.customer_name?.split(' ')[0] || 'Guest Customer'}
-                      </h4>
+                      <div className="flex items-center space-x-1.5 min-w-0">
+                        <h4 className="text-sm font-bold text-slate-800 truncate">
+                          {order.customer_name?.split(' ')[0] || 'Guest Customer'}
+                        </h4>
+                        <span className="bg-slate-100 text-slate-500 font-extrabold text-[8px] px-1.5 py-0.5 rounded uppercase tracking-wider block truncate max-w-[75px]" title={merchantName}>
+                          {merchantName}
+                        </span>
+                      </div>
                       <span className="text-xs font-bold text-slate-800 shrink-0">
                         €{Number(order.total || 0).toFixed(2)}
                       </span>
@@ -277,7 +284,16 @@ export default function Dashboard() {
                       {selectedOrder.customer_address || 'Dining Room / Table Order'}
                     </span>
                   </h3>
-                  <div className="flex items-center space-x-3 text-xs text-slate-500 font-bold mt-1.5">
+                  <div className="flex items-center space-x-3 text-xs text-slate-500 font-bold mt-1.5 flex-wrap gap-y-1.5">
+                    {(() => {
+                      const detailMerchantObj = (availableMerchants || []).find(m => m.id === selectedOrder.merchant_id || m.slug === selectedOrder.merchant_id || m.raw_details?.id === selectedOrder.merchant_id);
+                      const detailMerchantName = detailMerchantObj?.name || 'Spoonful';
+                      return (
+                        <span className="bg-brand-orange/10 text-brand-orange border border-brand-orange/20 px-2 py-0.5 rounded-md text-[10px] uppercase font-black tracking-wider flex items-center gap-1 shrink-0">
+                          Store: {detailMerchantName}
+                        </span>
+                      );
+                    })()}
                     <span>Order ID: #{selectedOrder.order_number}</span>
                     <span>•</span>
                     <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md capitalize">
