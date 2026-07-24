@@ -1135,6 +1135,25 @@ export const POSProvider = ({ children }) => {
 
       // Database write succeeded, now update local React state
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, driver_name: driverName, delivery_duration: deliveryDuration } : o));
+
+      // Trigger push notification to the driver
+      const targetOrder = orders.find(o => o.id === orderId);
+      const friendlyNum = targetOrder ? targetOrder.order_number : orderId;
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hyperzod-webhook`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          action: 'send_driver_push',
+          driver_name: driverName,
+          title: '📦 Order Assigned',
+          body: `You are assigned to Order #${friendlyNum}`,
+          url: `/driver`
+        })
+      }).catch(e => console.warn('[PWA Push] Failed to trigger driver push notification:', e));
+
       return { success: true };
     } catch (err) {
       console.error('Update driver details in Supabase failed:', err);

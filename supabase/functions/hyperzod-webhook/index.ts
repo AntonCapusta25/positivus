@@ -6,7 +6,14 @@ import webpush from "npm:web-push";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-async function sendPushNotifications(newOrder: any, supabase: any) {
+async function sendPushNotificationGeneric(
+  title: string,
+  body: string,
+  url: string,
+  tag: string,
+  recipientFilter: (sub: any) => boolean,
+  supabase: any
+) {
   try {
     const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
     const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
@@ -16,16 +23,66 @@ async function sendPushNotifications(newOrder: any, supabase: any) {
       return;
     }
 
-    if (!newOrder.merchant_id) {
-      console.warn("Order has no merchant_id. Skipping push notifications.");
-      return;
-    }
-
     webpush.setVapidDetails(
       "mailto:bangalexf@gmail.com",
       VAPID_PUBLIC_KEY,
       VAPID_PRIVATE_KEY
     );
+
+    // Fetch all active device subscriptions registered for push notifications
+    const { data: subs, error: subsError } = await supabase
+      .from("push_subscriptions")
+      .select("*");
+
+    if (subsError) {
+      console.error("Failed to query push subscriptions:", subsError);
+      return;
+    }
+
+    if (!subs || subs.length === 0) {
+      return;
+    }
+
+    const filteredSubs = subs.filter(recipientFilter);
+    if (filteredSubs.length === 0) {
+      console.log(`No matching subscriptions found for title: ${title}`);
+      return;
+    }
+
+    console.log(`Sending Web Push notifications to ${filteredSubs.length} matching devices...`);
+    const payload = JSON.stringify({
+      title,
+      body,
+      url,
+      tag
+    });
+
+    const sendPromises = filteredSubs.map((sub: any) => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: sub.keys
+      };
+      return webpush.sendNotification(pushSubscription, payload)
+        .catch((err: any) => {
+          console.error("Web Push failed for endpoint:", sub.endpoint, err);
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            supabase.from("push_subscriptions").delete().eq("id", sub.id).then();
+          }
+        });
+    });
+
+    await Promise.allSettled(sendPromises);
+  } catch (err) {
+    console.error("Failed to send generic push notification:", err);
+  }
+}
+
+async function sendPushNotifications(newOrder: any, supabase: any) {
+  try {
+    if (!newOrder.merchant_id) {
+      console.warn("Order has no merchant_id. Skipping push notifications.");
+      return;
+    }
 
     // Fetch merchant display name from Supabase merchants table
     let merchantName = "Spoonful";
@@ -42,45 +99,38 @@ async function sendPushNotifications(newOrder: any, supabase: any) {
       console.warn("Failed to fetch merchant name for push notification:", dbErr);
     }
 
-    // Fetch all active device subscriptions registered for push notifications
-    const { data: subs, error: subsError } = await supabase
-      .from("push_subscriptions")
-      .select("*");
+    // A. Merchant Kitchen Notification (Only send to subscriptions that match the merchant and NOT starting with driver:)
+    await sendPushNotificationGeneric(
+      `${merchantName} - New Kitchen Order!`,
+      `Order #${newOrder.order_number} for €${Number(newOrder.total).toFixed(2)} (${newOrder.type})`,
+      `/?incoming_order_id=${newOrder.id}`,
+      `order-${newOrder.order_number}`,
+      (sub: any) => {
+        const subMerchantId = sub.merchant_id || "";
+        if (subMerchantId.startsWith("driver:")) return false;
+        return subMerchantId === newOrder.merchant_id ||
+          ((newOrder.merchant_id === "restaurant_1" || newOrder.merchant_id === "6a0f03b4500ed5db150be1a1") &&
+           (subMerchantId === "restaurant_1" || subMerchantId === "6a0f03b4500ed5db150be1a1"));
+      },
+      supabase
+    );
 
-    if (subsError) {
-      console.error("Failed to query push subscriptions:", subsError);
-      return;
+    // B. Driver Notification for new delivery offers (Only send if order is delivery and unassigned)
+    const isDelivery = (newOrder.type || "").toLowerCase() === "delivery";
+    const isUnassigned = !newOrder.driver_name || newOrder.driver_name === "";
+    if (isDelivery && isUnassigned) {
+      await sendPushNotificationGeneric(
+        "🛵 New Delivery Offer!",
+        `Order #${newOrder.order_number} from ${merchantName} (€${Number(newOrder.total).toFixed(2)})`,
+        "/driver",
+        `offer-${newOrder.order_number}`,
+        (sub: any) => {
+          const subMerchantId = sub.merchant_id || "";
+          return subMerchantId.startsWith("driver:");
+        },
+        supabase
+      );
     }
-
-    if (!subs || subs.length === 0) {
-      console.log(`No active push subscriptions found for merchant: ${newOrder.merchant_id}`);
-      return;
-    }
-
-    console.log(`Sending Web Push notifications to ${subs.length} devices for merchant ${merchantName}...`);
-    const payload = JSON.stringify({
-      title: `${merchantName} - New Kitchen Order!`,
-      body: `Order #${newOrder.order_number} for €${Number(newOrder.total).toFixed(2)} (${newOrder.type})`,
-      url: `/?incoming_order_id=${newOrder.id}`
-    });
-
-    const sendPromises = subs.map((sub: any) => {
-      const pushSubscription = {
-        endpoint: sub.endpoint,
-        keys: sub.keys
-      };
-      return webpush.sendNotification(pushSubscription, payload)
-        .catch((err: any) => {
-          console.error("Web Push failed for endpoint:", sub.endpoint, err);
-          // Cleanup expired subscriptions (status code 410 Gone or 404 Not Found)
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            supabase.from("push_subscriptions").delete().eq("id", sub.id).then();
-          }
-        });
-    });
-
-    await Promise.allSettled(sendPromises);
-    console.log(`Finished sending Web Push notifications for order #${newOrder.order_number}`);
   } catch (pushErr) {
     console.error("Failed to process Web Push notifications:", pushErr);
   }
@@ -146,6 +196,34 @@ serve(async (req) => {
     // Read payload
     const body = await req.json();
     console.log("Received Hyperzod webhook payload:", JSON.stringify(body));
+
+    if (body.action === "send_driver_push") {
+      const { driver_name, title, body: msgBody, url } = body;
+      if (!driver_name) {
+        return new Response(JSON.stringify({ error: "Missing driver_name" }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          status: 400
+        });
+      }
+      const pushPromise = sendPushNotificationGeneric(
+        title || "📦 Order Update",
+        msgBody || "Your order has been updated",
+        url || "/driver",
+        `driver-push-${Date.now()}`,
+        (sub: any) => sub.merchant_id === `driver:${driver_name}`,
+        supabase
+      );
+      if (typeof EdgeRuntime !== 'undefined') {
+        // @ts-ignore
+        EdgeRuntime.waitUntil(pushPromise);
+      } else {
+        pushPromise.catch((err: any) => console.error("Background push error:", err));
+      }
+      return new Response(JSON.stringify({ success: true, message: "Push notification queued" }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        status: 200
+      });
+    }
 
     // Map Hyperzod fields to Spoonful POS orders table schema
     // Hyperzod payload structure typically:

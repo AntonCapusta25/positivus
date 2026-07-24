@@ -14,6 +14,79 @@ export default function DriverPortal() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [scannedNotice, setScannedNotice] = useState(null);
   const [showCongrats, setShowCongrats] = useState(false);
+  
+  const [notifPermission, setNotifPermission] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'default'
+  );
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  const registerDriverPushSubscription = async () => {
+    try {
+      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      if (!vapidPublicKey || typeof Notification === 'undefined') return;
+      if (!('serviceWorker' in navigator)) return;
+      const activeReg = await navigator.serviceWorker.ready;
+      let subscription = await activeReg.pushManager.getSubscription();
+      if (subscription) { try { await subscription.unsubscribe(); } catch {} }
+      subscription = await activeReg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+      });
+      const subJson = subscription.toJSON();
+      const identifier = `driver:${driverName}`;
+      await supabase.from('push_subscriptions').upsert(
+        { endpoint: subJson.endpoint, keys: subJson.keys, merchant_id: identifier },
+        { onConflict: 'endpoint' }
+      );
+      console.log('[PWA Push] Push subscription registered for driver:', driverName);
+    } catch (err) {
+      console.warn('[PWA Push] Driver subscription failed:', err);
+    }
+  };
+
+  const enableDriverPushNotifications = async () => {
+    try {
+      if (typeof Notification === 'undefined') {
+        alert('Push notifications require the app to be Added to Home Screen on iOS 16.4+');
+        return;
+      }
+      
+      let perm;
+      try {
+        perm = await Notification.requestPermission();
+      } catch (promiseErr) {
+        perm = await new Promise((resolve) => {
+          Notification.requestPermission(resolve);
+        });
+      }
+      
+      setNotifPermission(perm);
+      if (perm === 'granted') {
+        await registerDriverPushSubscription();
+        alert('✅ Push notifications enabled! You will receive alerts for new delivery offers.');
+      } else {
+        alert('❌ Permission not granted. Please allow notifications in your device settings.');
+      }
+    } catch (err) {
+      console.warn('[PWA Push] Permission request failed:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (driverName && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      registerDriverPushSubscription();
+    }
+  }, [driverName]);
 
   // Camera scanning state
   const [showScanner, setShowScanner] = useState(false);
@@ -562,6 +635,32 @@ export default function DriverPortal() {
                 className="text-xs text-slate-500 hover:text-rose-400 font-bold transition-all"
               >
                 Log Out
+              </button>
+            </div>
+
+            {/* Notifications Subscription Switch/Button */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between mt-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-700 text-lg">
+                  🔔
+                </div>
+                <div>
+                  <span className="text-xs text-slate-400 block font-semibold">Push Notifications</span>
+                  <span className="text-xs font-bold text-slate-200">
+                    {notifPermission === 'granted' ? 'Enabled' : 'Disabled'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={enableDriverPushNotifications}
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                  notifPermission === 'granted'
+                    ? 'bg-slate-800 text-slate-400 cursor-default'
+                    : 'bg-brand-orange hover:bg-brand-orange/90 text-white shadow-sm'
+                }`}
+                disabled={notifPermission === 'granted'}
+              >
+                {notifPermission === 'granted' ? 'Active' : 'Enable'}
               </button>
             </div>
 
