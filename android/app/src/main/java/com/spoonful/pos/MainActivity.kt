@@ -112,6 +112,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var seekBarVolume: SeekBar
     private lateinit var txtSoundVolumeVal: TextView
     private lateinit var btnSoundPlay: TextView
+    private lateinit var btnSoundStop: TextView
+    private lateinit var spinnerSoundType: android.widget.Spinner
     private lateinit var radioGroupSounds: RadioGroup
     private lateinit var radioSoundQuiet: RadioButton
     private lateinit var radioSoundDefault: RadioButton
@@ -567,6 +569,8 @@ class MainActivity : AppCompatActivity() {
         seekBarVolume = findViewById(R.id.seekBarVolume)
         txtSoundVolumeVal = findViewById(R.id.txtSoundVolumeVal)
         btnSoundPlay = findViewById(R.id.btnSoundPlay)
+        btnSoundStop = findViewById(R.id.btnSoundStop)
+        spinnerSoundType = findViewById(R.id.spinnerSoundType)
         radioGroupSounds = findViewById(R.id.radioGroupSounds)
         radioSoundQuiet = findViewById(R.id.radioSoundQuiet)
         radioSoundDefault = findViewById(R.id.radioSoundDefault)
@@ -1635,21 +1639,41 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        btnSoundPlay.setOnClickListener {
-            if (isTestSoundPlaying) {
-                stopIncomingOrderSound()
-            } else {
-                isTestSoundPlaying = true
-                btnSoundPlay.text = "⏹"
-                playIncomingOrderSound()
-                
-                // Auto stop after 4 seconds
-                handler.postDelayed({
-                    if (isTestSoundPlaying) {
-                        stopIncomingOrderSound()
-                    }
-                }, 4000)
+        // Setup Sound Type Spinner
+        val soundOptions = arrayOf("Siren Alarm", "Beeps", "Chime", "System Notification", "System Alarm")
+        val soundOptionKeys = arrayOf("siren", "beeps", "chime", "system_notification", "system_alarm")
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, soundOptions)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerSoundType.adapter = adapter
+
+        // Set initial selection
+        val savedSoundType = prefs.getString("sound_type", "siren")
+        val initialIndex = soundOptionKeys.indexOf(savedSoundType).coerceAtLeast(0)
+        spinnerSoundType.setSelection(initialIndex)
+
+        spinnerSoundType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val selectedKey = soundOptionKeys[position]
+                prefs.edit().putString("sound_type", selectedKey).apply()
             }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        btnSoundPlay.setOnClickListener {
+            isTestSoundPlaying = true
+            btnSoundPlay.text = "▶ Playing"
+            playIncomingOrderSound()
+            
+            // Auto stop after 6 seconds
+            handler.postDelayed({
+                if (isTestSoundPlaying) {
+                    stopIncomingOrderSound()
+                }
+            }, 6000)
+        }
+
+        btnSoundStop.setOnClickListener {
+            stopIncomingOrderSound()
         }
     }
 
@@ -2395,41 +2419,101 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var soundThread: Thread? = null
+    private var currentRingtone: android.media.Ringtone? = null
     private var toneGenerator: android.media.ToneGenerator? = null
     @Volatile private var isSoundAlertPlaying = false
 
     private fun playIncomingOrderSound() {
-        try {
-            stopIncomingOrderSound()
+        synchronized(this) {
+            stopIncomingOrderSoundInternal()
             isSoundAlertPlaying = true
-            
-            Thread {
+
+            val newThread = Thread {
                 try {
-                    val savedVolume = getSharedPreferences("spoonful_prefs", MODE_PRIVATE).getInt("sound_volume", 100)
-                    toneGenerator = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, savedVolume)
-                    var high = true
-                    while (isSoundAlertPlaying) {
-                        val tone = if (high) android.media.ToneGenerator.TONE_CDMA_HIGH_L else android.media.ToneGenerator.TONE_CDMA_MED_L
-                        toneGenerator?.startTone(tone, 300)
-                        Thread.sleep(400)
-                        high = !high
+                    val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
+                    val soundType = prefs.getString("sound_type", "siren")
+                    val savedVolume = prefs.getInt("sound_volume", 100)
+
+                    if (soundType == "system_notification" || soundType == "system_alarm") {
+                        val type = if (soundType == "system_alarm") {
+                            android.media.RingtoneManager.TYPE_ALARM
+                        } else {
+                            android.media.RingtoneManager.TYPE_NOTIFICATION
+                        }
+                        val notificationUri = android.media.RingtoneManager.getDefaultUri(type)
+                        currentRingtone = android.media.RingtoneManager.getRingtone(applicationContext, notificationUri)
+                        
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                            currentRingtone?.volume = savedVolume / 100f
+                        }
+                        
+                        currentRingtone?.play()
+                        while (isSoundAlertPlaying) {
+                            if (currentRingtone?.isPlaying == false) {
+                                if (type == android.media.RingtoneManager.TYPE_ALARM) {
+                                    currentRingtone?.play()
+                                } else {
+                                    break
+                                }
+                            }
+                            Thread.sleep(200)
+                        }
+                    } else {
+                        toneGenerator = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, savedVolume)
+                        var high = true
+                        while (isSoundAlertPlaying) {
+                            val tone = when (soundType) {
+                                "beeps" -> android.media.ToneGenerator.TONE_CDMA_PIP
+                                "chime" -> android.media.ToneGenerator.TONE_CDMA_CONFIRM
+                                else -> if (high) android.media.ToneGenerator.TONE_CDMA_HIGH_L else android.media.ToneGenerator.TONE_CDMA_MED_L
+                            }
+                            toneGenerator?.startTone(tone, if (soundType == "beeps") 150 else 300)
+                            
+                            val sleepMs = when (soundType) {
+                                "beeps" -> 300L
+                                "chime" -> 800L
+                                else -> 400L
+                            }
+                            Thread.sleep(sleepMs)
+                            high = !high
+                        }
                     }
+                } catch (e: InterruptedException) {
+                    // Interrupted, stop loop
                 } catch (e: Exception) {
-                    android.util.Log.e("MainActivity", "Error playing tone generator", e)
+                    android.util.Log.e("MainActivity", "Error in playIncomingOrderSound thread", e)
+                } finally {
+                    cleanupSound()
                 }
-            }.start()
-        } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Error in playIncomingOrderSound", e)
+            }
+            soundThread = newThread
+            newThread.start()
         }
     }
 
-    private fun stopIncomingOrderSound() {
+    private fun stopIncomingOrderSoundInternal() {
+        isSoundAlertPlaying = false
+        soundThread?.interrupt()
+        soundThread = null
+        cleanupSound()
+    }
+
+    private fun cleanupSound() {
         try {
-            isSoundAlertPlaying = false
             toneGenerator?.stopTone()
             toneGenerator?.release()
             toneGenerator = null
-            
+        } catch (e: Exception) {}
+        try {
+            currentRingtone?.stop()
+            currentRingtone = null
+        } catch (e: Exception) {}
+    }
+
+    private fun stopIncomingOrderSound() {
+        synchronized(this) {
+            stopIncomingOrderSoundInternal()
             if (isTestSoundPlaying) {
                 isTestSoundPlaying = false
                 runOnUiThread {
@@ -2438,7 +2522,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-        } catch (e: Exception) {}
+        }
     }
 
 
