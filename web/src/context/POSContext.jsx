@@ -467,7 +467,18 @@ export const POSProvider = ({ children }) => {
                   playDriverChime();
                 }
 
-                return prev.map(o => o.id === updatedOrder.id ? updatedOrder : o);
+                return prev.map(o => {
+                  if (o.id === updatedOrder.id) {
+                    return {
+                      ...o,
+                      ...updatedOrder,
+                      notes: updatedOrder.notes || o.notes,
+                      customer_address: updatedOrder.customer_address || o.customer_address,
+                      items: (updatedOrder.items && updatedOrder.items.length > 0) ? updatedOrder.items : o.items
+                    };
+                  }
+                  return o;
+                });
               });
             } else if (payload.eventType === 'DELETE') {
               setOrders((prev) => prev.filter(o => o.id !== payload.old.id));

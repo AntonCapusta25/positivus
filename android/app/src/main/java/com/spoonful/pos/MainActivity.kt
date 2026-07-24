@@ -232,11 +232,18 @@ class MainActivity : AppCompatActivity() {
                             val printTs = order.printRequestedAt
                             val isNewPrintRequest = printTs != null && printTs != existingOrder.printRequestedAt
 
-                            ordersList[index] = order
+                            val mergedOrder = order.copy(
+                                notes = if (order.notes.isNullOrEmpty()) existingOrder.notes else order.notes,
+                                customerAddress = if (order.customerAddress.isNullOrEmpty()) existingOrder.customerAddress else order.customerAddress,
+                                items = if (order.items.isEmpty()) existingOrder.items else order.items,
+                                customerName = if (order.customerName.isNullOrEmpty()) existingOrder.customerName else order.customerName,
+                                customerPhone = if (order.customerPhone.isNullOrEmpty()) existingOrder.customerPhone else order.customerPhone
+                            )
+                            ordersList[index] = mergedOrder
                             refreshOrderList()
                             
                             if (selectedOrder?.id == order.id) {
-                                openOrderDetail(order)
+                                openOrderDetail(mergedOrder)
                             }
                             
                             // Remote print requests: only print if isAutoPrintEnabled IS TRUE, OR if the request was made manually (> 5 seconds after creation)
@@ -2379,6 +2386,10 @@ class MainActivity : AppCompatActivity() {
             val txtTotal = dialogView.findViewById<TextView>(R.id.txtDialogTotal)
             val txtTimer = dialogView.findViewById<TextView>(R.id.txtDialogTimer)
             val containerItems = dialogView.findViewById<LinearLayout>(R.id.containerDialogItems)
+            val layoutDialogNotes = dialogView.findViewById<LinearLayout>(R.id.layoutDialogNotes)
+            val txtDialogNotes = dialogView.findViewById<TextView>(R.id.txtDialogNotes)
+            val layoutDialogTip = dialogView.findViewById<LinearLayout>(R.id.layoutDialogTip)
+            val txtDialogTip = dialogView.findViewById<TextView>(R.id.txtDialogTip)
             val btnAccept = dialogView.findViewById<Button>(R.id.btnDialogAccept)
             val btnDecline = dialogView.findViewById<Button>(R.id.btnDialogDecline)
             val btnPrepMinus = dialogView.findViewById<Button>(R.id.btnDialogPrepMinus)
@@ -2446,6 +2457,22 @@ class MainActivity : AppCompatActivity() {
             txtCustomerPhone.text = if (!order.customerPhone.isNullOrEmpty()) "📞 ${order.customerPhone}" else "No phone number"
             txtAddress.text = order.customerAddress ?: "No delivery address"
             txtTotal.text = String.format(Locale.US, "€%.2f", order.total)
+
+            val parsedNotes = parseCustomerNotes(order.notes)
+            if (parsedNotes.isNotEmpty()) {
+                layoutDialogNotes.visibility = View.VISIBLE
+                txtDialogNotes.text = parsedNotes
+            } else {
+                layoutDialogNotes.visibility = View.GONE
+            }
+
+            val tipVal = parseTipAmount(order.notes)
+            if (tipVal > 0.0) {
+                layoutDialogTip.visibility = View.VISIBLE
+                txtDialogTip.text = String.format(Locale.US, "€%.2f", tipVal)
+            } else {
+                layoutDialogTip.visibility = View.GONE
+            }
 
             // Setup Live Counting Timer
             val startTime = System.currentTimeMillis()

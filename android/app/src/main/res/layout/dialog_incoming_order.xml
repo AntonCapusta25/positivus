@@ -145,6 +145,32 @@
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:layout_marginTop="2dp" />
+
+            <!-- Instructions / Notes section -->
+            <LinearLayout
+                android:id="@+id/layoutDialogNotes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="8dp"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="INSTRUCTIONS / NOTES"
+                    android:textColor="#94A3B8"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/txtDialogNotes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Leave at door"
+                    android:textColor="#D8581B"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Items List Divider -->
@@ -175,6 +201,37 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
         </ScrollView>
+
+        <!-- Driver Tip Row -->
+        <LinearLayout
+            android:id="@+id/layoutDialogTip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="4dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Driver Tip"
+                android:textColor="#64748B"
+                android:textSize="13sp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/txtDialogTip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="€0.00"
+                android:textColor="#0F172A"
+                android:textSize="14sp" />
+        </LinearLayout>
 
         <!-- Total Amount Row -->
         <LinearLayout
