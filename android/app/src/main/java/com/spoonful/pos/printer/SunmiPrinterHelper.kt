@@ -188,7 +188,7 @@ class SunmiPrinterHelper(private val context: Context) {
         }
     }
 
-    fun printReceipt(order: Order, merchantName: String = "Spoonful POS", onComplete: (Boolean) -> Unit = {}) {
+    fun printReceipt(order: Order, merchantName: String = "Spoonfull POS", onComplete: (Boolean) -> Unit = {}) {
         val service = woyouService
         if (service == null) {
             Log.e(TAG, "Printer service is not bound.")
@@ -272,7 +272,7 @@ class SunmiPrinterHelper(private val context: Context) {
             bodyBuilder.append("--------------------------------\n")
             
             val courierText = if (order.type.lowercase(Locale.getDefault()) == "delivery") {
-                val driver = if (!order.driverName.isNullOrEmpty()) order.driverName else "Spoonful"
+                val driver = if (!order.driverName.isNullOrEmpty()) order.driverName else "Spoonfull"
                 "Courier: $driver ${order.orderNumber}"
             } else {
                 "Order: ${order.orderNumber}"
@@ -357,7 +357,7 @@ class SunmiPrinterHelper(private val context: Context) {
 
             // Payment Info
             val paymentSource = if (order.paymentMethod.lowercase(Locale.getDefault()) == "online") "Online" else "Cash"
-            bodyBuilder.append("Betaling Spoonful ").append(paymentSource).append("\n")
+            bodyBuilder.append("Betaling Spoonfull ").append(paymentSource).append("\n")
             
             // Flush Body block to printer in one AIDL IPC call
             sendText(service, bodyBuilder.toString())
@@ -401,7 +401,7 @@ class SunmiPrinterHelper(private val context: Context) {
             service.printerInit(printCallback)
             service.setAlignment(1, printCallback)
             service.setFontSize(32f, printCallback)
-            sendText(service, "Spoonful POS\n")
+            sendText(service, "Spoonfull POS\n")
             service.setFontSize(24f, printCallback)
             sendText(service, "Sunmi V2 Pro Print Test\n")
             sendText(service, "--------------------------------\n")

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Spoonful POS</string>
+    <string name="app_name">Spoonfull POS</string>
     <string name="supabase_not_connected">Supabase: Disconnected</string>
     <string name="supabase_connected">Supabase: Connected</string>
     <string name="printer_not_connected">Printer: Offline</string>

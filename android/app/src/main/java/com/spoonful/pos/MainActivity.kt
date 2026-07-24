@@ -780,7 +780,7 @@ class MainActivity : AppCompatActivity() {
                                             posOwnerId = ""
                                             merchantId = "6a0f03b4500ed5db150be1a1"
                                             
-                                            txtDrawerActiveRestaurant.text = "Spoonful"
+                                            txtDrawerActiveRestaurant.text = "Spoonfull"
                                             ordersList.clear()
                                             refreshOrderList()
                                             
@@ -924,7 +924,7 @@ class MainActivity : AppCompatActivity() {
                                                 posOwnerId = ""
                                                 merchantId = "6a0f03b4500ed5db150be1a1"
                                                 
-                                                txtDrawerActiveRestaurant.text = "Spoonful"
+                                                txtDrawerActiveRestaurant.text = "Spoonfull"
                                                 ordersList.clear()
                                                 refreshOrderList()
                                                 
@@ -989,7 +989,7 @@ class MainActivity : AppCompatActivity() {
                                                 posOwnerId = ""
                                                 merchantId = "6a0f03b4500ed5db150be1a1"
                                                 
-                                                txtDrawerActiveRestaurant.text = "Spoonful"
+                                                txtDrawerActiveRestaurant.text = "Spoonfull"
                                                 ordersList.clear()
                                                 refreshOrderList()
                                                 
@@ -1191,7 +1191,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Store Name Badge
-        val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonful"
+        val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonfull"
         val storeTxt = TextView(this).apply {
             text = resolvedName.uppercase()
             setTextColor(Color.parseColor("#D8581B"))
@@ -1503,7 +1503,7 @@ class MainActivity : AppCompatActivity() {
         // Address & order info
         val address = order.customerAddress ?: (order.customerName ?: "No address")
         txtDetailAddress.text = address
-        val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonful"
+        val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonfull"
         txtDetailOrderCode.text = "$resolvedName • #${order.orderNumber.takeLast(6)}"
         val typeIcon = when (order.type.lowercase()) {
             "delivery" -> "🛵 Delivery"
@@ -2421,7 +2421,7 @@ class MainActivity : AppCompatActivity() {
 
             updatePrepTimeDisplay(25)
 
-            val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonful"
+            val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonfull"
             txtOrderNo.text = "$resolvedName • #${order.orderNumber}"
             txtCustomerName.text = "${order.customerName ?: "Customer"} (${order.type.uppercase()})"
             
@@ -2705,7 +2705,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadHelpScreen() {
         showScreen(Screen.HELP)
-        editHelpSubject.setText("Spoonful POS Troubleshooting - " + (txtDrawerActiveRestaurant.text.toString().ifEmpty { "POS Terminal" }))
+        editHelpSubject.setText("Spoonfull POS Troubleshooting - " + (txtDrawerActiveRestaurant.text.toString().ifEmpty { "POS Terminal" }))
         
         val deviceModel = android.os.Build.MODEL
         val androidVersion = android.os.Build.VERSION.RELEASE

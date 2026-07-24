@@ -652,7 +652,7 @@ class SupabaseManager(
                         val list: List<JsonObject> = gson.fromJson(json, listType)
                         val merchants = list.map {
                             val id = it.get("merchant_id")?.asString ?: ""
-                            val name = it.get("name")?.asString ?: "Spoonful"
+                            val name = it.get("name")?.asString ?: "Spoonfull"
                             Pair(id, name)
                         }
                         mainHandler.post { onComplete(merchants) }
@@ -1027,6 +1027,46 @@ class SupabaseManager(
 
     fun isRealtimeConnected(): Boolean {
         return isRealtimeActive
+    }
+
+    fun sendTroubleshootEmail(subject: String, messageBody: String, terminalName: String, restaurantName: String, callback: (Boolean) -> Unit) {
+        val url = "$supabaseUrl/functions/v1/send-troubleshoot-email"
+        
+        val payload = JsonObject().apply {
+            addProperty("subject", subject)
+            addProperty("messageBody", messageBody)
+            addProperty("terminalName", terminalName)
+            addProperty("restaurantName", restaurantName)
+        }
+        
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(payload).toRequestBody(mediaType)
+        
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Content-Type", "application/json")
+            .post(requestBody)
+            .build()
+            
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "Failed to invoke send-troubleshoot-email function", e)
+                callback(false)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Successfully sent troubleshooting email")
+                        callback(true)
+                    } else {
+                        Log.e(TAG, "send-troubleshoot-email failed: ${response.code}")
+                        callback(false)
+                    }
+                }
+            }
+        })
     }
 }
 
