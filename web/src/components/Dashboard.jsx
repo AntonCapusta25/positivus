@@ -176,7 +176,7 @@ export default function Dashboard() {
               const itemsArray = parseItems(order.items);
               const itemCount = itemsArray.reduce((s, i) => s + (i.quantity || 1), 0);
               const merchantObj = (availableMerchants || []).find(m => m.id === order.merchant_id || m.slug === order.merchant_id || m.raw_details?.id === order.merchant_id);
-              const merchantName = merchantObj?.name || 'Spoonful';
+              const merchantName = merchantObj?.name || 'Spoonfull';
 
               return (
                 <div
@@ -287,7 +287,7 @@ export default function Dashboard() {
                   <div className="flex items-center space-x-3 text-xs text-slate-500 font-bold mt-1.5 flex-wrap gap-y-1.5">
                     {(() => {
                       const detailMerchantObj = (availableMerchants || []).find(m => m.id === selectedOrder.merchant_id || m.slug === selectedOrder.merchant_id || m.raw_details?.id === selectedOrder.merchant_id);
-                      const detailMerchantName = detailMerchantObj?.name || 'Spoonful';
+                      const detailMerchantName = detailMerchantObj?.name || 'Spoonfull';
                       return (
                         <span className="bg-brand-orange/10 text-brand-orange border border-brand-orange/20 px-2 py-0.5 rounded-md text-[10px] uppercase font-black tracking-wider flex items-center gap-1 shrink-0">
                           Store: {detailMerchantName}
@@ -590,7 +590,7 @@ export default function Dashboard() {
               {/* COPY 1: KITCHEN & DELIVERY RECEIPT */}
               <div className="thermal-receipt p-6 rounded-xl space-y-4 text-slate-850">
                 <div className="text-center space-y-1">
-                  <h4 className="font-black text-sm uppercase tracking-wide text-slate-900">Spoonful Delivery</h4>
+                  <h4 className="font-black text-sm uppercase tracking-wide text-slate-900">Spoonfull Delivery</h4>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Copy 1: Courier & Kitchen</p>
                 </div>
                 <div className="border-t border-b border-dashed border-slate-300 py-2.5 text-xs space-y-1">
@@ -656,7 +656,7 @@ export default function Dashboard() {
               {/* COPY 2: CUSTOMER RECEIPT */}
               <div className="thermal-receipt p-6 rounded-xl space-y-4 text-slate-850">
                 <div className="text-center space-y-1">
-                  <h4 className="font-black text-sm uppercase tracking-wide text-slate-900">Spoonful Guest</h4>
+                  <h4 className="font-black text-sm uppercase tracking-wide text-slate-900">Spoonfull Guest</h4>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Copy 2: Customer Copy</p>
                 </div>
                 <div className="border-t border-b border-dashed border-slate-300 py-2.5 text-xs space-y-1">

@@ -1309,7 +1309,7 @@ export const POSProvider = ({ children }) => {
         
         const updatePayload = {
           id: defaultMerchantId,
-          name: raw.name || "Spoonful",
+          name: raw.name || "Spoonfull",
           slug: raw.slug || "raj-curry-house",
           phone: raw.phone,
           email: raw.email,
@@ -1629,7 +1629,7 @@ export const POSProvider = ({ children }) => {
         cart_id: cartId,
         payment_mode_id: 3,
         order_type: 'pickup',
-        order_comment: 'Automated test order from Spoonful POS App',
+        order_comment: 'Automated test order from Spoonfull POS App',
         checksum: checksum,
         scheduling_slot: {
           is_scheduled: false
@@ -1723,7 +1723,7 @@ export const POSProvider = ({ children }) => {
 
 
     // 3. Real Browser print (Web / PWA / Chrome on Sunmi device)
-    const activeMerchant = availableMerchants.find(m => m.id === settingsRef.current.merchantId) || { name: 'Spoonful' };
+    const activeMerchant = availableMerchants.find(m => m.id === settingsRef.current.merchantId) || { name: 'Spoonfull' };
 
     
     // Parse order items

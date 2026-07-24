@@ -177,7 +177,7 @@ export default function DriverPortal() {
       if (!res.success) {
         console.warn("Claim database sync warning:", res.error);
         if (res.error?.includes("driver_name") || res.error?.includes("schema cache") || res.error?.includes("column")) {
-          alert("Spoonful warning: The 'driver_name' column is not found in your Supabase 'orders' table. We are claiming the order LOCALLY for testing.\n\nTo persist this, make sure to execute the SQL migration script in your Supabase SQL console!");
+          alert("Spoonfull warning: The 'driver_name' column is not found in your Supabase 'orders' table. We are claiming the order LOCALLY for testing.\n\nTo persist this, make sure to execute the SQL migration script in your Supabase SQL console!");
         } else {
           throw new Error(res.error);
         }
@@ -476,9 +476,9 @@ export default function DriverPortal() {
         {/* Header */}
         <header className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center space-x-2">
-            <img src="/favicon.png" className="w-6 h-6 object-contain" alt="Spoonful Logo" />
+            <img src="/favicon.png" className="w-6 h-6 object-contain" alt="Spoonfull Logo" />
             <div>
-              <h1 className="text-base font-extrabold tracking-tight text-white leading-tight">SPOONFUL RUNNER</h1>
+              <h1 className="text-base font-extrabold tracking-tight text-white leading-tight">SPOONFULL RUNNER</h1>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Driver Dispatch Portal</p>
             </div>
           </div>

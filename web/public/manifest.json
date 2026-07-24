@@ -1,6 +1,6 @@
 {
-  "name": "Spoonful Orderpad POS",
-  "short_name": "Spoonful POS",
+  "name": "Spoonfull Orderpad POS",
+  "short_name": "Spoonfull POS",
   "description": "Progressive Web Application POS terminal for Spoonful",
   "start_url": "/",
   "scope": "/",

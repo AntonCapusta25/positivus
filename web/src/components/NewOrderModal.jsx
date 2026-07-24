@@ -12,7 +12,7 @@ export default function NewOrderModal() {
   if (!activeIncomingOrder) return null;
 
   const order = activeIncomingOrder;
-  const activeMerchant = (availableMerchants || []).find(m => m.id === order.merchant_id || m.slug === order.merchant_id || m.raw_details?.id === order.merchant_id) || { name: 'Spoonful' };
+  const activeMerchant = (availableMerchants || []).find(m => m.id === order.merchant_id || m.slug === order.merchant_id || m.raw_details?.id === order.merchant_id) || { name: 'Spoonfull' };
 
   // Parse items
   let parsedItems = [];
@@ -48,7 +48,7 @@ export default function NewOrderModal() {
             </div>
             <div>
               <span className="text-[10px] uppercase font-black tracking-widest text-orange-100 block">
-                {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFUL'}
+                {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFULL'}
               </span>
               <h2 className="text-base sm:text-lg font-black tracking-tight leading-none my-0.5">
                 {step === 1 ? 'New Order' : 'Prepare Order'} #{order.order_number || order.id.substring(0, 8).toUpperCase()}
@@ -86,7 +86,7 @@ export default function NewOrderModal() {
               <div className="bg-slate-50 p-4 rounded-xl sm:rounded-2xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
                 <div className="space-y-1">
                   <div className="text-[9px] font-extrabold text-brand-orange uppercase tracking-widest mb-1 block">
-                    Store: {activeMerchant.name || 'Spoonful'}
+                    Store: {activeMerchant.name || 'Spoonfull'}
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <span className="text-base font-black text-slate-800">

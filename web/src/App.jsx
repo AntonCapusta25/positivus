@@ -149,7 +149,7 @@ function MainLayout() {
         await registerPushSubscription();
         alert('✅ Push notifications enabled! You will receive alerts for new orders.');
       } else {
-        alert('❌ Permission not granted. Please allow notifications in iPhone Settings → Spoonful POS → Notifications.');
+        alert('❌ Permission not granted. Please allow notifications in iPhone Settings → Spoonfull POS → Notifications.');
       }
     } catch (err) {
       console.warn('[PWA Push] Permission request failed:', err);
@@ -191,7 +191,7 @@ function MainLayout() {
     return status === 'incoming' || status === 'preparing';
   }).length;
 
-  const activeMerchant = availableMerchants.find(m => m.id === settings.merchantId) || { name: 'Spoonful' };
+  const activeMerchant = availableMerchants.find(m => m.id === settings.merchantId) || { name: 'Spoonfull' };
 
   const navItems = [
     { id: 'orders', icon: ShoppingBag, label: 'Active Orders', badge: activeOrdersCount },
@@ -217,10 +217,10 @@ function MainLayout() {
           {/* Overlay header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0">
             <div className="flex items-center space-x-3">
-              <img src="/favicon.png" alt="Spoonful Logo" className="w-8 h-8 rounded-lg object-cover" />
+              <img src="/favicon.png" alt="Spoonfull Logo" className="w-8 h-8 rounded-lg object-cover" />
               <div>
                 <p className="font-extrabold text-sm tracking-wide text-brand-orange leading-tight">
-                  {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFUL'}
+                  {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFULL'}
                 </p>
                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Kitchen Orderpad</span>
               </div>
@@ -312,10 +312,10 @@ function MainLayout() {
           {/* Header row */}
           <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-800">
             <div className="flex items-center space-x-3">
-              <img src="/favicon.png" alt="Spoonful Logo" className="w-8 h-8 md:w-9 md:h-9 rounded-xl object-cover" />
+              <img src="/favicon.png" alt="Spoonfull Logo" className="w-8 h-8 md:w-9 md:h-9 rounded-xl object-cover" />
               <div>
                 <h1 className="font-extrabold text-sm md:text-base tracking-wide text-brand-orange leading-tight font-sans my-0">
-                  {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFUL'}
+                  {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFULL'}
                 </h1>
                 <span className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Kitchen Orderpad</span>
                 {userRole === 'superadmin' && (
@@ -430,7 +430,7 @@ function MainLayout() {
           </div>
 
           <div className="text-[10px] text-slate-600 text-center font-bold">
-            SPOONFUL POS CLIENT v1.1.0
+            SPOONFULL POS CLIENT v1.1.0
           </div>
         </div>
       </aside>
@@ -499,7 +499,7 @@ function AuthScreen() {
     return (
       <div className="flex items-center justify-center min-h-screen w-screen bg-slate-950">
         <div className="text-white text-xs font-bold uppercase tracking-widest animate-pulse">
-          Loading Spoonful Terminal...
+          Loading Spoonfull Terminal...
         </div>
       </div>
     );
@@ -511,8 +511,8 @@ function AuthScreen() {
         
         {/* Title Logo */}
         <div className="text-center space-y-2 flex flex-col items-center">
-          <img src="/favicon.png" alt="Spoonful Logo" className="w-16 h-16 rounded-2xl object-cover shadow-lg shadow-black/25 mb-1" />
-          <h2 className="text-xl font-black text-white tracking-tight uppercase">Spoonful Auth</h2>
+          <img src="/favicon.png" alt="Spoonfull Logo" className="w-16 h-16 rounded-2xl object-cover shadow-lg shadow-black/25 mb-1" />
+          <h2 className="text-xl font-black text-white tracking-tight uppercase">Spoonfull Auth</h2>
           <p className="text-xs text-slate-400 font-medium">
             {isRegisterMode ? "Create your unified credentials profile" : "Log in with your standard credentials"}
           </p>
@@ -673,7 +673,7 @@ function AppContent() {
     return (
       <div className="flex items-center justify-center min-h-screen w-screen bg-slate-950">
         <div className="text-white text-xs font-bold uppercase tracking-widest animate-pulse">
-          Loading Spoonful Terminal...
+          Loading Spoonfull Terminal...
         </div>
       </div>
     );
@@ -695,7 +695,7 @@ function AppContent() {
                     NEW DELIVERY OFFER
                   </span>
                   <h4 className="font-extrabold text-white text-sm truncate">
-                    Order #{activeDriverOffer.order_number} from Spoonful
+                    Order #{activeDriverOffer.order_number} from Spoonfull
                   </h4>
                 </div>
               </div>

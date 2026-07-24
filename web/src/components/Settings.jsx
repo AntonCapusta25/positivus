@@ -135,7 +135,7 @@ export default function Settings() {
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-400 font-bold uppercase">Store Name</span>
                 <span className="font-extrabold text-slate-800">
-                  {availableMerchants.find(m => m.id === settings.merchantId)?.name || 'Spoonful'}
+                  {availableMerchants.find(m => m.id === settings.merchantId)?.name || 'Spoonfull'}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
