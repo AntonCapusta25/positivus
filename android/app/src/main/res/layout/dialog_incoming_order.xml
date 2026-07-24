@@ -7,51 +7,65 @@
     android:background="@drawable/dialog_rounded_bg"
     android:padding="16dp">
 
-    <!-- Top Badge Row -->
+    <!-- Top Header Layout -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:orientation="vertical"
         android:layout_marginBottom="12dp">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🔔 NEW INCOMING ORDER"
-            android:textColor="#D8581B"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:background="#FFF3EC"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="4dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔔 NEW ORDER"
+                android:textColor="#D8581B"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="#FFF3EC"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp" />
 
-        <TextView
-            android:id="@+id/txtDialogTimer"
-            android:layout_width="wrap_content"
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/txtDialogOrderNo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="#1021"
+                android:textColor="#0F172A"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="⏱ 00:00"
-            android:textColor="#E11D48"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:background="#FFE4E6"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp"
-            android:layout_marginEnd="8dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
 
-        <TextView
-            android:id="@+id/txtDialogOrderNo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="#1021"
-            android:textColor="#0F172A"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            <TextView
+                android:id="@+id/txtDialogTimer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⏱ Auto-declines in 00:00"
+                android:textColor="#E11D48"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="#FFE4E6"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="6dp"
+                android:gravity="center" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Step 1: Review Container -->
@@ -72,36 +86,30 @@
             android:layout_marginTop="4dp"
             android:layout_marginBottom="12dp">
 
-            <!-- Customer Name & Loyalty Badge Row -->
-            <LinearLayout
+            <!-- Customer Name -->
+            <TextView
+                android:id="@+id/txtDialogCustomerName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
+                android:text="John Doe"
+                android:textColor="#0F172A"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp"/>
 
-                <TextView
-                    android:id="@+id/txtDialogCustomerName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="John Doe"
-                    android:textColor="#0F172A"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/txtDialogCustomerLoyalty"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="NEW CUSTOMER"
-                    android:textColor="#B45309"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:layout_marginStart="8dp"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="3dp"
-                    android:gravity="center" />
-            </LinearLayout>
+            <!-- Loyalty Badge Row below name -->
+            <TextView
+                android:id="@+id/txtDialogCustomerLoyalty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="NEW CUSTOMER"
+                android:textColor="#B45309"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:gravity="center" />
 
             <TextView
                 android:id="@+id/txtDialogCustomerPhone"

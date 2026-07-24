@@ -396,34 +396,44 @@
                                     <LinearLayout
                                         android:id="@+id/btnToggleCustomerInfo"
                                         android:layout_width="match_parent"
-                                        android:layout_height="48dp"
+                                        android:layout_height="wrap_content"
+                                        android:minHeight="56dp"
                                         android:orientation="horizontal"
                                         android:gravity="center_vertical"
                                         android:paddingHorizontal="16dp"
+                                        android:paddingVertical="8dp"
                                         android:clickable="true"
                                         android:focusable="true"
                                         android:background="?attr/selectableItemBackground">
 
-                                        <TextView
-                                            android:id="@+id/txtDetailCustomerName"
+                                        <!-- Vertically stacked Name + Loyalty Badge -->
+                                        <LinearLayout
                                             android:layout_width="0dp"
                                             android:layout_height="wrap_content"
                                             android:layout_weight="1"
-                                            android:text="Bob M."
-                                            android:textColor="#1E1E24"
-                                            android:textStyle="bold"
-                                            android:textSize="15sp"/>
+                                            android:orientation="vertical">
 
-                                        <TextView
-                                            android:id="@+id/txtDetailCustomerLoyalty"
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="NEW CUSTOMER"
-                                            android:textColor="#92400E"
-                                            android:textStyle="bold"
-                                            android:textSize="11sp"
-                                            android:layout_marginEnd="12dp"
-                                            android:gravity="center" />
+                                            <TextView
+                                                android:id="@+id/txtDetailCustomerName"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content"
+                                                android:text="Bob M."
+                                                android:textColor="#1E1E24"
+                                                android:textStyle="bold"
+                                                android:textSize="15sp"/>
+
+                                            <!-- Loyalty Badge Row below name -->
+                                            <TextView
+                                                android:id="@+id/txtDetailCustomerLoyalty"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content"
+                                                android:text="NEW CUSTOMER"
+                                                android:textColor="#92400E"
+                                                android:textStyle="bold"
+                                                android:textSize="10sp"
+                                                android:layout_marginTop="4dp"
+                                                android:gravity="center" />
+                                        </LinearLayout>
 
                                         <TextView
                                             android:id="@+id/txtDetailPaidBadge"
