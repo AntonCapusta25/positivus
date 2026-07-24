@@ -410,7 +410,7 @@ export default function Coupons() {
                 <input
                   type="email"
                   required
-                  placeholder="e.g. guest@spoonful.com"
+                  placeholder="e.g. guest@spoonfull.com"
                   value={newCustomerEmail}
                   onChange={(e) => setNewCustomerEmail(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"

@@ -600,7 +600,7 @@ function AuthScreen() {
             <input
               type="email"
               required
-              placeholder="admin@spoonful.com"
+              placeholder="admin@spoonfull.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-slate-850 border border-slate-700/80 text-white rounded-xl px-4 py-3 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange"

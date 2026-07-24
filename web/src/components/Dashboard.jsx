@@ -716,7 +716,7 @@ export default function Dashboard() {
                   </span>
                   <div className="space-y-1">
                     <div className="mx-auto w-32 h-32 bg-white p-1 border border-slate-200 rounded-lg shadow-sm flex items-center justify-center">
-                      <QRCodeSVG value={settings.appStoreLink || 'https://spoonful.com/app'} size={120} />
+                      <QRCodeSVG value={settings.appStoreLink || 'https://spoonfull.com/app'} size={120} />
                     </div>
                     <div className="flex justify-center space-x-1.5 text-[8px] font-extrabold text-slate-400 uppercase">
                       <span>App Store</span>

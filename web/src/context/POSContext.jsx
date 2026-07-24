@@ -13,7 +13,7 @@ export function getDriverUrl(orderId) {
     return `${cleanUrl}/?order_id=${orderId}`;
   }
   if (typeof window === 'undefined') {
-    return `https://spoonful-pos.vercel.app/driver?order_id=${orderId}`;
+    return `https://spoonfull-pos.vercel.app/driver?order_id=${orderId}`;
   }
   const origin = window.location.origin;
   const hostname = window.location.hostname;
@@ -129,9 +129,9 @@ export const POSProvider = ({ children }) => {
       soundAlert: parsed.soundAlert !== undefined ? parsed.soundAlert : true,
       soundVolume: parsed.soundVolume !== undefined ? parsed.soundVolume : 80,
       soundTheme: parsed.soundTheme || 'default',
-      driverAppTemplate: parsed.driverAppTemplate || 'https://spoonful.com/driver?order={order_id}&address={address}&driver={driver}&time={time}',
-      appStoreLink: parsed.appStoreLink || 'https://apps.apple.com/app/spoonful',
-      playStoreLink: parsed.playStoreLink || 'https://play.google.com/store/apps/details?id=com.spoonful',
+      driverAppTemplate: parsed.driverAppTemplate || 'https://spoonfull.com/driver?order={order_id}&address={address}&driver={driver}&time={time}',
+      appStoreLink: parsed.appStoreLink || 'https://apps.apple.com/app/spoonfull',
+      playStoreLink: parsed.playStoreLink || 'https://play.google.com/store/apps/details?id=com.spoonfull',
       customiseReceipt: parsed.customiseReceipt || {
         itemIds: true,
         address: true,
@@ -1539,7 +1539,7 @@ export const POSProvider = ({ children }) => {
         const customerPayload = {
           first_name: 'Test',
           last_name: 'POS User',
-          email: 'pos_test@spoonful.com',
+          email: 'pos_test@spoonfull.com',
           country_code: 'US',
           mobile: '1234567890'
         };
