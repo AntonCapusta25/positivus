@@ -282,58 +282,29 @@ export default function DriverPortal() {
     }
   };
 
-  const handleDriverLogin = async (e) => {
+  const handleDriverLogin = (e) => {
     e.preventDefault();
-    const email = e.target.driverEmailInput.value.trim();
-    const password = e.target.driverPasswordInput.value.trim();
+    const name = e.target.driverNameInput.value.trim();
+    const passcode = e.target.driverPasscodeInput.value.trim();
 
-    if (!email || !password) {
-      setLoginError("Email and password are required.");
+    if (!name || !passcode) {
+      setLoginError("Name and passcode are required.");
       return;
     }
 
     setIsVerifying(true);
     setLoginError("");
 
-    try {
-      // 1. Authenticate with Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        setLoginError(error.message);
-        setIsVerifying(false);
-        return;
-      }
-
-      // 2. Query the drivers table for a profile matching this user_id
-      const { data: driverData, error: driverErr } = await supabase
-        .from('drivers')
-        .select('*')
-        .eq('user_id', data.user.id);
-
-      if (driverErr) {
-        console.error("Failed to query driver profile:", driverErr.message);
-      }
-
-      if (driverData && driverData.length > 0) {
-        const profile = driverData[0];
-        setDriverName(profile.name);
-        localStorage.setItem('pos_driver_name', profile.name);
-        setSettings(prev => ({ ...prev, merchantId: profile.merchant_id || '6a0f03b4500ed5db150be1a1' }));
+    setTimeout(() => {
+      if (passcode === '1234' && name) {
+        setDriverName(name);
+        localStorage.setItem('pos_driver_name', name);
+        setLoginError("");
       } else {
-        // Log out user since they are not a driver
-        await supabase.auth.signOut();
-        setLoginError("This credentials profile is not registered as a delivery driver.");
+        setLoginError("Invalid Passcode. Hint: 1234");
       }
-    } catch (err) {
-      console.error("Auth error:", err);
-      setLoginError("Error connecting to database: " + err.message);
-    } finally {
       setIsVerifying(false);
-    }
+    }, 500);
   };
 
   const handleManualSearch = (e) => {
@@ -508,23 +479,23 @@ export default function DriverPortal() {
               )}
               
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Email Address</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Driver Name</label>
                 <input
-                  type="email"
-                  name="driverEmailInput"
+                  type="text"
+                  name="driverNameInput"
                   required
-                  placeholder="driver@spoonful.com"
+                  placeholder="e.g. John Doe"
                   className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-brand-orange placeholder-slate-500 transition-all font-bold"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Password</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Passcode</label>
                 <input
                   type="password"
-                  name="driverPasswordInput"
+                  name="driverPasscodeInput"
                   required
-                  placeholder="••••••••"
+                  placeholder="••••"
                   className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-brand-orange placeholder-slate-500 transition-all font-bold"
                 />
               </div>
@@ -567,8 +538,9 @@ export default function DriverPortal() {
             </div>
 
             {/* Live Camera Scanner Option */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Scan Receipt</h3>
+            {!activeOrder && (
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Scan Receipt</h3>
               
               {!showScanner ? (
                 <div className="grid grid-cols-2 gap-3">
@@ -651,7 +623,8 @@ export default function DriverPortal() {
                   Find
                 </button>
               </form>
-            </div>
+              </div>
+            )}
 
             {/* Active scanned order details */}
             {activeOrder ? (
@@ -824,6 +797,16 @@ export default function DriverPortal() {
                       )}
                     </>
                   )}
+                </div>
+                
+                {/* Large Back Button for Mobile */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => setActiveOrder(null)}
+                    className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3.5 px-4 rounded-xl text-sm flex items-center justify-center space-x-2 transition-all shadow-md mt-2"
+                  >
+                    <span>← Back to Orders List</span>
+                  </button>
                 </div>
               </div>
             ) : (
