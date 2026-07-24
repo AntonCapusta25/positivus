@@ -1902,16 +1902,18 @@ class MainActivity : AppCompatActivity() {
             if (obj.has("payload") && obj.get("payload").isJsonObject) {
                 obj = obj.getAsJsonObject("payload")
             }
-            val orderComment = obj.get("order_comment")?.asString ?: ""
-            val notesVal = obj.get("notes")?.asString ?: ""
-            val orderInst = obj.get("order_instruction")?.asString ?: ""
+            val orderComment = if (obj.has("order_comment") && !obj.get("order_comment").isJsonNull) obj.get("order_comment").asString ?: "" else ""
+            val notesVal = if (obj.has("notes") && !obj.get("notes").isJsonNull) obj.get("notes").asString ?: "" else ""
+            val orderInst = if (obj.has("order_instruction") && !obj.get("order_instruction").isJsonNull) obj.get("order_instruction").asString ?: "" else ""
             
             val deliveryInst = if (obj.has("delivery_instructions") && obj.get("delivery_instructions").isJsonArray) {
                 val arr = obj.getAsJsonArray("delivery_instructions")
                 val list = mutableListOf<String>()
                 for (i in 0 until arr.size()) {
                     val instObj = arr.get(i).asJsonObject
-                    instObj.get("instruction")?.asString?.let { list.add(it) }
+                    if (instObj.has("instruction") && !instObj.get("instruction").isJsonNull) {
+                        instObj.get("instruction").asString?.let { list.add(it) }
+                    }
                 }
                 list.joinToString(", ")
             } else ""
@@ -1933,9 +1935,17 @@ class MainActivity : AppCompatActivity() {
             }
             if (obj.has("cart") && obj.get("cart").isJsonObject) {
                 val cart = obj.getAsJsonObject("cart")
-                cart.get("tip_amount")?.asDouble ?: 0.0
+                if (cart.has("tip_amount") && !cart.get("tip_amount").isJsonNull) {
+                    cart.get("tip_amount").asDouble
+                } else {
+                    0.0
+                }
             } else {
-                obj.get("tip_amount")?.asDouble ?: 0.0
+                if (obj.has("tip_amount") && !obj.get("tip_amount").isJsonNull) {
+                    obj.get("tip_amount").asDouble
+                } else {
+                    0.0
+                }
             }
         } catch (e: Exception) {
             0.0

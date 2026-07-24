@@ -293,7 +293,6 @@ serve(async (req) => {
 
     const updatePayload: any = {
       status: mappedStatus,
-      notes: JSON.stringify(body),
       updated_at: new Date().toISOString()
     };
 
