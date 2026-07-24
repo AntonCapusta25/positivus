@@ -84,6 +84,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtDetailType: TextView
     private lateinit var txtDetailCustomerName: TextView
     private lateinit var txtDetailPaidBadge: TextView
+    private lateinit var txtDetailCustomerLoyalty: TextView
     private lateinit var txtCustomerChevron: TextView
     private lateinit var layoutCustomerDetails: LinearLayout
     private lateinit var txtDetailCustomerPhone: TextView
@@ -552,6 +553,7 @@ class MainActivity : AppCompatActivity() {
         txtDetailType = findViewById(R.id.txtDetailType)
         txtDetailCustomerName = findViewById(R.id.txtDetailCustomerName)
         txtDetailPaidBadge = findViewById(R.id.txtDetailPaidBadge)
+        txtDetailCustomerLoyalty = findViewById(R.id.txtDetailCustomerLoyalty)
         txtCustomerChevron = findViewById(R.id.txtCustomerChevron)
         layoutCustomerDetails = findViewById(R.id.layoutCustomerDetails)
         txtDetailCustomerPhone = findViewById(R.id.txtDetailCustomerPhone)
@@ -1506,6 +1508,27 @@ class MainActivity : AppCompatActivity() {
         val isPaid = order.paymentStatus.lowercase() == "paid"
         txtDetailPaidBadge.text = if (isPaid) "Paid" else "Unpaid"
         txtDetailPaidBadge.setTextColor(Color.parseColor(if (isPaid) "#00A389" else "#EF4444"))
+
+        // Customer loyalty badge
+        val orderCount = order.customerOrderCount ?: 1
+        if (orderCount > 1) {
+            txtDetailCustomerLoyalty.text = "RETURNING (${orderCount}th order)"
+            txtDetailCustomerLoyalty.setTextColor(Color.parseColor("#065F46"))
+            txtDetailCustomerLoyalty.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(6).toFloat()
+                setColor(Color.parseColor("#D1FAE5"))
+            }
+        } else {
+            txtDetailCustomerLoyalty.text = "NEW CUSTOMER"
+            txtDetailCustomerLoyalty.setTextColor(Color.parseColor("#92400E"))
+            txtDetailCustomerLoyalty.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(6).toFloat()
+                setColor(Color.parseColor("#FEF3C7"))
+            }
+        }
+        txtDetailCustomerLoyalty.setPadding(dp(8), dp(3), dp(8), dp(3))
 
         txtDetailCustomerPhone.text = if (!order.customerPhone.isNullOrEmpty()) "📞 ${order.customerPhone}" else "No phone"
         val parsedNotes = parseCustomerNotes(order.notes)
