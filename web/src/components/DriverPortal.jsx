@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePOS } from '../context/POSContext';
 import { supabase } from '../supabaseClient';
-import { Camera, MapPin, Clock, CheckCircle2, Navigation, Shield, ArrowRight, UserCheck, Search, QrCode } from 'lucide-react';
+import { Camera, MapPin, Clock, CheckCircle2, Navigation, Shield, ArrowRight, UserCheck, Search, QrCode, MessageSquare, Coins } from 'lucide-react';
 import { useJsApiLoader, GoogleMap, Marker, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
 
 export default function DriverPortal() {
@@ -706,6 +706,62 @@ export default function DriverPortal() {
                       <p className="text-xs text-slate-300 font-semibold">{activeOrder.driver_name || 'Unassigned'}</p>
                     </div>
                   </div>
+
+                  {/* Delivery Note / Instructions */}
+                  {(() => {
+                    if (!activeOrder.notes) return null;
+                    let displayNote = activeOrder.notes;
+                    if (typeof displayNote === 'string' && displayNote.trim().startsWith('{')) {
+                      try {
+                        const parsed = JSON.parse(displayNote);
+                        const target = parsed.payload || parsed;
+                        
+                        let instructionsText = '';
+                        if (Array.isArray(target.delivery_instructions)) {
+                          instructionsText = target.delivery_instructions
+                            .map(item => item.instruction || '')
+                            .filter(Boolean)
+                            .join(', ');
+                        }
+                        
+                        displayNote = target.order_comment || target.notes || target.order_instruction || instructionsText || '';
+                      } catch (e) {
+                        displayNote = '';
+                      }
+                    }
+                    if (!displayNote) return null;
+                    return (
+                      <div className="flex items-start space-x-2.5 bg-slate-950/30 p-2.5 rounded-xl border border-slate-800/40">
+                        <MessageSquare className="text-brand-orange shrink-0 mt-0.5" size={16} />
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Instructions / Delivery Note</span>
+                          <p className="text-xs text-brand-orange font-semibold">{displayNote}</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Driver Tip */}
+                  {(() => {
+                    if (!activeOrder.notes) return null;
+                    try {
+                      const parsed = JSON.parse(activeOrder.notes);
+                      const target = parsed.payload || parsed;
+                      const tip = target.cart?.tip_amount || target.tip_amount;
+                      if (tip > 0) {
+                        return (
+                          <div className="flex items-start space-x-2.5 bg-emerald-950/20 p-2.5 rounded-xl border border-emerald-800/30">
+                            <Coins className="text-emerald-400 shrink-0 mt-0.5" size={16} />
+                            <div>
+                              <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider block">Driver Tip</span>
+                              <p className="text-xs text-emerald-400 font-bold">€{Number(tip).toFixed(2)}</p>
+                            </div>
+                          </div>
+                        );
+                      }
+                    } catch (e) {}
+                    return null;
+                  })()}
                 </div>
 
                 {/* Geolocation & Leaflet Routing Map */}
