@@ -113,8 +113,8 @@ export default function Dashboard() {
     <div className="h-full grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-slate-50 relative">
       {/* Floating Remote Print Toast Notification */}
       {printToast && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center space-x-2 animate-bounce">
-          <Printer size={16} className="text-brand-orange" />
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg border border-slate-800 flex items-center space-x-2 transition-all duration-300">
+          <Printer size={15} className="text-brand-orange" />
           <span>{printToast}</span>
         </div>
       )}

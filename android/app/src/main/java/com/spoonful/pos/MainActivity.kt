@@ -30,8 +30,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var btnHamburger: TextView
     private lateinit var btnDrawerClose: TextView
-    private lateinit var btnDrawerRefresh: LinearLayout
     private lateinit var btnDrawerStopOrders: LinearLayout
+    private lateinit var btnDrawerHelp: LinearLayout
+    private lateinit var layoutSettingsHelp: LinearLayout
+    private lateinit var btnHelpBack: TextView
+    private lateinit var editHelpSubject: EditText
+    private lateinit var editHelpMessage: EditText
+    private lateinit var btnHelpSend: android.widget.Button
     private lateinit var btnDrawerManagement: LinearLayout
     private lateinit var btnDrawerSettings: LinearLayout
     private lateinit var layoutDrawerManagementSub: LinearLayout
@@ -136,7 +141,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var switchDrawerAutoPrint: com.google.android.material.switchmaterial.SwitchMaterial
 
     // --- State ---
-    private enum class Screen { ORDER_LIST, ORDER_DETAIL, SETTINGS_RECEIPTS, SETTINGS_SOUNDS, SETTINGS_MENU, DRIVERS_MANAGEMENT }
+    private enum class Screen { ORDER_LIST, ORDER_DETAIL, SETTINGS_RECEIPTS, SETTINGS_SOUNDS, SETTINGS_MENU, DRIVERS_MANAGEMENT, HELP }
     private var currentScreen = Screen.ORDER_LIST
     private var currentTab = "prepare" // "prepare", "handover", "done"
     private var selectedOrder: Order? = null
@@ -475,6 +480,7 @@ class MainActivity : AppCompatActivity() {
             currentScreen == Screen.SETTINGS_SOUNDS -> showScreen(Screen.ORDER_LIST)
             currentScreen == Screen.SETTINGS_MENU -> showScreen(Screen.ORDER_LIST)
             currentScreen == Screen.DRIVERS_MANAGEMENT -> showScreen(Screen.ORDER_LIST)
+            currentScreen == Screen.HELP -> showScreen(Screen.ORDER_LIST)
             else -> super.onBackPressed()
         }
     }
@@ -486,10 +492,15 @@ class MainActivity : AppCompatActivity() {
         drawerLayout = findViewById(R.id.drawerLayout)
         btnHamburger = findViewById(R.id.btnHamburger)
         btnDrawerClose = findViewById(R.id.btnDrawerClose)
-        btnDrawerRefresh = findViewById(R.id.btnDrawerRefresh)
         btnDrawerStopOrders = findViewById(R.id.btnDrawerStopOrders)
         btnDrawerManagement = findViewById(R.id.btnDrawerManagement)
         btnDrawerSettings = findViewById(R.id.btnDrawerSettings)
+        btnDrawerHelp = findViewById(R.id.btnDrawerHelp)
+        layoutSettingsHelp = findViewById(R.id.layoutSettingsHelp)
+        btnHelpBack = findViewById(R.id.btnHelpBack)
+        editHelpSubject = findViewById(R.id.editHelpSubject)
+        editHelpMessage = findViewById(R.id.editHelpMessage)
+        btnHelpSend = findViewById(R.id.btnHelpSend)
         layoutDrawerManagementSub = findViewById(R.id.layoutDrawerManagementSub)
         layoutDrawerSettingsSub = findViewById(R.id.layoutDrawerSettingsSub)
         txtDrawerManagementChevron = findViewById(R.id.txtDrawerManagementChevron)
@@ -588,6 +599,7 @@ class MainActivity : AppCompatActivity() {
         layoutSettingsSounds.visibility = if (screen == Screen.SETTINGS_SOUNDS) View.VISIBLE else View.GONE
         layoutSettingsMenu.visibility = if (screen == Screen.SETTINGS_MENU) View.VISIBLE else View.GONE
         layoutSettingsDrivers.visibility = if (screen == Screen.DRIVERS_MANAGEMENT) View.VISIBLE else View.GONE
+        layoutSettingsHelp.visibility = if (screen == Screen.HELP) View.VISIBLE else View.GONE
     }
 
     // ─────────────────────────────────────────────
@@ -596,12 +608,6 @@ class MainActivity : AppCompatActivity() {
     private fun setupDrawer() {
         btnHamburger.setOnClickListener { drawerLayout.openDrawer(GravityCompat.START) }
         btnDrawerClose.setOnClickListener { drawerLayout.closeDrawer(GravityCompat.START) }
-
-        btnDrawerRefresh.setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            // fetchOrders posts result via SupabaseListener.onOrdersLoaded
-            supabaseManager.fetchOrders()
-        }
 
         // Stop taking orders toggle
         btnDrawerStopOrders.setOnClickListener {
@@ -1003,6 +1009,51 @@ class MainActivity : AppCompatActivity() {
         btnSubDriversManagement.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             loadDriversManagementScreen()
+        }
+
+        btnDrawerHelp.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            loadHelpScreen()
+        }
+
+        btnHelpBack.setOnClickListener {
+            showScreen(Screen.ORDER_LIST)
+        }
+
+        btnHelpSend.setOnClickListener {
+            val subject = editHelpSubject.text.toString().trim()
+            val msgBody = editHelpMessage.text.toString().trim()
+            
+            if (subject.isEmpty() || msgBody.isEmpty()) {
+                Toast.makeText(this, "Subject and Message details are required", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            val progressDialog = android.app.ProgressDialog(this).apply {
+                setMessage("Sending troubleshoot request via SendGrid...")
+                setCancelable(false)
+                show()
+            }
+            
+            supabaseManager.sendTroubleshootEmail(
+                subject = subject,
+                messageBody = msgBody,
+                terminalName = posTerminalName.ifEmpty { "POS Terminal" },
+                restaurantName = txtDrawerActiveRestaurant.text.toString(),
+                callback = { success ->
+                    runOnUiThread {
+                        progressDialog.dismiss()
+                        if (success) {
+                            Toast.makeText(this@MainActivity, "Ticket successfully sent via SendGrid!", Toast.LENGTH_LONG).show()
+                            editHelpSubject.setText("")
+                            editHelpMessage.setText("")
+                            showScreen(Screen.ORDER_LIST)
+                        } else {
+                            Toast.makeText(this@MainActivity, "Failed to send ticket. Please check your internet connection.", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            )
         }
 
         btnDriversBack.setOnClickListener {
@@ -2547,5 +2598,26 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    private fun loadHelpScreen() {
+        showScreen(Screen.HELP)
+        editHelpSubject.setText("Spoonful POS Troubleshooting - " + (txtDrawerActiveRestaurant.text.toString().ifEmpty { "POS Terminal" }))
+        
+        val deviceModel = android.os.Build.MODEL
+        val androidVersion = android.os.Build.VERSION.RELEASE
+        val appVersion = "1.0.0"
+        val activeRestaurant = txtDrawerActiveRestaurant.text.toString()
+        val details = """
+            -- Diagnostic Info --
+            Device Model: $deviceModel
+            Android Version: $androidVersion
+            App Version: $appVersion
+            Active Store/Restaurant: $activeRestaurant
+            
+            -- Please describe your issue below --
+            
+        """.trimIndent()
+        editHelpMessage.setText(details)
+        editHelpMessage.setSelection(editHelpMessage.text.length) // Place cursor at the end
+    }
 }
 

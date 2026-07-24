@@ -13,6 +13,7 @@ export default function DriverPortal() {
   const [loginError, setLoginError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [scannedNotice, setScannedNotice] = useState(null);
+  const [showCongrats, setShowCongrats] = useState(false);
   
   // Camera scanning state
   const [showScanner, setShowScanner] = useState(false);
@@ -378,6 +379,10 @@ export default function DriverPortal() {
     
     // Refresh local copy
     setActiveOrder(prev => ({ ...prev, status }));
+
+    if (status === 'completed') {
+      setShowCongrats(true);
+    }
   };
 
   const handlePrintReceipt = async () => {
@@ -416,6 +421,30 @@ export default function DriverPortal() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col items-center justify-between pb-8">
+      {/* Congrats Popup Modal */}
+      {showCongrats && (
+        <div className="fixed inset-0 bg-black/85 z-[300] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl relative animate-fade-in">
+            <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto animate-bounce">
+              🎉
+            </div>
+            <h3 className="text-lg font-black text-white">Order Delivered!</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Order has been successfully marked as completed. Great job, keep it up!
+            </p>
+            <button
+              onClick={() => {
+                setShowCongrats(false);
+                setActiveOrder(null);
+              }}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all"
+            >
+              Back to Orders List
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Floating Scan Notice Overlay */}
       {scannedNotice && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[200] w-full max-w-sm px-4 animate-bounce-in">

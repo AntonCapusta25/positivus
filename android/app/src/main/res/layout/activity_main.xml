@@ -1316,6 +1316,152 @@
                 </ScrollView>
             </LinearLayout>
 
+            <!-- 7. HELP & DIAGNOSTICS VIEW -->
+            <LinearLayout
+                android:id="@+id/layoutSettingsHelp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:background="#F4F5F8"
+                android:visibility="gone">
+
+                <!-- Header Bar -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:background="#FFFFFF"
+                    android:elevation="2dp">
+
+                    <TextView
+                        android:id="@+id/btnHelpBack"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:gravity="center"
+                        android:text="←"
+                        android:textColor="#1E1E24"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="POS Support &amp; Diagnostics"
+                        android:textColor="#1E1E24"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginStart="8dp"/>
+                </LinearLayout>
+
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingBottom="32dp">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="1dp"
+                            android:layout_marginBottom="16dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="20dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Troubleshooting Ticket"
+                                    android:textColor="#1E1E24"
+                                    android:textStyle="bold"
+                                    android:textSize="16sp"
+                                    android:layout_marginBottom="4dp"/>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Send a direct report to our tech team with diagnostic logs."
+                                    android:textColor="#64748B"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="16dp"/>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Ticket Subject"
+                                    android:textColor="#475569"
+                                    android:textStyle="bold"
+                                    android:textSize="11sp"
+                                    android:layout_marginBottom="6dp"/>
+
+                                <EditText
+                                    android:id="@+id/editHelpSubject"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="48dp"
+                                    android:background="@android:drawable/editbox_background_normal"
+                                    android:hint="e.g. Printer not responding"
+                                    android:textColor="#1E1E24"
+                                    android:textSize="14sp"
+                                    android:inputType="text"
+                                    android:padding="12dp"
+                                    android:layout_marginBottom="16dp"/>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Trouble Details (Prefilled with system info)"
+                                    android:textColor="#475569"
+                                    android:textStyle="bold"
+                                    android:textSize="11sp"
+                                    android:layout_marginBottom="6dp"/>
+
+                                <EditText
+                                    android:id="@+id/editHelpMessage"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="140dp"
+                                    android:background="@android:drawable/editbox_background_normal"
+                                    android:hint="Describe the issue you're facing..."
+                                    android:textColor="#1E1E24"
+                                    android:textSize="13sp"
+                                    android:gravity="top|start"
+                                    android:inputType="textMultiLine"
+                                    android:padding="12dp"
+                                    android:layout_marginBottom="20dp"/>
+
+                                <Button
+                                    android:id="@+id/btnHelpSend"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="52dp"
+                                    android:text="Send via SendGrid Connector"
+                                    android:textColor="#FFFFFF"
+                                    android:backgroundTint="#D8581B"
+                                    android:textStyle="bold"
+                                    android:textSize="14sp"
+                                    app:cornerRadius="26dp"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"/>
+
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+                    </LinearLayout>
+                </ScrollView>
+            </LinearLayout>
+
             <!-- 5. POS DEVICE REGISTRATION / ONBOARDING -->
             <LinearLayout
                 android:id="@+id/layoutOnboardingRegister"
@@ -1763,6 +1909,7 @@
 
                 <!-- 3. Help -->
                 <LinearLayout
+                    android:id="@+id/btnDrawerHelp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -1939,40 +2086,7 @@
                         android:layout_marginStart="12dp"/>
                 </LinearLayout>
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#F1F5F9"
-                    android:layout_marginVertical="4dp"/>
 
-                <!-- 6. Refresh -->
-                <LinearLayout
-                    android:id="@+id/btnDrawerRefresh"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="14dp"
-                    android:background="?attr/selectableItemBackground">
-
-                    <TextView
-                        android:layout_width="32dp"
-                        android:layout_height="wrap_content"
-                        android:text="🔄"
-                        android:textColor="#64748B"
-                        android:textSize="18sp"
-                        android:gravity="center"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Refresh"
-                        android:textColor="#1E1E24"
-                        android:textStyle="bold"
-                        android:textSize="14sp"
-                        android:layout_marginStart="12dp"/>
-                </LinearLayout>
 
             </LinearLayout>
         </ScrollView>
