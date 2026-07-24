@@ -600,6 +600,30 @@
                                             android:textSize="14sp"/>
                                     </LinearLayout>
 
+                                    <!-- Driver Tip -->
+                                    <LinearLayout
+                                        android:id="@+id/layoutDetailTip"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:layout_marginBottom="8dp"
+                                        android:visibility="gone">
+                                        <TextView
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="1"
+                                            android:text="Driver Tip"
+                                            android:textColor="#64748B"
+                                            android:textSize="14sp"/>
+                                        <TextView
+                                            android:id="@+id/txtDetailTip"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="€0.00"
+                                            android:textColor="#1E1E24"
+                                            android:textSize="14sp"/>
+                                    </LinearLayout>
+
                                     <View
                                         android:layout_width="match_parent"
                                         android:layout_height="1dp"

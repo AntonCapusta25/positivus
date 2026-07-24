@@ -94,6 +94,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtDetailSubtotal: TextView
     private lateinit var txtDetailDeliveryFee: TextView
     private lateinit var txtDetailTotal: TextView
+    private lateinit var layoutDetailTip: LinearLayout
+    private lateinit var txtDetailTip: TextView
     private lateinit var btnDetailAction: android.widget.Button
     private lateinit var btnDetailAssignDriver: android.widget.Button
     private lateinit var btnToggleCustomerInfo: LinearLayout
@@ -563,6 +565,8 @@ class MainActivity : AppCompatActivity() {
         txtDetailSubtotal = findViewById(R.id.txtDetailSubtotal)
         txtDetailDeliveryFee = findViewById(R.id.txtDetailDeliveryFee)
         txtDetailTotal = findViewById(R.id.txtDetailTotal)
+        layoutDetailTip = findViewById(R.id.layoutDetailTip)
+        txtDetailTip = findViewById(R.id.txtDetailTip)
         btnDetailAction = findViewById(R.id.btnDetailAction)
         btnDetailAssignDriver = findViewById(R.id.btnDetailAssignDriver)
         btnToggleCustomerInfo = findViewById(R.id.btnToggleCustomerInfo)
@@ -1547,6 +1551,14 @@ class MainActivity : AppCompatActivity() {
         txtDetailDeliveryFee.text = if (order.deliveryFee > 0) String.format(Locale.US, "€%.2f", order.deliveryFee) else "Free"
         txtDetailTotal.text = String.format(Locale.US, "€%.2f", order.total)
 
+        val tipVal = parseTipAmount(order.notes)
+        if (tipVal > 0.0) {
+            layoutDetailTip.visibility = View.VISIBLE
+            txtDetailTip.text = String.format(Locale.US, "€%.2f", tipVal)
+        } else {
+            layoutDetailTip.visibility = View.GONE
+        }
+
         // Action button
         val actionLabel = when (order.status.lowercase()) {
             "incoming" -> "ACCEPT ORDER"
@@ -1886,14 +1898,47 @@ class MainActivity : AppCompatActivity() {
     private fun parseCustomerNotes(rawNotes: String?): String {
         if (rawNotes.isNullOrEmpty()) return ""
         return try {
-            val obj = JsonParser.parseString(rawNotes).asJsonObject
-            obj.get("order_comment")?.asString
-                ?: obj.get("delivery_instructions")?.asString
-                ?: obj.get("notes")?.asString
-                ?: obj.get("order_instruction")?.asString
-                ?: ""
+            var obj = JsonParser.parseString(rawNotes).asJsonObject
+            if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                obj = obj.getAsJsonObject("payload")
+            }
+            val orderComment = obj.get("order_comment")?.asString ?: ""
+            val notesVal = obj.get("notes")?.asString ?: ""
+            val orderInst = obj.get("order_instruction")?.asString ?: ""
+            
+            val deliveryInst = if (obj.has("delivery_instructions") && obj.get("delivery_instructions").isJsonArray) {
+                val arr = obj.getAsJsonArray("delivery_instructions")
+                val list = mutableListOf<String>()
+                for (i in 0 until arr.size()) {
+                    val instObj = arr.get(i).asJsonObject
+                    instObj.get("instruction")?.asString?.let { list.add(it) }
+                }
+                list.joinToString(", ")
+            } else ""
+
+            listOf(orderComment, notesVal, orderInst, deliveryInst)
+                .filter { it.isNotEmpty() }
+                .joinToString("\n")
         } catch (e: Exception) {
             if (rawNotes.trim().startsWith("{")) "" else rawNotes
+        }
+    }
+
+    private fun parseTipAmount(rawNotes: String?): Double {
+        if (rawNotes.isNullOrEmpty()) return 0.0
+        return try {
+            var obj = JsonParser.parseString(rawNotes).asJsonObject
+            if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                obj = obj.getAsJsonObject("payload")
+            }
+            if (obj.has("cart") && obj.get("cart").isJsonObject) {
+                val cart = obj.getAsJsonObject("cart")
+                cart.get("tip_amount")?.asDouble ?: 0.0
+            } else {
+                obj.get("tip_amount")?.asDouble ?: 0.0
+            }
+        } catch (e: Exception) {
+            0.0
         }
     }
 

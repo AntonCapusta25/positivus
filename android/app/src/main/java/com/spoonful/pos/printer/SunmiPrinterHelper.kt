@@ -134,14 +134,47 @@ class SunmiPrinterHelper(private val context: Context) {
     private fun parseCustomerNotes(rawNotes: String?): String {
         if (rawNotes.isNullOrEmpty()) return ""
         return try {
-            val obj = JsonParser.parseString(rawNotes).asJsonObject
-            obj.get("order_comment")?.asString
-                ?: obj.get("delivery_instructions")?.asString
-                ?: obj.get("notes")?.asString
-                ?: obj.get("order_instruction")?.asString
-                ?: ""
+            var obj = JsonParser.parseString(rawNotes).asJsonObject
+            if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                obj = obj.getAsJsonObject("payload")
+            }
+            val orderComment = obj.get("order_comment")?.asString ?: ""
+            val notesVal = obj.get("notes")?.asString ?: ""
+            val orderInst = obj.get("order_instruction")?.asString ?: ""
+            
+            val deliveryInst = if (obj.has("delivery_instructions") && obj.get("delivery_instructions").isJsonArray) {
+                val arr = obj.getAsJsonArray("delivery_instructions")
+                val list = mutableListOf<String>()
+                for (i in 0 until arr.size()) {
+                    val instObj = arr.get(i).asJsonObject
+                    instObj.get("instruction")?.asString?.let { list.add(it) }
+                }
+                list.joinToString(", ")
+            } else ""
+
+            listOf(orderComment, notesVal, orderInst, deliveryInst)
+                .filter { it.isNotEmpty() }
+                .joinToString("\n")
         } catch (e: Exception) {
             if (rawNotes.trim().startsWith("{")) "" else rawNotes
+        }
+    }
+
+    private fun parseTipAmount(rawNotes: String?): Double {
+        if (rawNotes.isNullOrEmpty()) return 0.0
+        return try {
+            var obj = JsonParser.parseString(rawNotes).asJsonObject
+            if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                obj = obj.getAsJsonObject("payload")
+            }
+            if (obj.has("cart") && obj.get("cart").isJsonObject) {
+                val cart = obj.getAsJsonObject("cart")
+                cart.get("tip_amount")?.asDouble ?: 0.0
+            } else {
+                obj.get("tip_amount")?.asDouble ?: 0.0
+            }
+        } catch (e: Exception) {
+            0.0
         }
     }
 
@@ -301,6 +334,14 @@ class SunmiPrinterHelper(private val context: Context) {
             bodyBuilder.append("--------------------------------\n")
             bodyBuilder.append(nettoLine).append("\n")
             bodyBuilder.append(taxLine).append("\n")
+            
+            val tipAmount = parseTipAmount(order.notes)
+            if (tipAmount > 0.0) {
+                val tipValStr = String.format(Locale.US, "%.2f", tipAmount).replace(".", ",") + "€"
+                val tipLine = formatLine("Tip/Fooi:", tipValStr, MAX_LINE_CHAR_58MM)
+                bodyBuilder.append(tipLine).append("\n")
+            }
+            
             bodyBuilder.append(totalLine2).append("\n")
             bodyBuilder.append("--------------------------------\n")
 

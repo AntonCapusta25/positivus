@@ -336,7 +336,17 @@ export default function Dashboard() {
                     if (typeof displayNote === 'string' && displayNote.trim().startsWith('{')) {
                       try {
                         const parsed = JSON.parse(displayNote);
-                        displayNote = parsed.order_comment || parsed.delivery_instructions || parsed.notes || parsed.order_instruction || "System payload attached (No customer notes)";
+                        const target = parsed.payload || parsed;
+                        
+                        let instructionsText = '';
+                        if (Array.isArray(target.delivery_instructions)) {
+                          instructionsText = target.delivery_instructions
+                            .map(item => item.instruction || '')
+                            .filter(Boolean)
+                            .join(', ');
+                        }
+                        
+                        displayNote = target.order_comment || target.notes || target.order_instruction || instructionsText || "System payload attached (No customer notes)";
                       } catch (e) {
                         // ignore
                       }
@@ -493,6 +503,23 @@ export default function Dashboard() {
                   <span>BTW (Tax included)</span>
                   <span>€{Number(selectedOrder.tax || 0).toFixed(2)}</span>
                 </div>
+                {(() => {
+                  if (!selectedOrder.notes) return null;
+                  try {
+                    const parsed = JSON.parse(selectedOrder.notes);
+                    const target = parsed.payload || parsed;
+                    const tip = target.cart?.tip_amount || target.tip_amount;
+                    if (tip > 0) {
+                      return (
+                        <div className="flex justify-between text-slate-600 font-semibold bg-emerald-50/40 px-2 py-1 rounded">
+                          <span>Driver Tip</span>
+                          <span className="text-emerald-600 font-bold">€{Number(tip).toFixed(2)}</span>
+                        </div>
+                      );
+                    }
+                  } catch (e) {}
+                  return null;
+                })()}
                 <div className="border-t border-slate-100 pt-2.5 flex justify-between font-bold text-slate-800 text-base">
                   <span>Total amount</span>
                   <span className="text-brand-orange">€{Number(selectedOrder.total || 0).toFixed(2)}</span>
