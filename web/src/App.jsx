@@ -157,31 +157,8 @@ function MainLayout() {
   };
 
   useEffect(() => {
-    let controllerChangeCleanup = () => {};
-    if ('serviceWorker' in navigator) {
-      const handleControllerChange = () => { window.location.reload(); };
-      navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
-      controllerChangeCleanup = () => navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
-
-      const registerSW = async () => {
-        try {
-          await navigator.serviceWorker.register('/sw.js');
-          // Auto-subscribe if already granted (returning user)
-          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            await registerPushSubscription();
-          }
-        } catch (err) {
-          console.warn('[PWA SW] Registration failed:', err);
-        }
-      };
-
-      if (document.readyState === 'complete') {
-        registerSW();
-        return () => { controllerChangeCleanup(); };
-      } else {
-        window.addEventListener('load', registerSW);
-        return () => { window.removeEventListener('load', registerSW); controllerChangeCleanup(); };
-      }
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      registerPushSubscription();
     }
   }, [settings.merchantId]);
 
@@ -658,6 +635,32 @@ function AppContent() {
   const hostname = window.location.hostname.toLowerCase();
   const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
   const isDriver = import.meta.env.VITE_APP_MODE === 'driver' || hostname.startsWith('driver.') || hostname.startsWith('courier.') || hostname.startsWith('delivery.') || path === '/driver' || path === '/drivers';
+
+  useEffect(() => {
+    let controllerChangeCleanup = () => {};
+    if ('serviceWorker' in navigator) {
+      const handleControllerChange = () => { window.location.reload(); };
+      navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+      controllerChangeCleanup = () => navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+
+      const registerSW = async () => {
+        try {
+          await navigator.serviceWorker.register('/sw.js');
+          console.log('[PWA SW] Service Worker registered successfully at root level.');
+        } catch (err) {
+          console.warn('[PWA SW] Registration failed:', err);
+        }
+      };
+
+      if (document.readyState === 'complete') {
+        registerSW();
+        return () => { controllerChangeCleanup(); };
+      } else {
+        window.addEventListener('load', registerSW);
+        return () => { window.removeEventListener('load', registerSW); controllerChangeCleanup(); };
+      }
+    }
+  }, []);
 
   const handleClaimOffer = async (order) => {
     const loggedDriver = localStorage.getItem('pos_driver_name') || 'John Doe';
