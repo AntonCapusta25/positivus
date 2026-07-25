@@ -321,28 +321,6 @@ serve(async (req) => {
       }
     }
 
-    // Calculate customer order count (loyalty pill)
-    let customerOrderCount = 1;
-    try {
-      let query = supabase.from("orders").select("id", { count: "exact", head: true });
-      if (customerPhone && customerPhone.toString().trim() !== "") {
-        query = query.eq("customer_phone", customerPhone.toString().trim());
-      } else if (customerName && customerName.toString().trim() !== "") {
-        query = query.eq("customer_name", customerName.toString().trim());
-      } else {
-        query = null;
-      }
-
-      if (query) {
-        const { count, error: countError } = await query;
-        if (!countError && count !== null) {
-          customerOrderCount = count + 1;
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to calculate customer order count:", e);
-    }
-
     // Determine event action
     const eventName = body.event || 'order.created';
     let finalOrderData = null;
@@ -365,8 +343,7 @@ serve(async (req) => {
       payment_status: paymentStatus,
       notes: JSON.stringify(body), // Store raw payload for debugging!
       printed: false,
-      customer_address: customerAddress,
-      customer_order_count: customerOrderCount
+      customer_address: customerAddress
     };
 
     const updatePayload: any = {
