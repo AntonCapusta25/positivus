@@ -43,7 +43,7 @@ serve(async (req) => {
             country_code: raw.country_code,
             delivery_by: raw.delivery_by,
             accepted_order_types: raw.accepted_order_types || ["delivery", "pickup", "custom_1"],
-            status: raw.status ? 1 : 0,
+            status: nextAcceptState ? 1 : 0,
             tax_method: raw.tax_method || "exclusive",
             language_translation: raw.language_translation || [],
             is_accepting_orders: nextAcceptState,
