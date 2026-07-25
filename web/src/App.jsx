@@ -662,6 +662,25 @@ function AppContent() {
     }
   }, []);
 
+  useEffect(() => {
+    const titleEl = document.querySelector('title');
+    const iconEl = document.querySelector('link[rel="icon"]');
+    const appleIconEl = document.querySelector('link[rel="apple-touch-icon"]');
+    const manifestEl = document.querySelector('link[rel="manifest"]');
+
+    if (isDriver) {
+      if (titleEl) titleEl.innerText = "Spoonful Driver";
+      if (iconEl) iconEl.setAttribute('href', '/driver-favicon.png');
+      if (appleIconEl) appleIconEl.setAttribute('href', '/driver-logo-192.png');
+      if (manifestEl) manifestEl.setAttribute('href', '/manifest-driver.json');
+    } else {
+      if (titleEl) titleEl.innerText = "Spoonful Orderpad";
+      if (iconEl) iconEl.setAttribute('href', '/favicon.png');
+      if (appleIconEl) appleIconEl.setAttribute('href', '/logo-192.png');
+      if (manifestEl) manifestEl.setAttribute('href', '/manifest.json');
+    }
+  }, [isDriver]);
+
   const handleClaimOffer = async (order) => {
     const loggedDriver = localStorage.getItem('pos_driver_name') || 'John Doe';
     try {

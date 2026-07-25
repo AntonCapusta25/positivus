@@ -1,0 +1,24 @@
+{
+  "name": "Spoonful Driver Portal",
+  "short_name": "Spoonful Driver",
+  "description": "Progressive Web Application Driver portal for Spoonful",
+  "start_url": "/driver",
+  "scope": "/driver",
+  "id": "/driver",
+  "display": "standalone",
+  "background_color": "#090D16",
+  "theme_color": "#D8581B",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/driver-logo-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/driver-logo-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
