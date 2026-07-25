@@ -453,7 +453,10 @@ class SunmiPrinterHelper(private val context: Context) {
             val outputFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.US).apply {
                 timeZone = java.util.TimeZone.getDefault()
             }
-            date?.let { outputFormat.format(it) } ?: dateStr
+            date?.let { 
+                val adjustedTime = it.time + 3600000L
+                outputFormat.format(java.util.Date(adjustedTime))
+            } ?: dateStr
         } catch (e: Exception) {
             dateStr
         }

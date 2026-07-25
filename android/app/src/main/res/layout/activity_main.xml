@@ -689,6 +689,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
+                    android:baselineAligned="false"
+                    android:gravity="center_vertical"
                     android:background="#FFFFFF"
                     android:padding="16dp"
                     android:elevation="4dp">
