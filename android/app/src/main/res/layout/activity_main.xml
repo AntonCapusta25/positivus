@@ -433,6 +433,22 @@
                                                 android:textSize="10sp"
                                                 android:layout_marginTop="4dp"
                                                 android:gravity="center" />
+
+                                            <!-- Scheduled Delivery Badge -->
+                                            <TextView
+                                                android:id="@+id/txtDetailScheduledBadge"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content"
+                                                android:text="📅 Scheduled"
+                                                android:textColor="#9F1239"
+                                                android:textStyle="bold"
+                                                android:textSize="10sp"
+                                                android:layout_marginTop="4dp"
+                                                android:paddingHorizontal="6dp"
+                                                android:paddingVertical="2dp"
+                                                android:background="#FFE4E6"
+                                                android:gravity="center"
+                                                android:visibility="gone" />
                                         </LinearLayout>
 
                                         <TextView

@@ -446,9 +446,13 @@ class SunmiPrinterHelper(private val context: Context) {
     private fun formatDate(dateStr: String): String {
         return try {
             // Parse standard ISO/Supabase date "2026-06-12T10:07:32.123456+00:00"
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }
             val date = inputFormat.parse(dateStr)
-            val outputFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.US)
+            val outputFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.US).apply {
+                timeZone = java.util.TimeZone.getDefault()
+            }
             date?.let { outputFormat.format(it) } ?: dateStr
         } catch (e: Exception) {
             dateStr

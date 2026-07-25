@@ -85,6 +85,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtDetailCustomerName: TextView
     private lateinit var txtDetailPaidBadge: TextView
     private lateinit var txtDetailCustomerLoyalty: TextView
+    private lateinit var txtDetailScheduledBadge: TextView
     private lateinit var txtCustomerChevron: TextView
     private lateinit var layoutCustomerDetails: LinearLayout
     private lateinit var txtDetailCustomerPhone: TextView
@@ -563,6 +564,7 @@ class MainActivity : AppCompatActivity() {
         txtDetailCustomerName = findViewById(R.id.txtDetailCustomerName)
         txtDetailPaidBadge = findViewById(R.id.txtDetailPaidBadge)
         txtDetailCustomerLoyalty = findViewById(R.id.txtDetailCustomerLoyalty)
+        txtDetailScheduledBadge = findViewById(R.id.txtDetailScheduledBadge)
         txtCustomerChevron = findViewById(R.id.txtCustomerChevron)
         layoutCustomerDetails = findViewById(R.id.layoutCustomerDetails)
         txtDetailCustomerPhone = findViewById(R.id.txtDetailCustomerPhone)
@@ -1233,6 +1235,30 @@ class MainActivity : AppCompatActivity() {
         }
         infoLayout.addView(itemsSummary)
 
+        val scheduledTime = parseScheduledDelivery(order.notes)
+        if (scheduledTime != null) {
+            val scheduledTxt = TextView(this).apply {
+                text = "📅 Scheduled: $scheduledTime"
+                setTextColor(Color.parseColor("#9F1239"))
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+                setTypeface(null, Typeface.BOLD)
+                // Use a soft rose background
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = dp(4).toFloat()
+                    setColor(Color.parseColor("#FFE4E6"))
+                }
+                setPadding(dp(6), dp(2), dp(6), dp(2))
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = dp(4)
+                }
+            }
+            infoLayout.addView(scheduledTxt)
+        }
+
         root.addView(infoLayout)
 
         // Right: Price + print dot
@@ -1540,6 +1566,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
         txtDetailCustomerLoyalty.setPadding(dp(8), dp(3), dp(8), dp(3))
+
+        val scheduledTime = parseScheduledDelivery(order.notes)
+        if (scheduledTime != null) {
+            txtDetailScheduledBadge.text = "📅 Scheduled: $scheduledTime"
+            txtDetailScheduledBadge.visibility = View.VISIBLE
+        } else {
+            txtDetailScheduledBadge.visibility = View.GONE
+        }
 
         txtDetailCustomerPhone.text = if (!order.customerPhone.isNullOrEmpty()) "📞 ${order.customerPhone}" else "No phone"
         val parsedNotes = parseCustomerNotes(order.notes)
@@ -1956,6 +1990,26 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             0.0
+        }
+    }
+
+    private fun parseScheduledDelivery(rawNotes: String?): String? {
+        if (rawNotes.isNullOrEmpty()) return null
+        return try {
+            var obj = JsonParser.parseString(rawNotes).asJsonObject
+            if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                obj = obj.getAsJsonObject("payload")
+            }
+            val isScheduled = obj.has("is_scheduled") && obj.get("is_scheduled").asBoolean
+            if (!isScheduled) return null
+            if (obj.has("delivery_timestamp_human") && obj.get("delivery_timestamp_human").isJsonObject) {
+                val t = obj.getAsJsonObject("delivery_timestamp_human")
+                val date = if (t.has("local_date") && !t.get("local_date").isJsonNull) t.get("local_date").asString else ""
+                val time = if (t.has("local_time") && !t.get("local_time").isJsonNull) t.get("local_time").asString else ""
+                "$date $time".trim().ifEmpty { null }
+            } else null
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -2390,6 +2444,7 @@ class MainActivity : AppCompatActivity() {
             val txtDialogNotes = dialogView.findViewById<TextView>(R.id.txtDialogNotes)
             val layoutDialogTip = dialogView.findViewById<LinearLayout>(R.id.layoutDialogTip)
             val txtDialogTip = dialogView.findViewById<TextView>(R.id.txtDialogTip)
+            val txtDialogScheduledBadge = dialogView.findViewById<TextView>(R.id.txtDialogScheduledBadge)
             val btnAccept = dialogView.findViewById<Button>(R.id.btnDialogAccept)
             val btnDecline = dialogView.findViewById<Button>(R.id.btnDialogDecline)
             val btnPrepMinus = dialogView.findViewById<Button>(R.id.btnDialogPrepMinus)
@@ -2472,6 +2527,14 @@ class MainActivity : AppCompatActivity() {
                 txtDialogTip.text = String.format(Locale.US, "€%.2f", tipVal)
             } else {
                 layoutDialogTip.visibility = View.GONE
+            }
+
+            val scheduledTime = parseScheduledDelivery(order.notes)
+            if (scheduledTime != null) {
+                txtDialogScheduledBadge.text = "📅 Scheduled: $scheduledTime"
+                txtDialogScheduledBadge.visibility = View.VISIBLE
+            } else {
+                txtDialogScheduledBadge.visibility = View.GONE
             }
 
             // Setup Live Counting Timer
