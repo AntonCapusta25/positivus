@@ -190,11 +190,16 @@ serve(async (req) => {
     });
   }
 
+  const tStart = performance.now();
+  console.log("[PERF] Webhook function execution started.");
+
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Read payload
     const body = await req.json();
+    const tJson = performance.now();
+    console.log(`[PERF] JSON payload parsed in ${tJson - tStart}ms.`);
     console.log("Received Hyperzod webhook payload:", JSON.stringify(body));
 
     if (body.action === "send_driver_push") {
@@ -366,11 +371,14 @@ serve(async (req) => {
 
     if (eventName === 'order.updated' || eventName === 'order.status_updated') {
       console.log(`Update event received for Order ${orderNumber}. Executing update...`);
+      const tDbStart = performance.now();
       const { data: updatedData, error: updateError } = await supabase
         .from("orders")
         .update(updatePayload)
         .eq("order_number", orderNumber)
         .select();
+      const tDbEnd = performance.now();
+      console.log(`[PERF] Database UPDATE query took ${tDbEnd - tDbStart}ms.`);
 
       if (updateError) {
         console.error("Database update error:", updateError);
@@ -382,10 +390,13 @@ serve(async (req) => {
       } else {
         // Order does not exist yet. Fallback to insert (optimistic insert)
         console.log(`Order ${orderNumber} not found during update. Inserting new record...`);
+        const tDbStart = performance.now();
         const { data: insertedData, error: insertError } = await supabase
           .from("orders")
           .insert([insertPayload])
           .select();
+        const tDbEnd = performance.now();
+        console.log(`[PERF] Database Fallback INSERT query took ${tDbEnd - tDbStart}ms.`);
 
         if (insertError) {
           // If insert failed due to unique key conflict, another request inserted it concurrently. Retry update!
@@ -419,10 +430,13 @@ serve(async (req) => {
       }
     } else {
       console.log(`Creation event received for Order ${orderNumber}. Executing insert...`);
+      const tDbStart = performance.now();
       const { data: insertedData, error: insertError } = await supabase
         .from("orders")
         .insert([insertPayload])
         .select();
+      const tDbEnd = performance.now();
+      console.log(`[PERF] Database Creation INSERT query took ${tDbEnd - tDbStart}ms.`);
 
       if (insertError) {
         // If insert failed because the order already exists (unique conflict), fallback to update!
