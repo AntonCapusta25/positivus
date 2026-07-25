@@ -14,6 +14,24 @@ export default function NewOrderModal() {
   const order = activeIncomingOrder;
   const activeMerchant = (availableMerchants || []).find(m => m.id === order.merchant_id || m.slug === order.merchant_id || m.raw_details?.id === order.merchant_id) || { name: 'Spoonfull' };
 
+  let isScheduled = false;
+  let scheduledTimeText = '';
+  if (order.notes) {
+    try {
+      const parsed = JSON.parse(order.notes);
+      const target = parsed.payload || parsed;
+      if (target.is_scheduled) {
+        isScheduled = true;
+        const timeObj = target.delivery_timestamp_human;
+        if (timeObj) {
+          scheduledTimeText = `${timeObj.local_date} at ${timeObj.local_time}`;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
   // Parse items
   let parsedItems = [];
   try {
@@ -41,7 +59,7 @@ export default function NewOrderModal() {
       <div className="bg-white w-full max-w-xl rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[96vh] animate-scale-up">
         
         {/* Glowing Orange Header Banner */}
-        <div className="bg-gradient-to-r from-brand-orange to-amber-500 text-white p-4 sm:p-5 relative flex items-center justify-between shadow-md shrink-0">
+        <div className={`bg-gradient-to-r ${isScheduled ? 'from-rose-600 to-amber-600' : 'from-brand-orange to-amber-500'} text-white p-4 sm:p-5 relative flex items-center justify-between shadow-md shrink-0`}>
           <div className="flex items-center space-x-3">
             <div className="p-1.5 sm:p-2 bg-white/20 rounded-xl">
               <Bell size={20} className="text-white fill-current" />
@@ -51,7 +69,7 @@ export default function NewOrderModal() {
                 {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFULL'}
               </span>
               <h2 className="text-base sm:text-lg font-black tracking-tight leading-none my-0.5">
-                {step === 1 ? 'New Order' : 'Prepare Order'} #{order.order_number || order.id.substring(0, 8).toUpperCase()}
+                {isScheduled ? '📅 Scheduled Delivery' : step === 1 ? 'New Order' : 'Prepare Order'} #{order.order_number || order.id.substring(0, 8).toUpperCase()}
               </h2>
             </div>
           </div>
@@ -92,6 +110,12 @@ export default function NewOrderModal() {
                     <span className="text-base font-black text-slate-800">
                       {order.customer_name || 'Customer'}
                     </span>
+
+                    {isScheduled && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200 animate-pulse">
+                        📅 Scheduled: {scheduledTimeText}
+                      </span>
+                    )}
                     
                     {/* Loyalty Pill */}
                     {order.customer_order_count > 1 ? (

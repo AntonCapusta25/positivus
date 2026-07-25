@@ -299,6 +299,22 @@ export default function Dashboard() {
                     <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md capitalize">
                       {selectedOrder.type === 'delivery' ? '🛵 Delivery' : selectedOrder.type === 'pickup' ? '🏃 Pickup' : '🍽️ Dine-In'}
                     </span>
+                    {(() => {
+                      if (!selectedOrder.notes) return null;
+                      try {
+                        const parsed = JSON.parse(selectedOrder.notes);
+                        const target = parsed.payload || parsed;
+                        if (target.is_scheduled && target.delivery_timestamp_human) {
+                          const t = target.delivery_timestamp_human;
+                          return (
+                            <span className="bg-rose-100 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-md text-[10px] font-black tracking-wide animate-pulse">
+                              📅 Scheduled: {t.local_date} {t.local_time}
+                            </span>
+                          );
+                        }
+                      } catch (e) {}
+                      return null;
+                    })()}
                   </div>
                 </div>
               </div>
@@ -524,6 +540,23 @@ export default function Dashboard() {
                   <span>Total amount</span>
                   <span className="text-brand-orange">€{Number(selectedOrder.total || 0).toFixed(2)}</span>
                 </div>
+                {(() => {
+                  if (!selectedOrder.notes) return null;
+                  try {
+                    const parsed = JSON.parse(selectedOrder.notes);
+                    const target = parsed.payload || parsed;
+                    if (target.is_scheduled && target.delivery_timestamp_human) {
+                      const t = target.delivery_timestamp_human;
+                      return (
+                        <div className="border-t border-rose-100 pt-2.5 flex justify-between text-rose-700 font-bold text-sm bg-rose-50/60 -mx-5 px-5 pb-2 rounded-b-2xl">
+                          <span>📅 Scheduled Delivery</span>
+                          <span>{t.local_date} · {t.local_time}</span>
+                        </div>
+                      );
+                    }
+                  } catch (e) {}
+                  return null;
+                })()}
               </div>
 
             </div>
