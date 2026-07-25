@@ -352,8 +352,7 @@ serve(async (req) => {
     };
 
     const updatePayload: any = {
-      status: mappedStatus,
-      updated_at: new Date().toISOString()
+      status: mappedStatus
     };
 
     // Only update fields if they were explicitly provided in the webhook payload
