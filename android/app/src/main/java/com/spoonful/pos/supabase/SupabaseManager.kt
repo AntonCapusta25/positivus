@@ -1068,6 +1068,83 @@ class SupabaseManager(
             }
         })
     }
+
+    fun updateMerchantStatus(mId: String, isAccepting: Boolean, onComplete: (Boolean) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/merchants?merchant_id=eq.$mId"
+        val payload = JsonObject().apply {
+            addProperty("is_accepting_orders", isAccepting)
+            addProperty("is_open", isAccepting)
+            addProperty("updated_at", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }.format(java.util.Date()))
+        }
+        val body = gson.toJson(payload).toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .patch(body)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "updateMerchantStatus fail", e)
+                mainHandler.post { onComplete(false) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    val success = response.isSuccessful
+                    if (!success) {
+                        Log.e(TAG, "updateMerchantStatus error code: ${response.code}")
+                    }
+                    mainHandler.post { onComplete(success) }
+                }
+            }
+        })
+    }
+
+    fun fetchMerchantAcceptStatus(mId: String, onComplete: (Boolean) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/merchants?merchant_id=eq.$mId&select=is_accepting_orders"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .get()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "fetchMerchantAcceptStatus fail", e)
+                mainHandler.post { onComplete(true) } // fallback to accepting orders
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        mainHandler.post { onComplete(true) }
+                        return
+                    }
+                    val body = response.body?.string() ?: ""
+                    try {
+                        val array = JsonParser.parseString(body).asJsonArray
+                        if (array.size() > 0) {
+                            val merchant = array.get(0).asJsonObject
+                            val isAccepting = if (merchant.has("is_accepting_orders") && !merchant.get("is_accepting_orders").isJsonNull) {
+                                merchant.get("is_accepting_orders").asBoolean
+                            } else true
+                            mainHandler.post { onComplete(isAccepting) }
+                        } else {
+                            mainHandler.post { onComplete(true) }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "fetchMerchantAcceptStatus parse error", e)
+                        mainHandler.post { onComplete(true) }
+                    }
+                }
+            }
+        })
+    }
 }
 
 class OrderItemsDeserializer : JsonDeserializer<List<OrderItem>> {

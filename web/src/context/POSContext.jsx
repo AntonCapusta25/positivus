@@ -1305,7 +1305,7 @@ export const POSProvider = ({ children }) => {
           is_open: nextOpenState,
           updated_at: new Date().toISOString()
         })
-        .eq('merchant_id', defaultMerchantId);
+        .eq('merchant_id', settings.merchantId);
 
       if (error) throw error;
     } catch (err) {
@@ -1324,10 +1324,10 @@ export const POSProvider = ({ children }) => {
       });
       const mListData = await mListRes.json();
       if (mListData.success && mListData.data && mListData.data.data) {
-        const raw = mListData.data.data.find(m => m.id === defaultMerchantId) || {};
+        const raw = mListData.data.data.find(m => m.id === settings.merchantId) || {};
         
         const updatePayload = {
-          id: defaultMerchantId,
+          id: settings.merchantId,
           name: raw.name || "Spoonfull",
           slug: raw.slug || "raj-curry-house",
           phone: raw.phone,

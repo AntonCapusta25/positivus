@@ -323,6 +323,7 @@ class MainActivity : AppCompatActivity() {
         setupTimerTick()
 
         loadMockData()
+        fetchAndSyncStoreStatus()
 
         // Bind printer service
         printerHelper.bindPrinterService(object : SunmiPrinterHelper.PrinterBindListener {
@@ -400,6 +401,7 @@ class MainActivity : AppCompatActivity() {
                                     drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED)
                                     
                                     supabaseManager.updateMerchantId(selectedMerchantId)
+                                    fetchAndSyncStoreStatus()
                                     supabaseManager.start()
                                     Toast.makeText(this@MainActivity, "Logged in and linked to $selectedMerchantName successfully!", Toast.LENGTH_LONG).show()
                                 }
@@ -465,6 +467,7 @@ class MainActivity : AppCompatActivity() {
                         drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED)
                         
                         supabaseManager.updateMerchantId(mId)
+                        fetchAndSyncStoreStatus()
                         supabaseManager.start()
                         Toast.makeText(this@MainActivity, "Linked to $mName successfully!", Toast.LENGTH_LONG).show()
                     } else {
@@ -603,6 +606,8 @@ class MainActivity : AppCompatActivity() {
         radioSoundNoisy = findViewById(R.id.radioSoundNoisy)
     }
 
+
+
     // ─────────────────────────────────────────────
     // SCREEN NAVIGATION
     // ─────────────────────────────────────────────
@@ -626,18 +631,28 @@ class MainActivity : AppCompatActivity() {
 
         // Stop taking orders toggle
         btnDrawerStopOrders.setOnClickListener {
-            isStopOrdersActive = !isStopOrdersActive
-            val iconView = btnDrawerStopOrders.findViewById<TextView>(R.id.txtDrawerStopOrdersIcon)
-            val titleView = btnDrawerStopOrders.findViewById<TextView>(R.id.txtDrawerStopOrdersTitle)
-            val descView = btnDrawerStopOrders.findViewById<TextView>(R.id.txtDrawerStopOrdersDesc)
-            if (isStopOrdersActive) {
-                iconView?.text = "▶"
-                titleView?.text = "Start taking orders"
-                descView?.text = "You're currently paused. Tap to resume."
-            } else {
-                iconView?.text = "⏸"
-                titleView?.text = "Stop taking orders"
-                descView?.text = "You're currently ready to accept new orders."
+            val mId = merchantId
+            if (mId.isEmpty()) {
+                Toast.makeText(this, "No active store selected", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            // If currently stopped (isStopOrdersActive = true), nextAcceptState is true (resuming).
+            val nextAcceptState = isStopOrdersActive
+            Toast.makeText(this, "Updating store status...", Toast.LENGTH_SHORT).show()
+            supabaseManager.updateMerchantStatus(mId, nextAcceptState) { success ->
+                runOnUiThread {
+                    if (success) {
+                        isStopOrdersActive = !nextAcceptState
+                        refreshStopOrdersUI()
+                        Toast.makeText(
+                            this@MainActivity,
+                            if (isStopOrdersActive) "Store paused taking orders" else "Store is now taking orders",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(this@MainActivity, "Failed to update store status", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
 
@@ -879,6 +894,7 @@ class MainActivity : AppCompatActivity() {
                                             txtDrawerActiveRestaurant.text = selectedMerchantName
                                             
                                             supabaseManager.updateMerchantId(selectedMerchantId)
+                                            fetchAndSyncStoreStatus()
                                             ordersList.clear()
                                             refreshOrderList()
                                             
@@ -2010,6 +2026,32 @@ class MainActivity : AppCompatActivity() {
             } else null
         } catch (e: Exception) {
             null
+        }
+    }
+
+    private fun refreshStopOrdersUI() {
+        val iconView = btnDrawerStopOrders.findViewById<TextView>(R.id.txtDrawerStopOrdersIcon)
+        val titleView = btnDrawerStopOrders.findViewById<TextView>(R.id.txtDrawerStopOrdersTitle)
+        val descView = btnDrawerStopOrders.findViewById<TextView>(R.id.txtDrawerStopOrdersDesc)
+        if (isStopOrdersActive) {
+            iconView?.text = "▶"
+            titleView?.text = "Start taking orders"
+            descView?.text = "You're currently paused. Tap to resume."
+        } else {
+            iconView?.text = "⏸"
+            titleView?.text = "Stop taking orders"
+            descView?.text = "You're currently ready to accept new orders."
+        }
+    }
+
+    private fun fetchAndSyncStoreStatus() {
+        val mId = merchantId
+        if (mId.isEmpty()) return
+        supabaseManager.fetchMerchantAcceptStatus(mId) { isAccepting ->
+            runOnUiThread {
+                isStopOrdersActive = !isAccepting
+                refreshStopOrdersUI()
+            }
         }
     }
 
