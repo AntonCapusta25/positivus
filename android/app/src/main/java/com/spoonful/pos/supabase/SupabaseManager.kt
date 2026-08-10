@@ -188,6 +188,7 @@ class SupabaseManager(
     }
 
     private fun joinOrdersChannel(ws: WebSocket) {
+        val filterId = if (merchantId == "restaurant_1") "6a0f03b4500ed5db150be1a1" else merchantId
         val joinMsg = """
         {
           "topic": "realtime:public",
@@ -198,12 +199,14 @@ class SupabaseManager(
                 {
                   "event": "INSERT",
                   "schema": "public",
-                  "table": "orders"
+                  "table": "orders",
+                  "filter": "merchant_id=eq.$filterId"
                 },
                 {
                   "event": "UPDATE",
                   "schema": "public",
-                  "table": "orders"
+                  "table": "orders",
+                  "filter": "merchant_id=eq.$filterId"
                 }
               ]
             }
@@ -212,7 +215,7 @@ class SupabaseManager(
         }
         """.trimIndent()
         ws.send(joinMsg)
-        Log.d(TAG, "Sent join channel request for orders table (INSERT & UPDATE)")
+        Log.d(TAG, "Sent join channel request for orders table with merchant_id filter: $filterId")
     }
 
 

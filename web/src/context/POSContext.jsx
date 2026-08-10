@@ -402,11 +402,15 @@ export const POSProvider = ({ children }) => {
 
       // Use a unique channel name each time to avoid Supabase rejecting re-subscribe
       const channelName = `realtime:pos_orders_${Date.now()}`;
+      const filterMerchantId = settingsRef.current.merchantId === 'restaurant_1' 
+        ? '6a0f03b4500ed5db150be1a1' 
+        : settingsRef.current.merchantId;
+
       const channel = supabase
         .channel(channelName)
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'orders' },
+          { event: '*', schema: 'public', table: 'orders', filter: `merchant_id=eq.${filterMerchantId}` },
           (payload) => {
             const activeMerchantId = settingsRef.current.merchantId;
 
