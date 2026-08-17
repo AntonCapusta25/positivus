@@ -381,9 +381,18 @@ export const POSProvider = ({ children }) => {
         if (error) throw error;
         setOrders(data || []);
 
-        // Auto-show popup if there is any pending incoming order on load
+        // Auto-show popup if there is any pending incoming order on load (only if created in the last 10 minutes)
         if (data && data.length > 0) {
-          const pendingIncoming = data.find(o => (o.status || '').toLowerCase() === 'incoming');
+          const pendingIncoming = data.find(o => {
+            if ((o.status || '').toLowerCase() !== 'incoming') return false;
+            try {
+              const createdTime = new Date(o.created_at).getTime();
+              const diffMinutes = (Date.now() - createdTime) / 60000;
+              return diffMinutes <= 10;
+            } catch (e) {
+              return true;
+            }
+          });
           if (pendingIncoming) {
             console.log('[POS Initial Load] Found pending incoming order:', pendingIncoming.order_number);
             setActiveIncomingOrder(pendingIncoming);
