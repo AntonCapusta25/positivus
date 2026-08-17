@@ -36,34 +36,35 @@ function MainLayout() {
 
   // Handle order query parameter from notifications
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('incoming_order_id');
+    if (!orderId) return;
+
+    // Clean URL immediately so it can never be triggered again
+    window.history.replaceState({}, document.title, window.location.pathname);
+
     const handleUrlQuery = async () => {
       try {
-        const params = new URLSearchParams(window.location.search);
-        const orderId = params.get('incoming_order_id');
-        if (orderId) {
-          console.log('[PWA Navigation] Found incoming_order_id in URL:', orderId);
-          // First check if it's already in the local orders array
-          const existing = orders.find(o => o.id === orderId);
-          if (existing) {
-            setActiveIncomingOrder(existing);
-            setCurrentPage('orders'); // Go to active orders tab
-            window.history.replaceState({}, document.title, window.location.pathname);
-          } else {
-            // Fetch it directly from Supabase
-            const { data, error } = await supabase
-              .from('orders')
-              .select('*')
-              .eq('id', orderId)
-              .single();
-              
-            if (error) {
-              console.error('[PWA Navigation] Failed to fetch query order:', error);
-            } else if (data) {
-              console.log('[PWA Navigation] Fetched order from DB:', data);
-              setActiveIncomingOrder(data);
-              setCurrentPage('orders');
-              window.history.replaceState({}, document.title, window.location.pathname);
-            }
+        console.log('[PWA Navigation] Found incoming_order_id in URL:', orderId);
+        // First check if it's already in the local orders array
+        const existing = orders.find(o => o.id === orderId);
+        if (existing) {
+          setActiveIncomingOrder(existing);
+          setCurrentPage('orders'); // Go to active orders tab
+        } else {
+          // Fetch it directly from Supabase
+          const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', orderId)
+            .single();
+            
+          if (error) {
+            console.error('[PWA Navigation] Failed to fetch query order:', error);
+          } else if (data) {
+            console.log('[PWA Navigation] Fetched order from DB:', data);
+            setActiveIncomingOrder(data);
+            setCurrentPage('orders');
           }
         }
       } catch (err) {
