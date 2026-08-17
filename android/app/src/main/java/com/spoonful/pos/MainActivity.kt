@@ -207,10 +207,13 @@ class MainActivity : AppCompatActivity() {
                         if (ordersList.none { it.id == order.id }) {
                             ordersList.add(0, order)
                             refreshOrderList()
-                        }
 
-                        // Show Incoming Order Popup Screen (just like web version!)
-                        showIncomingOrderDialog(order)
+                            // Show Incoming Order Popup Screen (just like web version!) for incoming/pending orders only
+                            val status = (order.status ?: "").lowercase()
+                            if (status == "incoming" || status == "pending") {
+                                showIncomingOrderDialog(order)
+                            }
+                        }
 
                         // Auto-print: only once per order ID, never on reconnect re-deliveries
                         if (isAutoPrintEnabled && !printedOrderIds.contains(order.id)) {
@@ -2487,6 +2490,7 @@ class MainActivity : AppCompatActivity() {
             val layoutDialogTip = dialogView.findViewById<LinearLayout>(R.id.layoutDialogTip)
             val txtDialogTip = dialogView.findViewById<TextView>(R.id.txtDialogTip)
             val txtDialogScheduledBadge = dialogView.findViewById<TextView>(R.id.txtDialogScheduledBadge)
+            val txtDialogNewOrderBadge = dialogView.findViewById<TextView>(R.id.txtDialogNewOrderBadge)
             val btnAccept = dialogView.findViewById<Button>(R.id.btnDialogAccept)
             val btnDecline = dialogView.findViewById<Button>(R.id.btnDialogDecline)
             val btnPrepMinus = dialogView.findViewById<Button>(R.id.btnDialogPrepMinus)
@@ -2543,6 +2547,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             txtCustomerLoyalty.setPadding(dp(8), dp(3), dp(8), dp(3))
+
+            if (orderCount > 1) {
+                txtDialogNewOrderBadge.text = "🟢 NEW ORDER RECEIVED"
+            } else {
+                txtDialogNewOrderBadge.text = "🟢 NEW CUSTOMER ORDER RECEIVED"
+            }
 
             // Populate items list in the scroll view container
             containerItems.removeAllViews()

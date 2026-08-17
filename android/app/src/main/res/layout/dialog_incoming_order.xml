@@ -76,6 +76,21 @@
         android:orientation="vertical"
         android:visibility="visible">
 
+        <!-- Big prominent green badge indicating new order -->
+        <TextView
+            android:id="@+id/txtDialogNewOrderBadge"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🟢 NEW CUSTOMER ORDER RECEIVED"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:background="@drawable/badge_green_bg"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="10dp"
+            android:gravity="center"
+            android:layout_marginBottom="12dp" />
+
         <!-- Customer details Card container -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -106,10 +121,26 @@
                 android:textColor="#B45309"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="4dp"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="3dp"
                 android:gravity="center" />
+
+            <!-- Scheduled Delivery Badge (hidden by default, shown for scheduled orders) -->
+            <TextView
+                android:id="@+id/txtDialogScheduledBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📅 Scheduled"
+                android:textColor="#9F1239"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:background="#FFE4E6"
+                android:gravity="center"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/txtDialogCustomerPhone"
