@@ -8,6 +8,7 @@ import Drivers from './components/Drivers';
 import Coupons from './components/Coupons';
 import MyStores from './components/MyStores';
 import NewOrderModal from './components/NewOrderModal';
+import PWAInstallBanner from './components/PWAInstallBanner';
 import { ShoppingBag, Store, BarChart3, Settings as SettingsIcon, AlertCircle, Wifi, WifiOff, Download, Menu, X, Bike, Ticket } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import './App.css';
@@ -31,8 +32,7 @@ function urlBase64ToUint8Array(base64String) {
 function MainLayout() {
   const [currentPage, setCurrentPage] = useState('orders');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const { orders, supabaseConnected, restaurantOpen, settings, setSettings, availableMerchants, logoutMerchant, userRole, superadminName, setActiveIncomingOrder } = usePOS();
-  const [pwaInstallPrompt, setPwaInstallPrompt] = useState(null);
+  const { orders, supabaseConnected, restaurantOpen, settings, setSettings, availableMerchants, logoutMerchant, userRole, superadminName, setActiveIncomingOrder, pwaInstallPrompt, triggerPwaInstall } = usePOS();
 
   // Handle order query parameter from notifications
   useEffect(() => {
@@ -77,30 +77,6 @@ function MainLayout() {
   const [notifPermission, setNotifPermission] = useState(() => {
     try { return typeof Notification !== 'undefined' ? Notification.permission : null; } catch { return null; }
   });
-
-  // Listen to PWA installability prompt trigger
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setPwaInstallPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const triggerPwaInstall = async () => {
-    if (!pwaInstallPrompt) return;
-    pwaInstallPrompt.prompt();
-    const { outcome } = await pwaInstallPrompt.userChoice;
-    console.log(`[PWA Installation] User decision: ${outcome}`);
-    if (outcome === 'accepted') {
-      setPwaInstallPrompt(null);
-    }
-  };
 
   // Register PWA service worker + subscribe to push if permission already granted
   const registerPushSubscription = async () => {
@@ -631,7 +607,7 @@ function AuthScreen() {
 import DriverPortal from './components/DriverPortal';
 
 function AppContent() {
-  const { authUser, authLoading, activeDriverOffer, setActiveDriverOffer, assignOrderDriver } = usePOS();
+  const { authUser, authLoading, activeDriverOffer, setActiveDriverOffer, assignOrderDriver, pwaInstallPrompt, triggerPwaInstall } = usePOS();
   const hostname = window.location.hostname.toLowerCase();
   const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
   const isDriver = import.meta.env.VITE_APP_MODE === 'driver' || hostname.startsWith('driver.') || hostname.startsWith('courier.') || hostname.startsWith('delivery.') || path === '/driver' || path === '/drivers';
@@ -753,6 +729,7 @@ function AppContent() {
     <>
       <MainLayout />
       <NewOrderModal />
+      <PWAInstallBanner pwaInstallPrompt={pwaInstallPrompt} triggerPwaInstall={triggerPwaInstall} />
     </>
   );
 }

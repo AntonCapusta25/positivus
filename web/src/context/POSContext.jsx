@@ -1838,6 +1838,31 @@ ${deliveryQRSection}========================================
     window.print();
   };
 
+  const [pwaInstallPrompt, setPwaInstallPrompt] = useState(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setPwaInstallPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const triggerPwaInstall = async () => {
+    if (!pwaInstallPrompt) return;
+    pwaInstallPrompt.prompt();
+    const { outcome } = await pwaInstallPrompt.userChoice;
+    console.log(`[PWA Installation] User decision: ${outcome}`);
+    if (outcome === 'accepted') {
+      setPwaInstallPrompt(null);
+    }
+  };
+
   return (
     <POSContext.Provider value={{
       authUser,
@@ -1881,7 +1906,9 @@ ${deliveryQRSection}========================================
       registerMerchant,
       registerPOSMachine,
       fetchPOSMachines,
-      deletePOSMachine
+      deletePOSMachine,
+      pwaInstallPrompt,
+      triggerPwaInstall
     }}>
       {children}
     </POSContext.Provider>
