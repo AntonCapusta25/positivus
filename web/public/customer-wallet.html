@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spoonfull Loyalty Wallet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #020617;
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    header {
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+      padding: 32px 16px 16px 16px;
+      box-sizing: border-box;
+    }
+    header span {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #f97316;
+    }
+    header h1 {
+      font-size: 20px;
+      font-weight: 900;
+      margin: 6px 0;
+      color: #fff;
+    }
+    header p {
+      font-size: 12px;
+      color: #94a3b8;
+      margin: 0;
+      font-weight: 600;
+    }
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 440px;
+      padding: 16px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .coupon-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .coupon-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .coupon-body {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .coupon-img {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      object-fit: cover;
+      border: 1px solid #1e293b;
+    }
+    .coupon-placeholder {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: rgba(249, 115, 22, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .coupon-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .coupon-label {
+      font-size: 10px;
+      font-weight: 900;
+      color: #f97316;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .coupon-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: #fff;
+      margin: 4px 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .coupon-meta {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .info-btn {
+      background: #1e293b;
+      border: none;
+      color: #94a3b8;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .info-btn:hover {
+      background: #334155;
+      color: #fff;
+    }
+    .redeem-footer {
+      padding: 0 16px 16px 16px;
+    }
+    .redeem-btn {
+      width: 100%;
+      padding: 12px;
+      background: #f97316;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+      transition: all 0.2s;
+    }
+    .redeem-btn:hover {
+      opacity: 0.95;
+    }
+    .empty-state {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px dashed #334155;
+      border-radius: 24px;
+      padding: 40px 16px;
+      text-align: center;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .empty-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(2, 6, 17, 0.85);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+      box-sizing: border-box;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .modal.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 28px;
+      padding: 24px;
+      max-width: 340px;
+      width: 100%;
+      box-sizing: border-box;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+      text-align: center;
+    }
+    .modal-title {
+      font-size: 12px;
+      font-weight: 900;
+      color: #f97316;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    .modal-h {
+      font-size: 16px;
+      font-weight: 950;
+      color: #fff;
+      margin: 0 0 12px 0;
+    }
+    .modal-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin: 0 0 20px 0;
+      font-weight: 600;
+    }
+    .pin-input {
+      width: 100%;
+      padding: 14px;
+      font-size: 20px;
+      font-weight: 900;
+      text-align: center;
+      border: 1px solid #1e293b;
+      background: #020617;
+      color: #fff;
+      border-radius: 16px;
+      box-sizing: border-box;
+      outline: none;
+      letter-spacing: 6px;
+      margin-bottom: 16px;
+    }
+    .pin-error {
+      color: #ef4444;
+      font-size: 10px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+    .modal-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .modal-btn.cancel {
+      background: #1e293b;
+      color: #94a3b8;
+    }
+    .modal-btn.confirm {
+      background: #10b981;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span>Spoonfull VIP Club</span>
+    <h1>Your Loyalty Coupons</h1>
+    <p id="customer-email-txt">Loading account...</p>
+  </header>
+
+  <main>
+    <div class="coupon-list" id="coupons-container">
+      <div class="empty-state">
+        <div class="empty-icon">⏳</div>
+        <p>Loading your coupons...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Explanation Modal -->
+  <div class="modal" id="info-modal">
+    <div class="modal-content">
+      <div class="modal-title">Coupon Details</div>
+      <h3 class="modal-h" id="info-title">Free Mango Lassi</h3>
+      <p class="modal-desc" id="info-desc"></p>
+      <button class="modal-btn cancel" onclick="closeModal('info-modal')" style="width:100%;">Dismiss</button>
+    </div>
+  </div>
+
+  <!-- Verification PIN Modal -->
+  <div class="modal" id="pin-modal">
+    <div class="modal-content">
+      <div class="modal-title" style="color: #10b981;">Staff Approval</div>
+      <h3 class="modal-h">Merchant PIN Code</h3>
+      <p class="modal-desc">Please ask the waiter or cashier to enter their verification PIN on your phone to approve this discount.</p>
+      <input type="password" class="pin-input" id="staff-pin-field" maxLength="8" placeholder="••••" />
+      <div class="pin-error" id="pin-error-lbl">Invalid Staff PIN</div>
+      <div class="btn-row">
+        <button class="modal-btn cancel" onclick="closeModal('pin-modal')">Cancel</button>
+        <button class="modal-btn confirm" id="submit-pin-btn">Confirm PIN</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://qttdcibitumvwsrxqeld.supabase.co";
+    const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dGRjaWJpdHVtdndzcnhxZWxkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTI5NDUzNSwiZXhwIjoyMDk2ODcwNTM1fQ.JpDFwAdN-kRzhRWSQcfVZVKJjnDfGb1fZ6M52iWP0OA";
+
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email') || params.get('customer_email') || '';
+
+    let coupons = [];
+    let selectedCoupon = null;
+
+    if (email) {
+      document.getElementById('customer-email-txt').innerText = `Linked to: ${email}`;
+      fetchCoupons();
+    } else {
+      document.getElementById('customer-email-txt').innerText = "Missing email parameter";
+      document.getElementById('coupons-container').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">❌</div>
+          <p>Please enter your email link from your transaction confirmation to see your coupons.</p>
+        </div>
+      `;
+    }
+
+    async function fetchCoupons() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/issued_coupons?customer_email=eq.${email.toLowerCase().trim()}&status=eq.active`, {
+          headers: {
+            "apikey": ANON_KEY,
+            "Authorization": `Bearer ${ANON_KEY}`
+          }
+        });
+        const data = await res.json();
+        // Filter expired
+        coupons = (data || []).filter(c => new Date(c.expires_at) >= new Date());
+        renderCoupons();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('coupons-container').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⚠️</div>
+            <p>Failed to load coupons. Please reload.</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderCoupons() {
+      const container = document.getElementById('coupons-container');
+      if (coupons.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🎁</div>
+            <p>No active loyalty coupons for this account.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      coupons.forEach(coupon => {
+        const card = document.createElement('div');
+        card.className = 'coupon-card';
+        
+        const imgHtml = coupon.image_url 
+          ? `<img class="coupon-img" src="${coupon.image_url}" alt="" />`
+          : `<div class="coupon-placeholder">🏷️</div>`;
+
+        card.innerHTML = `
+          <div class="coupon-body">
+            ${imgHtml}
+            <div class="coupon-info">
+              <span class="coupon-label">${coupon.discount_label}</span>
+              <div class="coupon-title">${coupon.title}</div>
+              <div class="coupon-meta">
+                <span>Expires: ${new Date(coupon.expires_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <button class="info-btn" onclick="openInfoModal('${coupon.id}')">ℹ️</button>
+          </div>
+          <div class="redeem-footer">
+            <button class="redeem-btn" onclick="openRedemptionModal('${coupon.id}')">Redeem In Restaurant</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function openInfoModal(id) {
+      const coupon = coupons.find(c => c.id === id);
+      if (!coupon) return;
+      document.getElementById('info-title').innerText = coupon.title;
+      document.getElementById('info-desc').innerHTML = `
+        This VIP reward is active on your customer account.
+        <br/><br/>
+        <strong>Redemption Period:</strong> Expires on ${new Date(coupon.expires_at).toLocaleDateString()}.
+        <br/>
+        <strong>Customer:</strong> ${coupon.customer_email}
+      `;
+      document.getElementById('info-modal').classList.add('open');
+    }
+
+    function openRedemptionModal(id) {
+      selectedCoupon = coupons.find(c => c.id === id);
+      if (!selectedCoupon) return;
+      document.getElementById('pin-error-lbl').style.display = 'none';
+      document.getElementById('staff-pin-field').value = '';
+      document.getElementById('pin-modal').classList.add('open');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    document.getElementById('submit-pin-btn').onclick = async () => {
+      if (!selectedCoupon) return;
+      const pin = document.getElementById('staff-pin-field').value.trim();
+      const errLbl = document.getElementById('pin-error-lbl');
+      
+      errLbl.style.display = 'none';
+
+      try {
+        const mRes = await fetch(`${SUPABASE_URL}/rest/v1/merchants?select=admin_pin&limit=1`, {
+          headers: {
+            "apikey": ANON_KEY,
+            "Authorization": `Bearer ${ANON_KEY}`
+          }
+        });
+        const mData = await mRes.json();
+        const correctPin = mData?.[0]?.admin_pin || '1234';
+
+        if (pin !== correctPin) {
+          errLbl.innerText = "Invalid PIN. Try again.";
+          errLbl.style.display = 'block';
+          return;
+        }
+
+        const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/issued_coupons?id=eq.${selectedCoupon.id}`, {
+          method: "PATCH",
+          headers: {
+            "apikey": ANON_KEY,
+            "Authorization": `Bearer ${ANON_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            status: "redeemed",
+            redeemed_at: new Date().toISOString()
+          })
+        });
+
+        if (!patchRes.ok) throw new Error("Patch failed");
+
+        closeModal('pin-modal');
+        alert("Coupon Redeemed Successfully! ✅");
+        fetchCoupons();
+      } catch (err) {
+        errLbl.innerText = "Redemption error: " + err.message;
+        errLbl.style.display = 'block';
+      }
+    };
+  </script>
+</body>
+</html>

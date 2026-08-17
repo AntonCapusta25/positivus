@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { usePOS } from '../context/POSContext';
 import { Search, CheckCircle2, AlertTriangle, Clock, RefreshCw, Ticket, Plus, X } from 'lucide-react';
 
 export default function Coupons() {
+  const { playAlertSound } = usePOS();
   const [coupons, setCoupons] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [redeemingId, setRedeemingId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all'); // all, active, redeemed
+  const [latestRedeemedNotification, setLatestRedeemedNotification] = useState(null);
 
   // Create Coupon States
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -19,9 +22,130 @@ export default function Coupons() {
   const [isCreating, setIsCreating] = useState(false);
 
   // Custom Coupon custom field states (Yoga / Service / Outside Restaurant Contexts)
-  const [customTitle, setCustomTitle] = useState('');
+  const [customTitle, setCustomTitle] = useState('Free Priority Delivery');
   const [customDiscountLabel, setCustomDiscountLabel] = useState('Select');
-  const [customImageUrl, setCustomImageUrl] = useState('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80');
+  const [customImageUrl, setCustomImageUrl] = useState('https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80');
+
+  // PWA/Redemption Scanner States
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
+  const [scanInputVal, setScanInputVal] = useState('');
+  const [scanResult, setScanResult] = useState(null);
+  const [selectedQrCoupon, setSelectedQrCoupon] = useState(null);
+
+  const handleCouponCodeChange = (code) => {
+    setNewCouponCode(code);
+    const COUPON_METADATA = {
+      coupon_1: { title: "Free Priority Delivery", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80" },
+      coupon_2: { title: "10% Off Next Order", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" },
+      coupon_3: { title: "Free Mango Lassi", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80" },
+      coupon_4: { title: "Chef's Secret Sauce", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1589301760014-d929f39ce9b1?w=400&q=80" },
+      custom: { title: "", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80" }
+    };
+    const meta = COUPON_METADATA[code] || { title: "", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80" };
+    setCustomTitle(meta.title);
+    setCustomDiscountLabel(meta.discount_label);
+    setCustomImageUrl(meta.image_url);
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        const max_size = 400;
+        if (width > height) {
+          if (width > max_size) {
+            height *= max_size / width;
+            width = max_size;
+          }
+        } else {
+          if (height > max_size) {
+            width *= max_size / height;
+            height = max_size;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        setCustomImageUrl(compressedBase64);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleScanVerify = async (e) => {
+    if (e) e.preventDefault();
+    const id = scanInputVal.trim();
+    if (!id) return;
+
+    try {
+      const { data: coupon, error } = await supabase
+        .from('issued_coupons')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error || !coupon) {
+        setScanResult({ success: false, errorType: 'not_found', message: 'Invalid or non-existent coupon ID.' });
+        return;
+      }
+
+      if (coupon.status === 'redeemed') {
+        setScanResult({ 
+          success: false, 
+          errorType: 'already_redeemed', 
+          message: `Coupon was already redeemed on ${new Date(coupon.redeemed_at).toLocaleString()}`, 
+          coupon 
+        });
+        return;
+      }
+
+      const isExpired = new Date(coupon.expires_at).getTime() < Date.now();
+      if (isExpired) {
+        setScanResult({ 
+          success: false, 
+          errorType: 'expired', 
+          message: `Coupon expired on ${new Date(coupon.expires_at).toLocaleDateString()}`, 
+          coupon 
+        });
+        return;
+      }
+
+      // Mark as redeemed
+      const { error: updateErr } = await supabase
+        .from('issued_coupons')
+        .update({
+          status: 'redeemed',
+          redeemed_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (updateErr) throw updateErr;
+
+      setScanResult({
+        success: true,
+        message: `Successfully redeemed: ${coupon.title}!`,
+        coupon: { ...coupon, status: 'redeemed', redeemed_at: new Date().toISOString() }
+      });
+
+      setScanInputVal('');
+      fetchCoupons();
+    } catch (err) {
+      setScanResult({ success: false, errorType: 'error', message: 'Redemption failed: ' + err.message });
+    }
+  };
 
   const handleCreateCoupon = async (e) => {
     e.preventDefault();
@@ -31,29 +155,21 @@ export default function Coupons() {
     }
     setIsCreating(true);
 
-    const COUPON_METADATA = {
-      coupon_1: { title: "Free Priority Delivery", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80" },
-      coupon_2: { title: "10% Off Next Order", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" },
-      coupon_3: { title: "Free Mango Lassi", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80" },
-      coupon_4: { title: "Chef's Secret Sauce", discount_label: "Select", image_url: "https://images.unsplash.com/photo-1589301760014-d929f39ce9b1?w=400&q=80" }
+    if (!customTitle.trim()) {
+      alert("Coupon Title is required.");
+      setIsCreating(false);
+      return;
+    }
+
+    const meta = {
+      title: customTitle.trim(),
+      discount_label: customDiscountLabel.trim() || 'Select',
+      image_url: customImageUrl.trim() || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80'
     };
 
-    let meta;
     let finalCouponCode = newCouponCode;
     if (newCouponCode === 'custom') {
-      if (!customTitle.trim()) {
-        alert("Custom Coupon Title is required.");
-        setIsCreating(false);
-        return;
-      }
-      meta = {
-        title: customTitle.trim(),
-        discount_label: customDiscountLabel.trim() || 'Select',
-        image_url: customImageUrl.trim() || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80'
-      };
       finalCouponCode = `custom_${Math.floor(1000 + Math.random() * 9000)}`;
-    } else {
-      meta = COUPON_METADATA[newCouponCode];
     }
 
     const days = Math.min(Number(newExpiryDays || 14), 14);
@@ -86,9 +202,10 @@ export default function Coupons() {
       setNewOrderNumber('');
       setNewExpiryDays(14);
       setNewQuantity(1);
-      setCustomTitle('');
+      setCustomTitle('Free Priority Delivery');
       setCustomDiscountLabel('Select');
-      setCustomImageUrl('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80');
+      setCustomImageUrl('https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80');
+      setNewCouponCode('coupon_1');
       fetchCoupons();
     } catch (err) {
       alert("Failed to issue coupon: " + err.message);
@@ -117,6 +234,11 @@ export default function Coupons() {
   useEffect(() => {
     fetchCoupons();
 
+    // Request browser notification permissions on mount
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
     // Subscribe to realtime database changes on issued_coupons table
     const channel = supabase
       .channel('realtime-issued-coupons')
@@ -125,6 +247,24 @@ export default function Coupons() {
         if (payload.eventType === 'INSERT') {
           setCoupons(prev => [payload.new, ...prev]);
         } else if (payload.eventType === 'UPDATE') {
+          // If status changes to redeemed, play sound and trigger alert notifications
+          if (payload.new.status === 'redeemed' && payload.old.status !== 'redeemed') {
+            try { playAlertSound(); } catch (e) { console.log(e); }
+
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('🎟️ Coupon Redeemed!', {
+                body: `${payload.new.title} claimed by ${payload.new.customer_email}`,
+                icon: '/logo-192.png'
+              });
+            }
+
+            setLatestRedeemedNotification({
+              title: payload.new.title,
+              email: payload.new.customer_email,
+              time: new Date(payload.new.redeemed_at).toLocaleTimeString(),
+              id: payload.new.id
+            });
+          }
           setCoupons(prev => prev.map(c => c.id === payload.new.id ? payload.new : c));
         } else if (payload.eventType === 'DELETE') {
           setCoupons(prev => prev.filter(c => c.id !== payload.old.id));
@@ -136,6 +276,26 @@ export default function Coupons() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const handleStatusChange = async (couponId, newStatus) => {
+    try {
+      const updateData = { status: newStatus };
+      if (newStatus === 'redeemed') {
+        updateData.redeemed_at = new Date().toISOString();
+      } else {
+        updateData.redeemed_at = null;
+      }
+
+      const { error } = await supabase
+        .from('issued_coupons')
+        .update(updateData)
+        .eq('id', couponId);
+
+      if (error) throw error;
+    } catch (err) {
+      alert("Failed to update status: " + err.message);
+    }
+  };
 
   const handleRedeem = async (couponId) => {
     setRedeemingId(couponId);
@@ -214,6 +374,12 @@ export default function Coupons() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsScanModalOpen(true)}
+            className="flex items-center gap-1.5 py-2 px-3.5 bg-emerald-600 text-white hover:bg-emerald-500 rounded-xl text-xs font-bold shadow-md shadow-emerald-500/15 transition-all cursor-pointer active:scale-95"
+          >
+            <span>📷 Scan / Redeem</span>
+          </button>
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-1.5 py-2 px-3.5 bg-brand-orange text-white hover:bg-opacity-95 rounded-xl text-xs font-bold shadow-md shadow-brand-orange/15 transition-all cursor-pointer active:scale-95 animate-fade-in"
@@ -350,31 +516,36 @@ export default function Coupons() {
                         </span>
                       </td>
                       <td className="py-4 px-5">
-                        {coupon.status === 'redeemed' ? (
-                          <span className="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-bold inline-flex items-center gap-1">
-                            <CheckCircle2 size={10} />
-                            <span>Redeemed</span>
-                          </span>
-                        ) : isExpired ? (
-                          <span className="px-2.5 py-1 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold inline-flex items-center gap-1">
-                            <AlertTriangle size={10} />
-                            <span>Expired</span>
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold inline-flex items-center gap-1">
-                            <Clock size={10} />
-                            <span>Active</span>
-                          </span>
-                        )}
+                        <select
+                          value={coupon.status}
+                          onChange={(e) => handleStatusChange(coupon.id, e.target.value)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border cursor-pointer focus:outline-none focus:ring-1 focus:ring-brand-orange transition-all ${
+                            coupon.status === 'redeemed'
+                              ? 'bg-amber-50 text-amber-600 border-amber-200'
+                              : isExpired
+                              ? 'bg-red-50 text-red-500 border-red-200'
+                              : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                          }`}
+                        >
+                          <option value="active">Active</option>
+                          <option value="redeemed">Redeemed</option>
+                        </select>
                       </td>
-                      <td className="py-4 px-5 text-right">
+                      <td className="py-4 px-5 text-right flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => setSelectedQrCoupon(coupon)}
+                          className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-sm"
+                          title="View QR Code"
+                        >
+                          🔍 QR
+                        </button>
                         {coupon.status === 'active' && !isExpired && (
                           <button
                             disabled={redeemingId === coupon.id}
                             onClick={() => handleRedeem(coupon.id)}
                             className="py-1.5 px-3 bg-brand-orange hover:bg-opacity-95 text-white font-bold rounded-lg text-[10px] shadow-sm cursor-pointer active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none uppercase tracking-wider"
                           >
-                            {redeemingId === coupon.id ? 'Redeeming...' : 'Redeem Coupon'}
+                            {redeemingId === coupon.id ? 'Redeeming...' : 'Redeem'}
                           </button>
                         )}
                       </td>
@@ -418,10 +589,10 @@ export default function Coupons() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Select Coupon Reward</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Select Coupon Reward Template</label>
                 <select
                   value={newCouponCode}
-                  onChange={(e) => setNewCouponCode(e.target.value)}
+                  onChange={(e) => handleCouponCodeChange(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all cursor-pointer"
                 >
                   <option value="coupon_1">Free Priority Delivery</option>
@@ -432,42 +603,50 @@ export default function Coupons() {
                 </select>
               </div>
 
-              {newCouponCode === 'custom' && (
-                <div className="space-y-3.5 border-l-2 border-brand-orange pl-3.5 animate-fade-in">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Custom Coupon Title</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Yoga Class - 25% Discount"
-                      value={customTitle}
-                      onChange={(e) => setCustomTitle(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Discount / Service Label</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. 25% Off"
-                      value={customDiscountLabel}
-                      onChange={(e) => setCustomDiscountLabel(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Image URL (Optional)</label>
-                    <input
-                      type="text"
-                      placeholder="https://example.com/image.jpg"
-                      value={customImageUrl}
-                      onChange={(e) => setCustomImageUrl(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
-                    />
+              <div className="space-y-3.5 border-l-2 border-brand-orange pl-3.5 animate-fade-in">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Coupon Title</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Yoga Class - 25% Discount"
+                    value={customTitle}
+                    onChange={(e) => setCustomTitle(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Discount / Service Label</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 25% Off"
+                    value={customDiscountLabel}
+                    onChange={(e) => setCustomDiscountLabel(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-brand-orange focus:bg-white transition-all"
+                  />
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Coupon Image Upload</label>
+                  <div className="flex items-center space-x-3 mt-1">
+                    {customImageUrl && (
+                      <img src={customImageUrl} className="w-11 h-11 rounded-xl object-cover border border-slate-200 shadow-sm" alt="Preview" />
+                    )}
+                    <div className="flex-1">
+                      <label className="cursor-pointer bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold py-2.5 px-3 rounded-xl border border-slate-200 flex items-center justify-center space-x-1.5 transition-all active:scale-98">
+                        <Plus size={14} />
+                        <span>Select/Take Image</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleImageFileChange} 
+                          className="hidden" 
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
 
               <div className="grid grid-cols-2 gap-3.5">
                 <div>
@@ -524,6 +703,143 @@ export default function Coupons() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* QR Code Display Card Modal */}
+      {selectedQrCoupon && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[160] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-100 max-w-sm w-full shadow-2xl p-6 flex flex-col items-center text-center space-y-4 animate-scale-in">
+            <div className="w-full flex justify-between items-center border-b border-slate-100 pb-3">
+              <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Coupon Details</span>
+              <button onClick={() => setSelectedQrCoupon(null)} className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all">
+                <X size={16} />
+              </button>
+            </div>
+
+            {selectedQrCoupon.image_url ? (
+              <img src={selectedQrCoupon.image_url} className="w-20 h-20 rounded-2xl object-cover border border-slate-100 shadow-sm" alt="" />
+            ) : (
+              <span className="text-4xl bg-indigo-50 p-4 rounded-2xl">🏷️</span>
+            )}
+
+            <div className="space-y-1">
+              <h4 className="text-base font-black text-slate-900">{selectedQrCoupon.title}</h4>
+              <span className="text-[10px] bg-brand-orange/10 text-brand-orange px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">{selectedQrCoupon.discount_label}</span>
+            </div>
+
+            {/* QR Code generator */}
+            <div className="p-3 bg-slate-50 border border-slate-200/60 rounded-2xl shadow-inner">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${selectedQrCoupon.id}`} 
+                className="w-40 h-40 object-contain rounded-lg"
+                alt="QR Code" 
+              />
+            </div>
+
+            <div className="text-[10px] text-slate-400 font-bold font-mono select-all select-text">
+              ID: {selectedQrCoupon.id}
+            </div>
+
+            <div className="w-full bg-slate-50 p-3 rounded-xl border border-slate-100 text-left text-[11px] font-bold text-slate-500 space-y-1">
+              <div>Customer: <span className="text-slate-800 select-all select-text">{selectedQrCoupon.customer_email}</span></div>
+              <div>Expiry: <span className="text-slate-800">{new Date(selectedQrCoupon.expires_at).toLocaleDateString()}</span></div>
+              <div>Status: <span className={selectedQrCoupon.status === 'redeemed' ? 'text-amber-500' : 'text-emerald-500'}>{selectedQrCoupon.status.toUpperCase()}</span></div>
+            </div>
+
+            <button 
+              onClick={() => window.print()} 
+              className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all shadow-md"
+            >
+              🖨️ Print Coupon Card
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Scan & Redeem Modal */}
+      {isScanModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[160] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-100 max-w-md w-full shadow-2xl p-6 flex flex-col space-y-4 animate-scale-in">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <span>📷 Scan & Redeem Coupon</span>
+              </h3>
+              <button 
+                onClick={() => {
+                  setIsScanModalOpen(false);
+                  setScanResult(null);
+                  setScanInputVal('');
+                }} 
+                className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleScanVerify} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scan or Type Coupon UUID</label>
+                <input 
+                  type="text"
+                  required
+                  autoFocus
+                  placeholder="Scan QR code or paste unique UUID..."
+                  value={scanInputVal}
+                  onChange={(e) => setScanInputVal(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-all font-mono"
+                />
+              </div>
+
+              <button 
+                type="submit"
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md"
+              >
+                Verify & Redeem
+              </button>
+            </form>
+
+            {/* Scan Results Layout */}
+            {scanResult && (
+              <div className={`p-4 rounded-2xl border text-xs font-bold flex flex-col items-center text-center space-y-2.5 ${
+                scanResult.success 
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+              }`}>
+                <span className="text-3xl">{scanResult.success ? '🎉' : '❌'}</span>
+                <div>
+                  <h4 className="text-sm font-black uppercase tracking-tight">{scanResult.success ? 'Redeemed Successfully' : 'Redemption Failed'}</h4>
+                  <p className="mt-1 font-medium">{scanResult.message}</p>
+                </div>
+                {scanResult.coupon && (
+                  <div className="w-full bg-white/70 border border-slate-100 p-3 rounded-xl text-left text-[11px] text-slate-600 space-y-1">
+                    <div>Coupon: <span className="text-slate-900 font-extrabold">{scanResult.coupon.title}</span></div>
+                    <div>Customer: <span className="text-slate-900">{scanResult.coupon.customer_email}</span></div>
+                    <div>Expiry: <span className="text-slate-900">{new Date(scanResult.coupon.expires_at).toLocaleDateString()}</span></div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Floating Realtime Redemption Notification Banner */}
+      {latestRedeemedNotification && (
+        <div className="fixed top-6 right-6 z-[200] max-w-sm w-full bg-slate-900 border border-emerald-500/30 text-white p-4 rounded-2xl shadow-2xl flex items-start space-x-3 animate-slide-up">
+          <span className="text-2xl">🎉</span>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-xs font-black uppercase tracking-widest text-emerald-400">Coupon Redeemed</h4>
+            <p className="text-xs font-extrabold text-white mt-1 truncate">{latestRedeemedNotification.title}</p>
+            <p className="text-[10px] text-slate-400 font-semibold truncate mt-0.5">By: {latestRedeemedNotification.email}</p>
+            <p className="text-[9px] text-slate-500 font-bold mt-1">At: {latestRedeemedNotification.time}</p>
+          </div>
+          <button 
+            onClick={() => setLatestRedeemedNotification(null)} 
+            className="p-1 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-all cursor-pointer"
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 

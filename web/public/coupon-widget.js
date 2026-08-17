@@ -112,6 +112,46 @@
     }
   }
 
+  function showCouponInfoModal(action) {
+    const existing = document.getElementById('pro-info-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'pro-info-modal';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.background = 'rgba(0,0,0,0.5)';
+    modal.style.backdropFilter = 'blur(4px)';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.zIndex = '99999';
+
+    modal.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 20px; max-width: 320px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.15); font-family: sans-serif; position: relative; text-align: left;">
+        <span class="pro-modal-close" style="position: absolute; top: 16px; right: 16px; font-size: 18px; cursor: pointer; color: #aaa; font-weight: bold;">&times;</span>
+        <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 800; color: #111;">${action.title}</h4>
+        <p style="margin: 0 0 16px 0; font-size: 12px; color: #666; line-height: 1.4;">
+          This VIP offer gives you "${action.title}" on your order. 
+          <br/><br/>
+          <strong>Redemption Period:</strong> Valid for 14 days after purchase.
+          <br/>
+          <strong>Coupon Limit:</strong> Maximum 3 coupon selections per order.
+        </p>
+        <button class="pro-modal-btn" style="width: 100%; background: #01C267; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 13px; padding: 10px 0;">Got it</button>
+      </div>
+    `;
+
+    modal.querySelector('.pro-modal-close').onclick = () => modal.remove();
+    modal.querySelector('.pro-modal-btn').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    document.body.appendChild(modal);
+  }
+
   function initPremiumWidget() {
     if (document.getElementById('pro-actions-widget')) return;
     
@@ -144,14 +184,20 @@
       card.dataset.id = action.id;
       card.innerHTML = `
         <img class="pro-card-img" src="${action.image}" alt="${action.title}" loading="lazy" />
-        <h4 class="pro-card-title">${action.title}</h4>
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 4px;">
+          <h4 class="pro-card-title">${action.title}</h4>
+          <span class="pro-info-btn" style="cursor: pointer; font-size: 11px; background: rgba(0,0,0,0.05); color: #666; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; margin-top: 2px;">i</span>
+        </div>
         <p class="pro-card-price">${action.price}</p>
       `;
 
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
         // Disable selection if total < 50
         const total = getCartTotal();
         if (total < 50) return;
+
+        // Skip selection check if clicking info button
+        if (e.target.classList.contains('pro-info-btn')) return;
 
         if (selectedProCards.has(action.id)) {
           selectedProCards.delete(action.id);
@@ -163,6 +209,12 @@
           console.log("Selected Coupons:", Array.from(selectedProCards));
         }
         checkEmailAndSync();
+      });
+
+      const infoBtn = card.querySelector('.pro-info-btn');
+      infoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showCouponInfoModal(action);
       });
 
       scrollContainer.appendChild(card);

@@ -9,6 +9,7 @@ import Coupons from './components/Coupons';
 import MyStores from './components/MyStores';
 import NewOrderModal from './components/NewOrderModal';
 import PWAInstallBanner from './components/PWAInstallBanner.jsx';
+import CustomerCoupons from './components/CustomerCoupons.jsx';
 import { ShoppingBag, Store, BarChart3, Settings as SettingsIcon, AlertCircle, Wifi, WifiOff, Download, Menu, X, Bike, Ticket } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import './App.css';
@@ -612,6 +613,10 @@ function AppContent() {
   const hostname = window.location.hostname.toLowerCase();
   const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
   const isDriver = import.meta.env.VITE_APP_MODE === 'driver' || hostname.startsWith('driver.') || hostname.startsWith('courier.') || hostname.startsWith('delivery.') || path === '/driver' || path === '/drivers';
+  
+  const searchParams = new URLSearchParams(window.location.search);
+  const customerEmail = searchParams.get('customer_email') || searchParams.get('email');
+  const isCustomerCoupons = path === '/coupons' || path === '/customer-coupons' || searchParams.has('customer_email') || searchParams.has('email');
 
   useEffect(() => {
     let controllerChangeCleanup = () => {};
@@ -667,6 +672,10 @@ function AppContent() {
       alert("Failed to claim: " + e.message);
     }
   };
+
+  if (isCustomerCoupons) {
+    return <CustomerCoupons email={customerEmail} />;
+  }
 
   if (authLoading) {
     return (
