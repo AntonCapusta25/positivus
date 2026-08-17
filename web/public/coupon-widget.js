@@ -39,12 +39,52 @@
   const MAX_SELECTIONS = 3;
   const selectedProCards = new Set();
 
-  let PRO_ACTIONS = [
-    { id: "coupon_1", title: "Free Priority Delivery", price: "Select", image: "https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80" },
-    { id: "coupon_2", title: "10% Off Next Order", price: "Select", image: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" },
-    { id: "coupon_3", title: "Free Mango Lassi", price: "Select", image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80" },
-    { id: "coupon_4", title: "Chef's Secret Sauce", price: "Select", image: "https://images.unsplash.com/photo-1589301760014-d929f39ce9b1?w=400&q=80" }
-  ];
+  let PRO_ACTIONS = [];
+  let isFetchingCoupons = false;
+  let isCouponsLoaded = false;
+
+  async function fetchLivePublicCoupons() {
+    if (isFetchingCoupons || isCouponsLoaded) return;
+    isFetchingCoupons = true;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/issued_coupons?customer_email=eq.public&status=eq.active`, {
+        method: "GET",
+        headers: {
+          "apikey": ANON_KEY,
+          "Authorization": `Bearer ${ANON_KEY}`
+        }
+      });
+      const data = await res.json();
+      const activeData = (data || []).filter(c => new Date(c.expires_at) >= new Date());
+      if (activeData && activeData.length > 0) {
+        PRO_ACTIONS = activeData.map(c => ({
+          id: c.coupon_code,
+          title: c.title,
+          price: c.discount_label,
+          image: c.image_url || 'https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80'
+        }));
+      } else {
+        // Fallback default templates if no public campaign is active
+        PRO_ACTIONS = [
+          { id: "coupon_1", title: "Free Priority Delivery", price: "Select", image: "https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80" },
+          { id: "coupon_2", title: "10% Off Next Order", price: "Select", image: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" }
+        ];
+      }
+      isCouponsLoaded = true;
+    } catch (e) {
+      console.warn("Failed to fetch public coupons, using fallback:", e);
+      PRO_ACTIONS = [
+        { id: "coupon_1", title: "Free Priority Delivery", price: "Select", image: "https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80" },
+        { id: "coupon_2", title: "10% Off Next Order", price: "Select", image: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" }
+      ];
+      isCouponsLoaded = true;
+    } finally {
+      isFetchingCoupons = false;
+    }
+  }
+
+  // Pre-fetch immediately
+  fetchLivePublicCoupons();
 
   function getCartTotal() {
     let maxVal = 0;
@@ -153,6 +193,14 @@
   }
 
   function initPremiumWidget() {
+    if (!isCouponsLoaded) {
+      // Re-trigger fetch and defer rendering
+      fetchLivePublicCoupons().then(() => {
+        if (isCouponsLoaded) initPremiumWidget();
+      });
+      return;
+    }
+
     if (document.getElementById('pro-actions-widget')) return;
     
     injectPremiumStyles();
