@@ -2549,8 +2549,9 @@ class MainActivity : AppCompatActivity() {
             txtCustomerLoyalty.setPadding(dp(8), dp(3), dp(8), dp(3))
 
             if (orderCount > 1) {
-                txtDialogNewOrderBadge.text = "🟢 NEW ORDER RECEIVED"
+                txtDialogNewOrderBadge.visibility = View.GONE
             } else {
+                txtDialogNewOrderBadge.visibility = View.VISIBLE
                 txtDialogNewOrderBadge.text = "🟢 NEW CUSTOMER ORDER RECEIVED"
             }
 

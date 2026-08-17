@@ -101,12 +101,14 @@ export default function NewOrderModal() {
           {step === 1 ? (
             <div className="space-y-4">
               {/* Big prominent green badge */}
-              <div className="bg-emerald-500 text-white px-4 py-3.5 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0 text-center animate-bounce-slow">
-                <span className="text-xs uppercase font-extrabold tracking-widest text-emerald-100">Live Status</span>
-                <h3 className="text-lg font-black tracking-tight leading-none m-0 pt-1.5">
-                  🟢 NEW {(order.customer_order_count > 1) ? 'ORDER' : 'CUSTOMER ORDER'} RECEIVED
-                </h3>
-              </div>
+              {(!order.customer_order_count || order.customer_order_count <= 1) && (
+                <div className="bg-emerald-500 text-white px-4 py-3.5 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0 text-center animate-bounce-slow">
+                  <span className="text-xs uppercase font-extrabold tracking-widest text-emerald-100">Live Status</span>
+                  <h3 className="text-lg font-black tracking-tight leading-none m-0 pt-1.5">
+                    🟢 NEW CUSTOMER ORDER RECEIVED
+                  </h3>
+                </div>
+              )}
 
               {/* Customer Info Card & Loyalty Badge */}
               <div className="bg-slate-50 p-4 rounded-xl sm:rounded-2xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
