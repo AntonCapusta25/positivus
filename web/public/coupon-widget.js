@@ -10,30 +10,35 @@
 
   // 1. Inject the Glassmorphism CSS dynamically
   function injectPremiumStyles() {
-    if (document.getElementById('premium-widget-css')) return;
-    const style = document.createElement('style');
-    style.id = 'premium-widget-css';
-    style.innerHTML = `
-      #pro-actions-widget { margin: 24px 0; padding: 24px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.5); font-family: 'Inter', -apple-system, sans-serif; position: relative; z-index: 10; display: block !important; opacity: 1 !important; }
-      .pro-actions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-      .pro-actions-title { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #111, #444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; letter-spacing: -0.5px; }
-      .pro-actions-subtitle { font-size: 12px; color: #fff; font-weight: 700; background: linear-gradient(135deg, #01C267, #0B9E56); padding: 6px 12px; border-radius: 20px; box-shadow: 0 4px 10px rgba(1, 194, 103, 0.2); }
-      .pro-actions-subtitle.locked { background: #eab308; color: #854d0e; box-shadow: none; }
-      .pro-actions-warning { font-size: 13px; color: #854d0e; font-weight: 700; background: #fef9c3; border: 1px solid #eab308; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; text-align: center; line-height: 1.4; }
-      .pro-actions-scroll-container { display: flex; overflow-x: auto; gap: 16px; padding: 4px 4px 20px 4px; scroll-behavior: smooth; -ms-overflow-style: none; scrollbar-width: none; }
-      .pro-actions-scroll-container::-webkit-scrollbar { display: none; }
-      .pro-card { min-width: 150px; max-width: 150px; background: rgba(255, 255, 255, 0.9); border-radius: 16px; padding: 12px; cursor: pointer; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: hidden; }
-      .pro-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); border-color: rgba(1, 194, 103, 0.3); }
-      .pro-card.selected { background: #f0fdf4; border-color: #01C267; box-shadow: 0 0 0 1px #01C267, 0 8px 24px rgba(1, 194, 103, 0.15); }
-      .pro-card.selected::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 16px; background: radial-gradient(circle at top right, rgba(1, 194, 103, 0.1), transparent 70%); pointer-events: none; }
-      .pro-card.selected::after { content: '✓'; position: absolute; top: 10px; right: 10px; background: #01C267; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; box-shadow: 0 2px 8px rgba(1, 194, 103, 0.3); }
-      .pro-card.disabled { opacity: 0.4; pointer-events: none !important; filter: grayscale(100%); cursor: not-allowed; }
-      .pro-card-img { width: 100%; height: 90px; border-radius: 10px; object-fit: cover; margin-bottom: 12px; background: #f5f5f5; transition: transform 0.3s ease; }
-      .pro-card:hover .pro-card-img { transform: scale(1.03); }
-      .pro-card-title { font-size: 14px; font-weight: 700; color: #111; margin: 0 0 6px 0; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-      .pro-card-price { font-size: 13px; font-weight: 800; color: #01C267; margin: 0; }
-    `;
-    document.head.appendChild(style);
+    try {
+      if (!document || !document.head) return;
+      if (document.getElementById('premium-widget-css')) return;
+      const style = document.createElement('style');
+      style.id = 'premium-widget-css';
+      style.innerHTML = `
+        #pro-actions-widget { margin: 24px 0; padding: 24px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.5); font-family: 'Inter', -apple-system, sans-serif; position: relative; z-index: 10; display: block !important; opacity: 1 !important; }
+        .pro-actions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .pro-actions-title { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #111, #444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; letter-spacing: -0.5px; }
+        .pro-actions-subtitle { font-size: 12px; color: #fff; font-weight: 700; background: linear-gradient(135deg, #01C267, #0B9E56); padding: 6px 12px; border-radius: 20px; box-shadow: 0 4px 10px rgba(1, 194, 103, 0.2); }
+        .pro-actions-subtitle.locked { background: #eab308; color: #854d0e; box-shadow: none; }
+        .pro-actions-warning { font-size: 13px; color: #854d0e; font-weight: 700; background: #fef9c3; border: 1px solid #eab308; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; text-align: center; line-height: 1.4; }
+        .pro-actions-scroll-container { display: flex; overflow-x: auto; gap: 16px; padding: 4px 4px 20px 4px; scroll-behavior: smooth; -ms-overflow-style: none; scrollbar-width: none; }
+        .pro-actions-scroll-container::-webkit-scrollbar { display: none; }
+        .pro-card { min-width: 150px; max-width: 150px; background: rgba(255, 255, 255, 0.9); border-radius: 16px; padding: 12px; cursor: pointer; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: hidden; }
+        .pro-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); border-color: rgba(1, 194, 103, 0.3); }
+        .pro-card.selected { background: #f0fdf4; border-color: #01C267; box-shadow: 0 0 0 1px #01C267, 0 8px 24px rgba(1, 194, 103, 0.15); }
+        .pro-card.selected::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 16px; background: radial-gradient(circle at top right, rgba(1, 194, 103, 0.1), transparent 70%); pointer-events: none; }
+        .pro-card.selected::after { content: '✓'; position: absolute; top: 10px; right: 10px; background: #01C267; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; box-shadow: 0 2px 8px rgba(1, 194, 103, 0.3); }
+        .pro-card.disabled { opacity: 0.4; pointer-events: none !important; filter: grayscale(100%); cursor: not-allowed; }
+        .pro-card-img { width: 100%; height: 90px; border-radius: 10px; object-fit: cover; margin-bottom: 12px; background: #f5f5f5; transition: transform 0.3s ease; }
+        .pro-card:hover .pro-card-img { transform: scale(1.03); }
+        .pro-card-title { font-size: 14px; font-weight: 700; color: #111; margin: 0 0 6px 0; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .pro-card-price { font-size: 13px; font-weight: 800; color: #01C267; margin: 0; }
+      `;
+      document.head.appendChild(style);
+    } catch (e) {
+      console.warn("injectPremiumStyles error:", e);
+    }
   }
 
   const MAX_SELECTIONS = 3;
@@ -87,29 +92,34 @@
   fetchLivePublicCoupons();
 
   function getCartTotal() {
-    let maxVal = 0;
-    
-    // 1. Search text contents
-    const bodyText = (document.body.innerText || "").toLowerCase();
-    const subtotalRegex = /(subtotal|totaal|total|totaalbedrag)[^\d\n]*€?\s*(\d+[\.,]\d{2})/g;
-    let match;
-    while ((match = subtotalRegex.exec(bodyText)) !== null) {
-      const val = parseFloat(match[2].replace(',', '.'));
-      if (val > maxVal) maxVal = val;
-    }
-    
-    // 2. Try classes with common pricing keywords
-    const priceEls = document.querySelectorAll('[class*="price"], [class*="total"], [class*="subtotal"], [class*="amount"]');
-    priceEls.forEach(el => {
-      const text = (el.innerText || "").trim().replace(',', '.');
-      const matchNum = text.match(/\d+(\.\d{2})?/);
-      if (matchNum) {
-        const val = parseFloat(matchNum[0]);
+    try {
+      if (!document || !document.body) return 0;
+      let maxVal = 0;
+      
+      // 1. Search text contents
+      const bodyText = (document.body.innerText || "").toLowerCase();
+      const subtotalRegex = /(subtotal|totaal|total|totaalbedrag)[^\d\n]*€?\s*(\d+[\.,]\d{2})/g;
+      let match;
+      while ((match = subtotalRegex.exec(bodyText)) !== null) {
+        const val = parseFloat(match[2].replace(',', '.'));
         if (val > maxVal) maxVal = val;
       }
-    });
+      
+      // 2. Try classes with common pricing keywords
+      const priceEls = document.querySelectorAll('[class*="price"], [class*="total"], [class*="subtotal"], [class*="amount"]');
+      priceEls.forEach(el => {
+        const text = (el.innerText || "").trim().replace(',', '.');
+        const matchNum = text.match(/\d+(\.\d{2})?/);
+        if (matchNum) {
+          const val = parseFloat(matchNum[0]);
+          if (val > maxVal) maxVal = val;
+        }
+      });
 
-    return maxVal;
+      return maxVal;
+    } catch (e) {
+      return 0;
+    }
   }
 
   async function upsertSelectedCoupons(email, couponIds) {
@@ -297,11 +307,16 @@
   }
 
   function isCartEmpty() {
-    const text = (document.body.innerText || "").toLowerCase();
-    return text.includes("once you add items") || 
-           text.includes("cart is empty") || 
-           text.includes("winkelwagen is leeg") ||
-           text.includes("winkelwagen leeg");
+    try {
+      if (!document || !document.body) return true;
+      const text = (document.body.innerText || "").toLowerCase();
+      return text.includes("once you add items") || 
+             text.includes("cart is empty") || 
+             text.includes("winkelwagen is leeg") ||
+             text.includes("winkelwagen leeg");
+    } catch (e) {
+      return true;
+    }
   }
 
   // Polling check to ensure it injects and toggles dynamically as cart updates
