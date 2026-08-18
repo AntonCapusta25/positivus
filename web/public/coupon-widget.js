@@ -139,16 +139,24 @@
   let lastSyncedCouponsStr = "";
 
   function checkEmailAndSync() {
-    const emailInput = document.querySelector('input[type="email"]') || document.querySelector('input[name="email"]') || document.querySelector('input[placeholder*="email" i]');
-    const currentEmail = emailInput ? emailInput.value.trim() : "";
-    const currentCouponsStr = Array.from(selectedProCards).join(",");
+    try {
+      const emailInput = document.querySelector('input[type="email"]') || 
+                         document.querySelector('input[name="email"]') || 
+                         document.querySelector('input[placeholder*="email"]') ||
+                         document.querySelector('input[placeholder*="Email"]') ||
+                         document.querySelector('input[placeholder*="EMAIL"]');
+      const currentEmail = emailInput ? emailInput.value.trim() : "";
+      const currentCouponsStr = Array.from(selectedProCards).join(",");
 
-    if (currentEmail && currentEmail.includes('@')) {
-      if (currentEmail !== lastSyncedEmail || currentCouponsStr !== lastSyncedCouponsStr) {
-        lastSyncedEmail = currentEmail;
-        lastSyncedCouponsStr = currentCouponsStr;
-        upsertSelectedCoupons(currentEmail, Array.from(selectedProCards));
+      if (currentEmail && currentEmail.includes('@')) {
+        if (currentEmail !== lastSyncedEmail || currentCouponsStr !== lastSyncedCouponsStr) {
+          lastSyncedEmail = currentEmail;
+          lastSyncedCouponsStr = currentCouponsStr;
+          upsertSelectedCoupons(currentEmail, Array.from(selectedProCards));
+        }
       }
+    } catch (err) {
+      console.warn("checkEmailAndSync error:", err);
     }
   }
 
@@ -193,15 +201,16 @@
   }
 
   function initPremiumWidget() {
-    if (!isCouponsLoaded) {
-      // Re-trigger fetch and defer rendering
-      fetchLivePublicCoupons().then(() => {
-        if (isCouponsLoaded) initPremiumWidget();
-      });
-      return;
-    }
+    try {
+      if (!isCouponsLoaded) {
+        // Re-trigger fetch and defer rendering
+        fetchLivePublicCoupons().then(() => {
+          if (isCouponsLoaded) initPremiumWidget();
+        });
+        return;
+      }
 
-    if (document.getElementById('pro-actions-widget')) return;
+      if (document.getElementById('pro-actions-widget')) return;
     
     injectPremiumStyles();
 
@@ -282,6 +291,9 @@
     } else {
         document.body.appendChild(widget);
     }
+    } catch (err) {
+      console.warn("initPremiumWidget error:", err);
+    }
   }
 
   function isCartEmpty() {
@@ -294,10 +306,11 @@
 
   // Polling check to ensure it injects and toggles dynamically as cart updates
   function checkAndToggleWidget() {
-    const hasCartCard = document.getElementById('CartCard') !== null;
-    const hasCheckout = document.getElementById('checkout') !== null;
-    
-    if (!hasCartCard && !hasCheckout) {
+    try {
+      const hasCartCard = document.getElementById('CartCard') !== null;
+      const hasCheckout = document.getElementById('checkout') !== null;
+      
+      if (!hasCartCard && !hasCheckout) {
       const widget = document.getElementById('pro-actions-widget');
       if (widget) {
         widget.style.display = 'none';
@@ -365,6 +378,9 @@
       if (widget) {
         widget.style.display = 'none';
       }
+    }
+    } catch (err) {
+      console.warn("checkAndToggleWidget error:", err);
     }
   }
 
