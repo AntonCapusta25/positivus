@@ -201,98 +201,102 @@
   }
 
   function initPremiumWidget() {
-    if (!isCouponsLoaded) {
-      // Re-trigger fetch and defer rendering
-      fetchLivePublicCoupons().then(() => {
-        if (isCouponsLoaded) initPremiumWidget();
-      });
-      return;
-    }
+    try {
+      if (!isCouponsLoaded) {
+        // Re-trigger fetch and defer rendering
+        fetchLivePublicCoupons().then(() => {
+          if (isCouponsLoaded) initPremiumWidget();
+        });
+        return;
+      }
 
-    if (document.getElementById('pro-actions-widget')) return;
-    
-    injectPremiumStyles();
+      if (document.getElementById('pro-actions-widget')) return;
+      
+      injectPremiumStyles();
 
-    const widget = document.createElement('div');
-    widget.id = 'pro-actions-widget';
+      const widget = document.createElement('div');
+      widget.id = 'pro-actions-widget';
 
-    const header = document.createElement('div');
-    header.className = 'pro-actions-header';
-    header.innerHTML = `
-      <h3 class="pro-actions-title">Unlock VIP Offers ✨</h3>
-      <span class="pro-actions-subtitle" id="pro-actions-status-badge">Unlocked!</span>
-    `;
-    widget.appendChild(header);
-
-    // Warning Banner Container (yellow box)
-    const warning = document.createElement('div');
-    warning.id = 'pro-actions-warning-banner';
-    warning.className = 'pro-actions-warning';
-    warning.style.display = 'none';
-    widget.appendChild(warning);
-
-    const scrollContainer = document.createElement('div');
-    scrollContainer.className = 'pro-actions-scroll-container';
-
-    PRO_ACTIONS.forEach(action => {
-      const card = document.createElement('div');
-      card.className = 'pro-card';
-      card.dataset.id = action.id;
-      card.innerHTML = `
-        <img class="pro-card-img" src="${action.image}" alt="${action.title}" loading="lazy" />
-        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 4px;">
-          <h4 class="pro-card-title">${action.title}</h4>
-          <span class="pro-info-btn" style="cursor: pointer; font-size: 11px; background: rgba(0,0,0,0.05); color: #666; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; margin-top: 2px;">i</span>
-        </div>
-        <p class="pro-card-price">${action.price}</p>
+      const header = document.createElement('div');
+      header.className = 'pro-actions-header';
+      header.innerHTML = `
+        <h3 class="pro-actions-title">Unlock VIP Offers ✨</h3>
+        <span class="pro-actions-subtitle" id="pro-actions-status-badge">Unlocked!</span>
       `;
+      widget.appendChild(header);
 
-      card.addEventListener('click', (e) => {
-        // Disable selection if total < 50
-        const total = getCartTotal();
-        if (total < 50) return;
+      // Warning Banner Container (yellow box)
+      const warning = document.createElement('div');
+      warning.id = 'pro-actions-warning-banner';
+      warning.className = 'pro-actions-warning';
+      warning.style.display = 'none';
+      widget.appendChild(warning);
 
-        // Skip selection check if clicking info button
-        if (e.target.classList.contains('pro-info-btn')) return;
+      const scrollContainer = document.createElement('div');
+      scrollContainer.className = 'pro-actions-scroll-container';
 
-        if (selectedProCards.has(action.id)) {
-          selectedProCards.delete(action.id);
-          card.classList.remove('selected');
-        } else {
-          if (selectedProCards.size >= MAX_SELECTIONS) return;
-          selectedProCards.add(action.id);
-          card.classList.add('selected');
-          console.log("Selected Coupons:", Array.from(selectedProCards));
-        }
-        checkEmailAndSync();
+      PRO_ACTIONS.forEach(action => {
+        const card = document.createElement('div');
+        card.className = 'pro-card';
+        card.dataset.id = action.id;
+        card.innerHTML = `
+          <img class="pro-card-img" src="${action.image}" alt="${action.title}" loading="lazy" />
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 4px;">
+            <h4 class="pro-card-title">${action.title}</h4>
+            <span class="pro-info-btn" style="cursor: pointer; font-size: 11px; background: rgba(0,0,0,0.05); color: #666; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; margin-top: 2px;">i</span>
+          </div>
+          <p class="pro-card-price">${action.price}</p>
+        `;
+
+        card.addEventListener('click', (e) => {
+          // Disable selection if total < 50
+          const total = getCartTotal();
+          if (total < 50) return;
+
+          // Skip selection check if clicking info button
+          if (e.target.classList.contains('pro-info-btn')) return;
+
+          if (selectedProCards.has(action.id)) {
+            selectedProCards.delete(action.id);
+            card.classList.remove('selected');
+          } else {
+            if (selectedProCards.size >= MAX_SELECTIONS) return;
+            selectedProCards.add(action.id);
+            card.classList.add('selected');
+            console.log("Selected Coupons:", Array.from(selectedProCards));
+          }
+          checkEmailAndSync();
+        });
+
+        const infoBtn = card.querySelector('.pro-info-btn');
+        infoBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showCouponInfoModal(action);
+        });
+
+        scrollContainer.appendChild(card);
       });
 
-      const infoBtn = card.querySelector('.pro-info-btn');
-      infoBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showCouponInfoModal(action);
-      });
+      widget.appendChild(scrollContainer);
 
-      scrollContainer.appendChild(card);
-    });
+      // Inject into checkout page DOM structure
+      const cartCard = document.getElementById('CartCard');
+      const checkout = document.getElementById('checkout');
 
-    widget.appendChild(scrollContainer);
-
-    // Inject into checkout page DOM structure
-    const cartCard = document.getElementById('CartCard');
-    const checkout = document.getElementById('checkout');
-
-    if (cartCard) {
-        cartCard.appendChild(widget);
-    } else if (checkout) {
-        // Safely insert sibling BEFORE the checkout element rather than inside it, preventing blocking checkout actions!
-        if (checkout.parentNode) {
-            checkout.parentNode.insertBefore(widget, checkout);
-        } else {
-            document.body.appendChild(widget);
-        }
-    } else {
-        document.body.appendChild(widget);
+      if (cartCard) {
+          cartCard.appendChild(widget);
+      } else if (checkout) {
+          // Safely insert sibling BEFORE the checkout element rather than inside it, preventing blocking checkout actions!
+          if (checkout.parentNode) {
+              checkout.parentNode.insertBefore(widget, checkout);
+          } else {
+              document.body.appendChild(widget);
+          }
+      } else {
+          document.body.appendChild(widget);
+      }
+    } catch (err) {
+      console.warn("initPremiumWidget error:", err);
     }
   }
 
