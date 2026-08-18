@@ -616,7 +616,7 @@ function AppContent() {
   
   const searchParams = new URLSearchParams(window.location.search);
   const customerEmail = searchParams.get('customer_email') || searchParams.get('email');
-  const isCustomerCoupons = path === '/coupons' || path === '/customer-coupons' || searchParams.has('customer_email') || searchParams.has('email');
+  const isCustomerCoupons = path === '/coupons' || path === '/customer-coupons';
 
   useEffect(() => {
     let controllerChangeCleanup = () => {};
