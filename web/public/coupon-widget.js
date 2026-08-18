@@ -277,8 +277,12 @@
     if (cartCard) {
         cartCard.appendChild(widget);
     } else if (checkout) {
-        // Append to checkout container so it sits at the bottom rather than top, preventing overlaps!
-        checkout.appendChild(widget);
+        // Safely insert sibling BEFORE the checkout element rather than inside it, preventing blocking checkout actions!
+        if (checkout.parentNode) {
+            checkout.parentNode.insertBefore(widget, checkout);
+        } else {
+            document.body.appendChild(widget);
+        }
     } else {
         document.body.appendChild(widget);
     }
