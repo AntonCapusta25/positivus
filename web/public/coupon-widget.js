@@ -296,6 +296,15 @@
   function checkAndToggleWidget() {
     const hasCartCard = document.getElementById('CartCard') !== null;
     const hasCheckout = document.getElementById('checkout') !== null;
+    
+    if (!hasCartCard && !hasCheckout) {
+      const widget = document.getElementById('pro-actions-widget');
+      if (widget) {
+        widget.style.display = 'none';
+      }
+      return;
+    }
+
     const isCartOrCheckoutPage = hasCartCard || hasCheckout || window.location.pathname.includes('checkout') || window.location.pathname.includes('cart');
     
     if (isCartOrCheckoutPage) {
