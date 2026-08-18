@@ -10,30 +10,83 @@
 
   // 1. Inject the Glassmorphism CSS dynamically
   function injectPremiumStyles() {
-    if (document.getElementById('premium-widget-css')) return;
-    const style = document.createElement('style');
-    style.id = 'premium-widget-css';
-    style.innerHTML = `
-      #pro-actions-widget { margin: 24px 0; padding: 24px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.5); font-family: 'Inter', -apple-system, sans-serif; position: relative; z-index: 10; display: block !important; opacity: 1 !important; }
-      .pro-actions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-      .pro-actions-title { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #111, #444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; letter-spacing: -0.5px; }
-      .pro-actions-subtitle { font-size: 12px; color: #fff; font-weight: 700; background: linear-gradient(135deg, #01C267, #0B9E56); padding: 6px 12px; border-radius: 20px; box-shadow: 0 4px 10px rgba(1, 194, 103, 0.2); }
-      .pro-actions-subtitle.locked { background: #eab308; color: #854d0e; box-shadow: none; }
-      .pro-actions-warning { font-size: 13px; color: #854d0e; font-weight: 700; background: #fef9c3; border: 1px solid #eab308; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; text-align: center; line-height: 1.4; }
-      .pro-actions-scroll-container { display: flex; overflow-x: auto; gap: 16px; padding: 4px 4px 20px 4px; scroll-behavior: smooth; -ms-overflow-style: none; scrollbar-width: none; }
-      .pro-actions-scroll-container::-webkit-scrollbar { display: none; }
-      .pro-card { min-width: 150px; max-width: 150px; background: rgba(255, 255, 255, 0.9); border-radius: 16px; padding: 12px; cursor: pointer; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: hidden; }
-      .pro-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); border-color: rgba(1, 194, 103, 0.3); }
-      .pro-card.selected { background: #f0fdf4; border-color: #01C267; box-shadow: 0 0 0 1px #01C267, 0 8px 24px rgba(1, 194, 103, 0.15); }
-      .pro-card.selected::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 16px; background: radial-gradient(circle at top right, rgba(1, 194, 103, 0.1), transparent 70%); pointer-events: none; }
-      .pro-card.selected::after { content: '✓'; position: absolute; top: 10px; right: 10px; background: #01C267; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; box-shadow: 0 2px 8px rgba(1, 194, 103, 0.3); }
-      .pro-card.disabled { opacity: 0.4; pointer-events: none !important; filter: grayscale(100%); cursor: not-allowed; }
-      .pro-card-img { width: 100%; height: 90px; border-radius: 10px; object-fit: cover; margin-bottom: 12px; background: #f5f5f5; transition: transform 0.3s ease; }
-      .pro-card:hover .pro-card-img { transform: scale(1.03); }
-      .pro-card-title { font-size: 14px; font-weight: 700; color: #111; margin: 0 0 6px 0; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-      .pro-card-price { font-size: 13px; font-weight: 800; color: #01C267; margin: 0; }
-    `;
-    document.head.appendChild(style);
+    try {
+      if (document.getElementById('premium-widget-css')) return;
+      const style = document.createElement('style');
+      style.id = 'premium-widget-css';
+      style.innerHTML = `
+        #pro-actions-widget { 
+          position: fixed; 
+          bottom: 84px; 
+          right: 24px; 
+          width: 350px; 
+          max-width: calc(100vw - 48px); 
+          padding: 20px; 
+          background: rgba(255, 255, 255, 0.98); 
+          border: 1px solid rgba(0, 0, 0, 0.08); 
+          border-radius: 24px; 
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12); 
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+          z-index: 2147483647; 
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+          display: none; 
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        #pro-actions-widget.active {
+          display: block !important;
+          opacity: 1 !important;
+          transform: translateY(0);
+        }
+        #pro-actions-launcher {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          background: #01C267;
+          color: white;
+          border-radius: 50px;
+          padding: 12px 20px;
+          font-weight: 800;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          box-shadow: 0 10px 25px rgba(1, 194, 103, 0.3);
+          cursor: pointer;
+          z-index: 2147483646;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.3s ease;
+        }
+        #pro-actions-launcher:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 14px 30px rgba(1, 194, 103, 0.4);
+        }
+        #pro-actions-launcher.hidden {
+          display: none !important;
+        }
+        .pro-actions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .pro-actions-title { font-size: 15px; font-weight: 800; color: #111; margin: 0; letter-spacing: -0.3px; }
+        .pro-actions-close { font-size: 20px; color: #aaa; cursor: pointer; font-weight: bold; padding: 4px; line-height: 1; transition: color 0.2s; }
+        .pro-actions-close:hover { color: #333; }
+        .pro-actions-subtitle { font-size: 9px; color: #fff; font-weight: 700; background: linear-gradient(135deg, #01C267, #0B9E56); padding: 4px 10px; border-radius: 20px; }
+        .pro-actions-subtitle.locked { background: #eab308; color: #854d0e; }
+        .pro-actions-warning { font-size: 11px; color: #854d0e; font-weight: 750; background: #fef9c3; border: 1px solid #eab308; padding: 8px 12px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
+        .pro-actions-scroll-container { display: flex; overflow-x: auto; gap: 12px; padding: 2px 2px 10px 2px; }
+        .pro-actions-scroll-container::-webkit-scrollbar { display: none; }
+        .pro-card { min-width: 105px; max-width: 105px; background: #fff; border-radius: 12px; padding: 8px; cursor: pointer; border: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02); transition: all 0.2s ease; position: relative; }
+        .pro-card:hover { transform: translateY(-2px); border-color: rgba(1, 194, 103, 0.25); }
+        .pro-card.selected { background: #f0fdf4; border-color: #01C267; box-shadow: 0 0 0 1px #01C267; }
+        .pro-card.selected::after { content: '✓'; position: absolute; top: 6px; right: 6px; background: #01C267; color: #fff; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; }
+        .pro-card.disabled { opacity: 0.35; pointer-events: none !important; filter: grayscale(100%); }
+        .pro-card-img { width: 100%; height: 60px; border-radius: 8px; object-fit: cover; margin-bottom: 8px; background: #f5f5f5; }
+        .pro-card-title { font-size: 10px; font-weight: 700; color: #111; margin: 0 0 4px 0; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .pro-card-price { font-size: 9px; font-weight: 800; color: #01C267; margin: 0; }
+      `;
+      document.head.appendChild(style);
+    } catch (e) {
+      console.warn("Failed to inject styles:", e);
+    }
   }
 
   const MAX_SELECTIONS = 3;
@@ -64,7 +117,6 @@
           image: c.image_url || 'https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80'
         }));
       } else {
-        // Fallback default templates if no public campaign is active
         PRO_ACTIONS = [
           { id: "coupon_1", title: "Free Priority Delivery", price: "Select", image: "https://images.unsplash.com/photo-1628102491629-778571d893a3?w=400&q=80" },
           { id: "coupon_2", title: "10% Off Next Order", price: "Select", image: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=400&q=80" }
@@ -87,30 +139,34 @@
   fetchLivePublicCoupons();
 
   function getCartTotal() {
-    if (!document || !document.body) return 0;
-    let maxVal = 0;
-    
-    // 1. Search text contents
-    const bodyText = (document.body.innerText || "").toLowerCase();
-    const subtotalRegex = /(subtotal|totaal|total|totaalbedrag)[^\d\n]*€?\s*(\d+[\.,]\d{2})/g;
-    let match;
-    while ((match = subtotalRegex.exec(bodyText)) !== null) {
-      const val = parseFloat(match[2].replace(',', '.'));
-      if (val > maxVal) maxVal = val;
-    }
-    
-    // 2. Try classes with common pricing keywords
-    const priceEls = document.querySelectorAll('[class*="price"], [class*="total"], [class*="subtotal"], [class*="amount"]');
-    priceEls.forEach(el => {
-      const text = (el.innerText || "").trim().replace(',', '.');
-      const matchNum = text.match(/\d+(\.\d{2})?/);
-      if (matchNum) {
-        const val = parseFloat(matchNum[0]);
+    try {
+      if (!document || !document.body) return 0;
+      let maxVal = 0;
+      
+      // 1. Search text contents
+      const bodyText = (document.body.innerText || "").toLowerCase();
+      const subtotalRegex = /(subtotal|totaal|total|totaalbedrag)[^\d\n]*€?\s*(\d+[\.,]\d{2})/g;
+      let match;
+      while ((match = subtotalRegex.exec(bodyText)) !== null) {
+        const val = parseFloat(match[2].replace(',', '.'));
         if (val > maxVal) maxVal = val;
       }
-    });
+      
+      // 2. Try classes with common pricing keywords
+      const priceEls = document.querySelectorAll('[class*="price"], [class*="total"], [class*="subtotal"], [class*="amount"]');
+      priceEls.forEach(el => {
+        const text = (el.innerText || "").trim().replace(',', '.');
+        const matchNum = text.match(/\d+(\.\d{2})?/);
+        if (matchNum) {
+          const val = parseFloat(matchNum[0]);
+          if (val > maxVal) maxVal = val;
+        }
+      });
 
-    return maxVal;
+      return maxVal;
+    } catch (err) {
+      return 0;
+    }
   }
 
   async function upsertSelectedCoupons(email, couponIds) {
@@ -161,49 +217,52 @@
   }
 
   function showCouponInfoModal(action) {
-    const existing = document.getElementById('pro-info-modal');
-    if (existing) existing.remove();
+    try {
+      const existing = document.getElementById('pro-info-modal');
+      if (existing) existing.remove();
 
-    const modal = document.createElement('div');
-    modal.id = 'pro-info-modal';
-    modal.style.position = 'fixed';
-    modal.style.top = '0';
-    modal.style.left = '0';
-    modal.style.width = '100vw';
-    modal.style.height = '100vh';
-    modal.style.background = 'rgba(0,0,0,0.5)';
-    modal.style.backdropFilter = 'blur(4px)';
-    modal.style.display = 'flex';
-    modal.style.alignItems = 'center';
-    modal.style.justifyContent = 'center';
-    modal.style.zIndex = '99999';
+      const modal = document.createElement('div');
+      modal.id = 'pro-info-modal';
+      modal.style.position = 'fixed';
+      modal.style.top = '0';
+      modal.style.left = '0';
+      modal.style.width = '100vw';
+      modal.style.height = '100vh';
+      modal.style.background = 'rgba(0,0,0,0.5)';
+      modal.style.backdropFilter = 'blur(4px)';
+      modal.style.display = 'flex';
+      modal.style.alignItems = 'center';
+      modal.style.justifyContent = 'center';
+      modal.style.zIndex = '99999';
 
-    modal.innerHTML = `
-      <div style="background: white; padding: 24px; border-radius: 20px; max-width: 320px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.15); font-family: sans-serif; position: relative; text-align: left;">
-        <span class="pro-modal-close" style="position: absolute; top: 16px; right: 16px; font-size: 18px; cursor: pointer; color: #aaa; font-weight: bold;">&times;</span>
-        <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 800; color: #111;">${action.title}</h4>
-        <p style="margin: 0 0 16px 0; font-size: 12px; color: #666; line-height: 1.4;">
-          This VIP offer gives you "${action.title}" on your order. 
-          <br/><br/>
-          <strong>Redemption Period:</strong> Valid for 14 days after purchase.
-          <br/>
-          <strong>Coupon Limit:</strong> Maximum 3 coupon selections per order.
-        </p>
-        <button class="pro-modal-btn" style="width: 100%; background: #01C267; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 13px; padding: 10px 0;">Got it</button>
-      </div>
-    `;
+      modal.innerHTML = `
+        <div style="background: white; padding: 20px; border-radius: 20px; max-width: 300px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.15); font-family: sans-serif; position: relative; text-align: left;">
+          <span class="pro-modal-close" style="position: absolute; top: 12px; right: 16px; font-size: 18px; cursor: pointer; color: #aaa; font-weight: bold;">&times;</span>
+          <h4 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 800; color: #111;">${action.title}</h4>
+          <p style="margin: 0 0 14px 0; font-size: 11px; color: #666; line-height: 1.4;">
+            This VIP offer gives you "${action.title}" on your order. 
+            <br/><br/>
+            <strong>Redemption Period:</strong> Valid for 14 days after purchase.
+            <br/>
+            <strong>Coupon Limit:</strong> Maximum 3 coupon selections per order.
+          </p>
+          <button class="pro-modal-btn" style="width: 100%; background: #01C267; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 12px; padding: 9px 0;">Got it</button>
+        </div>
+      `;
 
-    modal.querySelector('.pro-modal-close').onclick = () => modal.remove();
-    modal.querySelector('.pro-modal-btn').onclick = () => modal.remove();
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+      modal.querySelector('.pro-modal-close').onclick = () => modal.remove();
+      modal.querySelector('.pro-modal-btn').onclick = () => modal.remove();
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 
-    document.body.appendChild(modal);
+      document.body.appendChild(modal);
+    } catch (e) {
+      console.warn("Failed to show info modal:", e);
+    }
   }
 
   function initPremiumWidget() {
     try {
       if (!isCouponsLoaded) {
-        // Re-trigger fetch and defer rendering
         fetchLivePublicCoupons().then(() => {
           if (isCouponsLoaded) initPremiumWidget();
         });
@@ -214,18 +273,21 @@
       
       injectPremiumStyles();
 
+      // 1. Create floating sheet card
       const widget = document.createElement('div');
       widget.id = 'pro-actions-widget';
 
       const header = document.createElement('div');
       header.className = 'pro-actions-header';
       header.innerHTML = `
-        <h3 class="pro-actions-title">Unlock VIP Offers ✨</h3>
-        <span class="pro-actions-subtitle" id="pro-actions-status-badge">Unlocked!</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h3 class="pro-actions-title">VIP Offers ✨</h3>
+          <span class="pro-actions-subtitle" id="pro-actions-status-badge">Unlocked!</span>
+        </div>
+        <span class="pro-actions-close">&times;</span>
       `;
       widget.appendChild(header);
 
-      // Warning Banner Container (yellow box)
       const warning = document.createElement('div');
       warning.id = 'pro-actions-warning-banner';
       warning.className = 'pro-actions-warning';
@@ -241,20 +303,13 @@
         card.dataset.id = action.id;
         card.innerHTML = `
           <img class="pro-card-img" src="${action.image}" alt="${action.title}" loading="lazy" />
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 4px;">
-            <h4 class="pro-card-title">${action.title}</h4>
-            <span class="pro-info-btn" style="cursor: pointer; font-size: 11px; background: rgba(0,0,0,0.05); color: #666; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; margin-top: 2px;">i</span>
-          </div>
+          <h4 class="pro-card-title">${action.title}</h4>
           <p class="pro-card-price">${action.price}</p>
         `;
 
-        card.addEventListener('click', (e) => {
-          // Disable selection if total < 50
+        card.addEventListener('click', () => {
           const total = getCartTotal();
           if (total < 50) return;
-
-          // Skip selection check if clicking info button
-          if (e.target.classList.contains('pro-info-btn')) return;
 
           if (selectedProCards.has(action.id)) {
             selectedProCards.delete(action.id);
@@ -263,50 +318,48 @@
             if (selectedProCards.size >= MAX_SELECTIONS) return;
             selectedProCards.add(action.id);
             card.classList.add('selected');
-            console.log("Selected Coupons:", Array.from(selectedProCards));
           }
           checkEmailAndSync();
-        });
-
-        const infoBtn = card.querySelector('.pro-info-btn');
-        infoBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          showCouponInfoModal(action);
         });
 
         scrollContainer.appendChild(card);
       });
 
       widget.appendChild(scrollContainer);
+      document.body.appendChild(widget);
 
-      // Inject into checkout page DOM structure
-      const cartCard = document.getElementById('CartCard');
-      const checkout = document.getElementById('checkout');
+      // 2. Create Floating Launcher Button
+      const launcher = document.createElement('div');
+      launcher.id = 'pro-actions-launcher';
+      launcher.innerHTML = `<span>🎟️ VIP Offers</span>`;
+      
+      launcher.addEventListener('click', () => {
+        launcher.classList.add('hidden');
+        widget.classList.add('active');
+      });
 
-      if (cartCard) {
-          cartCard.appendChild(widget);
-      } else if (checkout) {
-          // Safely insert sibling BEFORE the checkout element rather than inside it, preventing blocking checkout actions!
-          if (checkout.parentNode) {
-              checkout.parentNode.insertBefore(widget, checkout);
-          } else {
-              document.body.appendChild(widget);
-          }
-      } else {
-          document.body.appendChild(widget);
-      }
+      widget.querySelector('.pro-actions-close').addEventListener('click', () => {
+        widget.classList.remove('active');
+        launcher.classList.remove('hidden');
+      });
+
+      document.body.appendChild(launcher);
     } catch (err) {
       console.warn("initPremiumWidget error:", err);
     }
   }
 
   function isCartEmpty() {
-    if (!document || !document.body) return true;
-    const text = (document.body.innerText || "").toLowerCase();
-    return text.includes("once you add items") || 
-           text.includes("cart is empty") || 
-           text.includes("winkelwagen is leeg") ||
-           text.includes("winkelwagen leeg");
+    try {
+      if (!document || !document.body) return true;
+      const text = (document.body.innerText || "").toLowerCase();
+      return text.includes("once you add items") || 
+             text.includes("cart is empty") || 
+             text.includes("winkelwagen is leeg") ||
+             text.includes("winkelwagen leeg");
+    } catch (e) {
+      return true;
+    }
   }
 
   // Polling check to ensure it injects and toggles dynamically as cart updates
@@ -316,16 +369,7 @@
       const hasCartCard = document.getElementById('CartCard') !== null;
       const hasCheckout = document.getElementById('checkout') !== null;
 
-      // 1. If storefront checkout/cart containers are missing, destroy the widget immediately
-      if (!hasCartCard && !hasCheckout) {
-        const widget = document.getElementById('pro-actions-widget');
-        if (widget) {
-          widget.remove();
-        }
-        return;
-      }
-
-      // 2. Check for checkout success indicators (classes or page texts)
+      // Check for success screen indicators
       const hasSuccessClass = document.querySelector('.order-success') !== null || 
                               document.querySelector('.thank-you') !== null || 
                               document.querySelector('.checkout-success') !== null || 
@@ -348,75 +392,77 @@
                                    window.location.pathname.includes('confirmation') ||
                                    window.location.pathname.includes('payment');
 
-      if (isSuccessOrOrderPage) {
+      // If active checkout containers are gone, or if success page is detected, destroy the widgets
+      if (isSuccessOrOrderPage || (!hasCartCard && !hasCheckout)) {
         const widget = document.getElementById('pro-actions-widget');
-        if (widget) {
-          widget.remove();
-        }
+        if (widget) widget.remove();
+        const launcher = document.getElementById('pro-actions-launcher');
+        if (launcher) launcher.remove();
         return;
       }
 
       const isCartOrCheckoutPage = (window.location.pathname.includes('checkout') || window.location.pathname.includes('cart')) && !isSuccessOrOrderPage;
       
       if (isCartOrCheckoutPage) {
-      if (isCartEmpty()) {
-        const widget = document.getElementById('pro-actions-widget');
-        if (widget) {
-          widget.style.display = 'none';
+        if (isCartEmpty()) {
+          const widget = document.getElementById('pro-actions-widget');
+          if (widget) widget.classList.remove('active');
+          const launcher = document.getElementById('pro-actions-launcher');
+          if (launcher) launcher.classList.add('hidden');
+        } else {
+          const widget = document.getElementById('pro-actions-widget');
+          const launcher = document.getElementById('pro-actions-launcher');
+          
+          if (!widget && !launcher) {
+            initPremiumWidget();
+          } else {
+            // Restore launcher visibility if drawer collapsed
+            if (widget && !widget.classList.contains('active') && launcher && launcher.classList.contains('hidden')) {
+              launcher.classList.remove('hidden');
+            }
+          }
+
+          // Live Total Check and UI update
+          const total = getCartTotal();
+          const warning = document.getElementById('pro-actions-warning-banner');
+          const badge = document.getElementById('pro-actions-status-badge');
+          const cards = document.querySelectorAll('.pro-card');
+
+          if (total < 50) {
+            if (warning) {
+              warning.innerText = `${total.toFixed(2)}/50 €, no coupons available`;
+              warning.style.display = 'block';
+            }
+            if (badge) {
+              badge.innerText = 'Locked!';
+              badge.className = 'pro-actions-subtitle locked';
+            }
+            selectedProCards.clear();
+            cards.forEach(card => {
+              card.classList.add('disabled');
+              card.classList.remove('selected');
+            });
+          } else {
+            if (warning) {
+              warning.style.display = 'none';
+            }
+            if (badge) {
+              badge.innerText = 'Unlocked!';
+              badge.className = 'pro-actions-subtitle';
+            }
+            cards.forEach(card => {
+              card.classList.remove('disabled');
+            });
+          }
+
+          checkEmailAndSync();
         }
       } else {
         const widget = document.getElementById('pro-actions-widget');
-        if (widget) {
-          widget.style.display = 'block';
-        } else {
-          initPremiumWidget();
-        }
-
-        // Live Total Check and UI update
-        const total = getCartTotal();
-        const warning = document.getElementById('pro-actions-warning-banner');
-        const badge = document.getElementById('pro-actions-status-badge');
-        const cards = document.querySelectorAll('.pro-card');
-
-        if (total < 50) {
-          // Locked State
-          if (warning) {
-            warning.innerText = `${total.toFixed(2)}/50 €, no coupons available`;
-            warning.style.display = 'block';
-          }
-          if (badge) {
-            badge.innerText = 'Locked!';
-            badge.className = 'pro-actions-subtitle locked';
-          }
-          // Clear current selections
-          selectedProCards.clear();
-          cards.forEach(card => {
-            card.classList.add('disabled');
-            card.classList.remove('selected');
-          });
-        } else {
-          // Unlocked State
-          if (warning) {
-            warning.style.display = 'none';
-          }
-          if (badge) {
-            badge.innerText = 'Unlocked!';
-            badge.className = 'pro-actions-subtitle';
-          }
-          cards.forEach(card => {
-            card.classList.remove('disabled');
-          });
-        }
-
-        // Poll email for changes and sync
-        checkEmailAndSync();
+        if (widget) widget.classList.remove('active');
+        const launcher = document.getElementById('pro-actions-launcher');
+        if (launcher) launcher.classList.add('hidden');
       }
-    } else {
-      const widget = document.getElementById('pro-actions-widget');
-      if (widget) {
-        widget.style.display = 'none';
-      }
-    }
     } catch (err) {
       console.warn("checkAndToggleWidget error:", err);
     }
