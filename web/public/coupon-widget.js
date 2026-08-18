@@ -298,26 +298,42 @@
 
   // Polling check to ensure it injects and toggles dynamically as cart updates
   function checkAndToggleWidget() {
-    const isSuccessOrOrderPage = window.location.pathname.includes('success') || 
-                                 window.location.pathname.includes('thank-you') || 
-                                 window.location.pathname.includes('order') ||
-                                 window.location.pathname.includes('status') ||
-                                 window.location.pathname.includes('confirmation') ||
-                                 window.location.pathname.includes('payment');
+    try {
+      const hasSuccessClass = document.querySelector('.order-success') !== null || 
+                              document.querySelector('.thank-you') !== null || 
+                              document.querySelector('.checkout-success') !== null || 
+                              document.querySelector('.order-confirmation') !== null;
+                              
+      const bodyText = (document.body.innerText || "").toLowerCase();
+      const hasSuccessText = bodyText.includes("thank you") || 
+                             bodyText.includes("order placed") || 
+                             bodyText.includes("bestelling geplaatst") ||
+                             bodyText.includes("order number") ||
+                             bodyText.includes("bestelnummer") ||
+                             bodyText.includes("bestelling succesvol");
 
-    if (isSuccessOrOrderPage) {
-      const widget = document.getElementById('pro-actions-widget');
-      if (widget) {
-        widget.remove();
+      const isSuccessOrOrderPage = hasSuccessClass || 
+                                   hasSuccessText ||
+                                   window.location.pathname.includes('success') || 
+                                   window.location.pathname.includes('thank-you') || 
+                                   window.location.pathname.includes('order') ||
+                                   window.location.pathname.includes('status') ||
+                                   window.location.pathname.includes('confirmation') ||
+                                   window.location.pathname.includes('payment');
+
+      if (isSuccessOrOrderPage) {
+        const widget = document.getElementById('pro-actions-widget');
+        if (widget) {
+          widget.remove();
+        }
+        return;
       }
-      return;
-    }
 
-    const hasCartCard = document.getElementById('CartCard') !== null;
-    const hasCheckout = document.getElementById('checkout') !== null;
-    const isCartOrCheckoutPage = (hasCartCard || hasCheckout || window.location.pathname.includes('checkout') || window.location.pathname.includes('cart')) && !isSuccessOrOrderPage;
-    
-    if (isCartOrCheckoutPage) {
+      const hasCartCard = document.getElementById('CartCard') !== null;
+      const hasCheckout = document.getElementById('checkout') !== null;
+      const isCartOrCheckoutPage = (hasCartCard || hasCheckout || window.location.pathname.includes('checkout') || window.location.pathname.includes('cart')) && !isSuccessOrOrderPage;
+      
+      if (isCartOrCheckoutPage) {
       if (isCartEmpty()) {
         const widget = document.getElementById('pro-actions-widget');
         if (widget) {
@@ -375,6 +391,9 @@
       if (widget) {
         widget.style.display = 'none';
       }
+    }
+    } catch (err) {
+      console.warn("checkAndToggleWidget error:", err);
     }
   }
 
