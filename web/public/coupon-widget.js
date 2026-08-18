@@ -87,6 +87,7 @@
   fetchLivePublicCoupons();
 
   function getCartTotal() {
+    if (!document || !document.body) return 0;
     let maxVal = 0;
     
     // 1. Search text contents
@@ -139,16 +140,23 @@
   let lastSyncedCouponsStr = "";
 
   function checkEmailAndSync() {
-    const emailInput = document.querySelector('input[type="email"]') || document.querySelector('input[name="email"]') || document.querySelector('input[placeholder*="email" i]');
-    const currentEmail = emailInput ? emailInput.value.trim() : "";
-    const currentCouponsStr = Array.from(selectedProCards).join(",");
+    try {
+      if (!document || !document.body) return;
+      const emailInput = document.querySelector('input[type="email"]') || 
+                         document.querySelector('input[name="email"]') || 
+                         document.querySelector('input[placeholder*="email"]');
+      const currentEmail = emailInput ? emailInput.value.trim() : "";
+      const currentCouponsStr = Array.from(selectedProCards).join(",");
 
-    if (currentEmail && currentEmail.includes('@')) {
-      if (currentEmail !== lastSyncedEmail || currentCouponsStr !== lastSyncedCouponsStr) {
-        lastSyncedEmail = currentEmail;
-        lastSyncedCouponsStr = currentCouponsStr;
-        upsertSelectedCoupons(currentEmail, Array.from(selectedProCards));
+      if (currentEmail && currentEmail.includes('@')) {
+        if (currentEmail !== lastSyncedEmail || currentCouponsStr !== lastSyncedCouponsStr) {
+          lastSyncedEmail = currentEmail;
+          lastSyncedCouponsStr = currentCouponsStr;
+          upsertSelectedCoupons(currentEmail, Array.from(selectedProCards));
+        }
       }
+    } catch (err) {
+      console.warn("checkEmailAndSync error:", err);
     }
   }
 
@@ -289,6 +297,7 @@
   }
 
   function isCartEmpty() {
+    if (!document || !document.body) return true;
     const text = (document.body.innerText || "").toLowerCase();
     return text.includes("once you add items") || 
            text.includes("cart is empty") || 
@@ -299,6 +308,7 @@
   // Polling check to ensure it injects and toggles dynamically as cart updates
   function checkAndToggleWidget() {
     try {
+      if (!document || !document.body) return;
       const hasCartCard = document.getElementById('CartCard') !== null;
       const hasCheckout = document.getElementById('checkout') !== null;
 
