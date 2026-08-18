@@ -294,6 +294,21 @@
 
   // Polling check to ensure it injects and toggles dynamically as cart updates
   function checkAndToggleWidget() {
+    const isSuccessPage = window.location.pathname.includes('success') || 
+                          window.location.pathname.includes('thank-you') || 
+                          window.location.pathname.includes('order-status') ||
+                          window.location.pathname.includes('status') ||
+                          window.location.pathname.includes('confirmation') ||
+                          window.location.pathname.includes('payment');
+
+    if (isSuccessPage) {
+      const widget = document.getElementById('pro-actions-widget');
+      if (widget) {
+        widget.remove();
+      }
+      return;
+    }
+
     const hasCartCard = document.getElementById('CartCard') !== null;
     const hasCheckout = document.getElementById('checkout') !== null;
     const isCartOrCheckoutPage = hasCartCard || hasCheckout || window.location.pathname.includes('checkout') || window.location.pathname.includes('cart');
