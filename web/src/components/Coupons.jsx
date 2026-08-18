@@ -75,7 +75,7 @@ export default function Coupons() {
         } else if (payload.eventType === 'UPDATE') {
           // Play sound and trigger notifications if coupon is redeemed
           if (payload.new.status === 'redeemed' && payload.old.status !== 'redeemed') {
-            try { playAlertSound(); } catch (e) {}
+            try { playAlertSound(); } catch (e) { }
 
             if ('Notification' in window && Notification.permission === 'granted') {
               new Notification('🎟️ Coupon Redeemed!', {
@@ -275,22 +275,22 @@ export default function Coupons() {
       }
 
       if (coupon.status === 'redeemed') {
-        setScanResult({ 
-          success: false, 
-          errorType: 'already_redeemed', 
-          message: `Coupon was already redeemed on ${new Date(coupon.redeemed_at).toLocaleString()}`, 
-          coupon 
+        setScanResult({
+          success: false,
+          errorType: 'already_redeemed',
+          message: `Coupon was already redeemed on ${new Date(coupon.redeemed_at).toLocaleString()}`,
+          coupon
         });
         return;
       }
 
       const isExpired = new Date(coupon.expires_at).getTime() < Date.now();
       if (isExpired) {
-        setScanResult({ 
-          success: false, 
-          errorType: 'expired', 
-          message: `Coupon expired on ${new Date(coupon.expires_at).toLocaleDateString()}`, 
-          coupon 
+        setScanResult({
+          success: false,
+          errorType: 'expired',
+          message: `Coupon expired on ${new Date(coupon.expires_at).toLocaleDateString()}`,
+          coupon
         });
         return;
       }
@@ -322,16 +322,16 @@ export default function Coupons() {
   // Group coupons by coupon_code to show unique campaigns
   const campaigns = [];
   const seenCodes = new Set();
-  
+
   coupons.forEach(c => {
     if (!seenCodes.has(c.coupon_code)) {
       seenCodes.add(c.coupon_code);
-      
+
       const instances = coupons.filter(item => item.coupon_code === c.coupon_code);
       const isPublic = instances.some(item => item.customer_email === 'public');
       const claimCount = instances.filter(item => item.customer_email !== 'public').length;
       const redeemedCount = instances.filter(item => item.status === 'redeemed').length;
-      
+
       campaigns.push({
         ...c,
         isPublic,
@@ -357,7 +357,7 @@ export default function Coupons() {
 
   return (
     <div className="p-6 space-y-6">
-      
+
       {/* Title Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -453,8 +453,8 @@ export default function Coupons() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredCampaigns.map((campaign) => {
             return (
-              <div 
-                key={campaign.id} 
+              <div
+                key={campaign.id}
                 onClick={() => {
                   setSelectedCampaign(campaign);
                   setEditTitle(campaign.title);
@@ -472,9 +472,8 @@ export default function Coupons() {
                     <span className="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center text-2xl shrink-0">🏷️</span>
                   )}
                   <div className="flex-1 min-w-0">
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider inline-block ${
-                      campaign.isPublic ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider inline-block ${campaign.isPublic ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'
+                      }`}>
                       {campaign.isPublic ? 'Public Storefront' : 'Targeted Customer'}
                     </span>
                     <h4 className="font-black text-slate-900 text-sm truncate mt-1.5 group-hover:text-brand-orange transition-all">
@@ -513,11 +512,11 @@ export default function Coupons() {
                 <Ticket className="text-brand-orange" size={20} />
                 <span>Manage Coupon Offer & Claims</span>
               </h3>
-              <button 
+              <button
                 onClick={() => {
                   setIsCampaignModalOpen(false);
                   setSelectedCampaign(null);
-                }} 
+                }}
                 className="p-1 hover:bg-slate-50 text-slate-400 hover:text-slate-700 rounded-lg transition-all cursor-pointer"
               >
                 <X size={18} />
@@ -525,11 +524,11 @@ export default function Coupons() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start overflow-y-auto max-h-[70vh] pr-2">
-              
+
               {/* Left Column: Edit Form */}
               <form onSubmit={handleSaveCampaign} className="space-y-4 bg-slate-50/60 border border-slate-100 p-5 rounded-3xl text-left">
                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Campaign Settings</h4>
-                
+
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Coupon Title</label>
                   <input
@@ -573,11 +572,11 @@ export default function Coupons() {
                       <label className="cursor-pointer bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold py-2.5 px-3 rounded-xl border border-slate-200 flex items-center justify-center space-x-1.5 transition-all active:scale-98">
                         <Plus size={14} />
                         <span>Select/Take Image</span>
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          onChange={(e) => handleImageFileChange(e, true)} 
-                          className="hidden" 
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageFileChange(e, true)}
+                          className="hidden"
                         />
                       </label>
                     </div>
@@ -609,7 +608,7 @@ export default function Coupons() {
               {/* Right Column: Activity Stream Claim History */}
               <div className="space-y-4 flex flex-col h-full text-left">
                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Claim & Redemption Log</h4>
-                
+
                 {selectedCampaign.instances.filter(item => item.customer_email !== 'public').length === 0 ? (
                   <div className="flex-1 p-8 text-center text-slate-400 font-bold text-xs bg-slate-50 border border-slate-100 rounded-3xl flex flex-col items-center justify-center space-y-1 py-12">
                     <span className="text-2xl">⏳</span>
@@ -633,13 +632,12 @@ export default function Coupons() {
                               <select
                                 value={instance.status}
                                 onChange={(e) => handleStatusChange(instance.id, e.target.value)}
-                                className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border cursor-pointer focus:outline-none ${
-                                  instance.status === 'redeemed'
+                                className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border cursor-pointer focus:outline-none ${instance.status === 'redeemed'
                                     ? 'bg-amber-50 text-amber-600 border-amber-200'
                                     : isInstanceExpired
-                                    ? 'bg-red-50 text-red-500 border-red-200'
-                                    : 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                }`}
+                                      ? 'bg-red-50 text-red-500 border-red-200'
+                                      : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                  }`}
                               >
                                 <option value="active">Active</option>
                                 <option value="redeemed">Redeemed</option>
@@ -676,7 +674,7 @@ export default function Coupons() {
             </div>
 
             <form onSubmit={handleCreateCoupon} className="space-y-4">
-              
+
               <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Coupon Title</label>
                 <input
@@ -723,11 +721,11 @@ export default function Coupons() {
                     <label className="cursor-pointer bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold py-2.5 px-3 rounded-xl border border-slate-200 flex items-center justify-center space-x-1.5 transition-all active:scale-98">
                       <Plus size={14} />
                       <span>Select/Take Image</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={(e) => handleImageFileChange(e, false)} 
-                        className="hidden" 
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageFileChange(e, false)}
+                        className="hidden"
                       />
                     </label>
                   </div>
@@ -738,24 +736,24 @@ export default function Coupons() {
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Coupon Issue Scope</label>
                 <div className="flex items-center space-x-4 mt-2">
                   <label className="flex items-center space-x-2 text-xs font-bold text-slate-750 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="issueScope" 
-                      value="public" 
-                      checked={issueScope === 'public'} 
+                    <input
+                      type="radio"
+                      name="issueScope"
+                      value="public"
+                      checked={issueScope === 'public'}
                       onChange={() => setIssueScope('public')}
-                      className="accent-brand-orange" 
+                      className="accent-brand-orange"
                     />
                     <span>Public to Everyone</span>
                   </label>
                   <label className="flex items-center space-x-2 text-xs font-bold text-slate-750 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="issueScope" 
-                      value="targeted" 
-                      checked={issueScope === 'targeted'} 
+                    <input
+                      type="radio"
+                      name="issueScope"
+                      value="targeted"
+                      checked={issueScope === 'targeted'}
                       onChange={() => setIssueScope('targeted')}
-                      className="accent-brand-orange" 
+                      className="accent-brand-orange"
                     />
                     <span>Targeted Customer Email</span>
                   </label>
@@ -831,12 +829,12 @@ export default function Coupons() {
               <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                 <span>📷 Scan & Redeem Coupon</span>
               </h3>
-              <button 
+              <button
                 onClick={() => {
                   setIsScanModalOpen(false);
                   setScanResult(null);
                   setScanInputVal('');
-                }} 
+                }}
                 className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all cursor-pointer"
               >
                 <X size={16} />
@@ -846,7 +844,7 @@ export default function Coupons() {
             <form onSubmit={handleScanVerify} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scan or Type Coupon UUID</label>
-                <input 
+                <input
                   type="text"
                   required
                   autoFocus
@@ -857,7 +855,7 @@ export default function Coupons() {
                 />
               </div>
 
-              <button 
+              <button
                 type="submit"
                 className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md"
               >
@@ -867,11 +865,10 @@ export default function Coupons() {
 
             {/* Scan Results Layout */}
             {scanResult && (
-              <div className={`p-4 rounded-2xl border text-xs font-bold flex flex-col items-center text-center space-y-2.5 ${
-                scanResult.success 
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+              <div className={`p-4 rounded-2xl border text-xs font-bold flex flex-col items-center text-center space-y-2.5 ${scanResult.success
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                   : 'bg-rose-50 border-rose-200 text-rose-800'
-              }`}>
+                }`}>
                 <span className="text-3xl">{scanResult.success ? '🎉' : '❌'}</span>
                 <div>
                   <h4 className="text-sm font-black uppercase tracking-tight">{scanResult.success ? 'Redeemed Successfully' : 'Redemption Failed'}</h4>
@@ -900,8 +897,8 @@ export default function Coupons() {
             <p className="text-[10px] text-slate-400 font-semibold truncate mt-0.5">By: {latestRedeemedNotification.email}</p>
             <p className="text-[9px] text-slate-500 font-bold mt-1">At: {latestRedeemedNotification.time}</p>
           </div>
-          <button 
-            onClick={() => setLatestRedeemedNotification(null)} 
+          <button
+            onClick={() => setLatestRedeemedNotification(null)}
             className="p-1 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-all cursor-pointer"
           >
             <X size={14} />
