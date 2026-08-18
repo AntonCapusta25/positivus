@@ -299,6 +299,19 @@
   // Polling check to ensure it injects and toggles dynamically as cart updates
   function checkAndToggleWidget() {
     try {
+      const hasCartCard = document.getElementById('CartCard') !== null;
+      const hasCheckout = document.getElementById('checkout') !== null;
+
+      // 1. If storefront checkout/cart containers are missing, destroy the widget immediately
+      if (!hasCartCard && !hasCheckout) {
+        const widget = document.getElementById('pro-actions-widget');
+        if (widget) {
+          widget.remove();
+        }
+        return;
+      }
+
+      // 2. Check for checkout success indicators (classes or page texts)
       const hasSuccessClass = document.querySelector('.order-success') !== null || 
                               document.querySelector('.thank-you') !== null || 
                               document.querySelector('.checkout-success') !== null || 
@@ -329,9 +342,7 @@
         return;
       }
 
-      const hasCartCard = document.getElementById('CartCard') !== null;
-      const hasCheckout = document.getElementById('checkout') !== null;
-      const isCartOrCheckoutPage = (hasCartCard || hasCheckout || window.location.pathname.includes('checkout') || window.location.pathname.includes('cart')) && !isSuccessOrOrderPage;
+      const isCartOrCheckoutPage = (window.location.pathname.includes('checkout') || window.location.pathname.includes('cart')) && !isSuccessOrOrderPage;
       
       if (isCartOrCheckoutPage) {
       if (isCartEmpty()) {
