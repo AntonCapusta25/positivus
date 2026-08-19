@@ -360,172 +360,173 @@ export const POSProvider = ({ children }) => {
   }, [settings.merchantId]);
 
   // Fetch initial orders and listen to realtime updates from Supabase
-  // With auto-reconnect: if the WebSocket drops, re-fetches orders and re-subscribes
+  // Optimized for minimum data egress and auto-reconnection safety (no manual retry channel leaks)
   useEffect(() => {
     if (!settings.merchantId) return;
-    setSupabaseConnected(true);
 
-    let activeChannel = null;
-    let reconnectTimeout = null;
     let destroyed = false;
+    let channel = null;
 
-    const fetchOrders = async () => {
+    // Keep track of the latest order timestamp to fetch only new/missed orders on connect
+    const latestOrderTimeRef = { current: null };
+
+    const fetchMissedOrders = async () => {
       try {
-        const { data, error } = await supabase
+        const activeMerchantId = settingsRef.current.merchantId;
+        let query = supabase
           .from('orders')
           .select('*')
-          .eq('merchant_id', settings.merchantId)
-          .order('created_at', { ascending: false })
-          .limit(50);
+          .eq('merchant_id', activeMerchantId);
 
+        if (latestOrderTimeRef.current) {
+          // Bandwidth optimization: fetch only new orders since connection drop
+          query = query.gt('created_at', latestOrderTimeRef.current);
+        } else {
+          // Initial fetch: limit to 20 latest orders to save bandwidth
+          query = query.order('created_at', { ascending: false }).limit(20);
+        }
+
+        const { data, error } = await query;
         if (error) throw error;
-        setOrders(data || []);
 
-        // Auto-show popup if there is any pending incoming order on load (only if created in the last 10 minutes)
         if (data && data.length > 0) {
-          const pendingIncoming = data.find(o => {
-            if ((o.status || '').toLowerCase() !== 'incoming') return false;
-            try {
+          // Update the latest order timestamp ref
+          const latestTime = data.reduce((max, o) => {
+            const time = new Date(o.created_at).getTime();
+            return time > max ? time : max;
+          }, 0);
+          if (latestTime > 0) {
+            latestOrderTimeRef.current = new Date(latestTime).toISOString();
+          }
+
+          setOrders((prev) => {
+            const existingIds = new Set(prev.map(o => o.id));
+            const newOrders = data.filter(o => !existingIds.has(o.id));
+            
+            // Auto-show popup if there is any pending incoming order on load
+            const pendingIncoming = newOrders.find(o => {
+              if ((o.status || '').toLowerCase() !== 'incoming') return false;
               const createdTime = new Date(o.created_at).getTime();
               const diffMinutes = (Date.now() - createdTime) / 60000;
               return diffMinutes <= 10;
-            } catch (e) {
-              return true;
+            });
+            
+            if (pendingIncoming) {
+              console.log('[POS] Found pending incoming order:', pendingIncoming.order_number);
+              setActiveIncomingOrder(pendingIncoming);
+              if (settingsRef.current.soundAlert !== false) {
+                startSirenAlert();
+              }
             }
+
+            return [...newOrders, ...prev].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           });
-          if (pendingIncoming) {
-            console.log('[POS Initial Load] Found pending incoming order:', pendingIncoming.order_number);
-            setActiveIncomingOrder(pendingIncoming);
-            if (settingsRef.current.soundAlert !== false) {
-              startSirenAlert();
-            }
-          }
         }
       } catch (err) {
-        console.error('Supabase fetch error:', err);
+        console.error('[Realtime] Sync orders failed:', err);
       }
     };
 
-    const setupChannel = () => {
-      if (destroyed) return;
+    const filterMerchantId = settingsRef.current.merchantId === 'restaurant_1' 
+      ? '6a0f03b4500ed5db150be1a1' 
+      : settingsRef.current.merchantId;
 
-      // Use a unique channel name each time to avoid Supabase rejecting re-subscribe
-      const channelName = `realtime:pos_orders_${Date.now()}`;
-      const filterMerchantId = settingsRef.current.merchantId === 'restaurant_1' 
-        ? '6a0f03b4500ed5db150be1a1' 
-        : settingsRef.current.merchantId;
+    // Use a fixed channel name per merchant to avoid channel leakage
+    const channelName = `realtime:pos_orders_${filterMerchantId}`;
 
-      const channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'orders', filter: `merchant_id=eq.${filterMerchantId}` },
-          (payload) => {
-            const activeMerchantId = settingsRef.current.merchantId;
+    channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `merchant_id=eq.${filterMerchantId}` },
+        (payload) => {
+          if (destroyed) return;
+          const activeMerchantId = settingsRef.current.merchantId;
+          const isMatch = payload.new?.merchant_id === activeMerchantId ||
+            ((activeMerchantId === 'restaurant_1' || activeMerchantId === '6a0f03b4500ed5db150be1a1') &&
+             (payload.new?.merchant_id === 'restaurant_1' || payload.new?.merchant_id === '6a0f03b4500ed5db150be1a1')) ||
+            !payload.new?.merchant_id;
 
-            if (payload.eventType === 'INSERT') {
-              const newOrder = payload.new;
-              const isMatch = newOrder.merchant_id === activeMerchantId ||
-                ((activeMerchantId === 'restaurant_1' || activeMerchantId === '6a0f03b4500ed5db150be1a1') &&
-                 (newOrder.merchant_id === 'restaurant_1' || newOrder.merchant_id === '6a0f03b4500ed5db150be1a1')) ||
-                !newOrder.merchant_id;
+          if (!isMatch && payload.eventType !== 'DELETE') return;
 
-              if (!isMatch) return;
+          if (payload.eventType === 'INSERT') {
+            const newOrder = payload.new;
+            setOrders((prev) => {
+              if (prev.some(o => o.id === newOrder.id)) return prev;
+              
+              if (settingsRef.current.soundAlert !== false) {
+                startSirenAlert();
+              }
+              setActiveIncomingOrder(newOrder);
 
-              setOrders((prev) => {
-                if (prev.some(o => o.id === newOrder.id)) return prev;
-                
-                // 1. Admin sound / modal alert
-                if (settingsRef.current.soundAlert !== false) {
-                  startSirenAlert();
+              if (settingsRef.current.autoPrint === true) {
+                triggerTestPrint(newOrder);
+              }
+
+              const isDelivery = (newOrder.type || '').toLowerCase() === 'delivery';
+              const isUnassigned = !newOrder.driver_name || newOrder.driver_name === '';
+              if (isDelivery && isUnassigned) {
+                setActiveDriverOffer(newOrder);
+                playDriverChime();
+              }
+
+              // Update latest timestamp
+              const newTime = new Date(newOrder.created_at).getTime();
+              if (!latestOrderTimeRef.current || newTime > new Date(latestOrderTimeRef.current).getTime()) {
+                latestOrderTimeRef.current = newOrder.created_at;
+              }
+
+              return [newOrder, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedOrder = payload.new;
+            setOrders((prev) => {
+              const matchedPrev = prev.find(o => o.id === updatedOrder.id);
+              const isDelivery = (updatedOrder.type || '').toLowerCase() === 'delivery';
+              const isUnassigned = !updatedOrder.driver_name || updatedOrder.driver_name === '';
+              const statusChanged = matchedPrev && matchedPrev.status !== updatedOrder.status;
+              const isNowAvailable = updatedOrder.status === 'ready' || updatedOrder.status === 'preparing';
+
+              if (isDelivery && isUnassigned && statusChanged && isNowAvailable) {
+                setActiveDriverOffer(updatedOrder);
+                playDriverChime();
+              }
+
+              return prev.map(o => {
+                if (o.id === updatedOrder.id) {
+                  return {
+                    ...o,
+                    ...updatedOrder,
+                    notes: updatedOrder.notes || o.notes,
+                    customer_address: updatedOrder.customer_address || o.customer_address,
+                    items: (updatedOrder.items && updatedOrder.items.length > 0) ? updatedOrder.items : o.items
+                  };
                 }
-                setActiveIncomingOrder(newOrder);
-
-                // 1.5 Auto-print if explicitly enabled
-                console.log('[AutoPrintCheck] INSERT event received for order:', newOrder.order_number, 'settings.autoPrint is:', settingsRef.current.autoPrint);
-                if (settingsRef.current.autoPrint === true) {
-                  triggerTestPrint(newOrder);
-                }
-
-                // 2. Driver sound / popup offer notification (if unassigned delivery)
-                const isDelivery = (newOrder.type || '').toLowerCase() === 'delivery';
-                const isUnassigned = !newOrder.driver_name || newOrder.driver_name === '';
-                if (isDelivery && isUnassigned) {
-                  setActiveDriverOffer(newOrder);
-                  playDriverChime();
-                }
-
-                return [newOrder, ...prev];
+                return o;
               });
-            } else if (payload.eventType === 'UPDATE') {
-              const updatedOrder = payload.new;
-              const isMatch = updatedOrder.merchant_id === activeMerchantId ||
-                ((activeMerchantId === 'restaurant_1' || activeMerchantId === '6a0f03b4500ed5db150be1a1') &&
-                 (updatedOrder.merchant_id === 'restaurant_1' || updatedOrder.merchant_id === '6a0f03b4500ed5db150be1a1')) ||
-                !updatedOrder.merchant_id;
-
-              if (!isMatch) return;
-
-              setOrders((prev) => {
-                const matchedPrev = prev.find(o => o.id === updatedOrder.id);
-                
-                // Driver notification: if status changed to ready/preparing and is unassigned delivery
-                const isDelivery = (updatedOrder.type || '').toLowerCase() === 'delivery';
-                const isUnassigned = !updatedOrder.driver_name || updatedOrder.driver_name === '';
-                const statusChanged = matchedPrev && matchedPrev.status !== updatedOrder.status;
-                const isNowAvailable = updatedOrder.status === 'ready' || updatedOrder.status === 'preparing';
-
-                if (isDelivery && isUnassigned && statusChanged && isNowAvailable) {
-                  setActiveDriverOffer(updatedOrder);
-                  playDriverChime();
-                }
-
-                return prev.map(o => {
-                  if (o.id === updatedOrder.id) {
-                    return {
-                      ...o,
-                      ...updatedOrder,
-                      notes: updatedOrder.notes || o.notes,
-                      customer_address: updatedOrder.customer_address || o.customer_address,
-                      items: (updatedOrder.items && updatedOrder.items.length > 0) ? updatedOrder.items : o.items
-                    };
-                  }
-                  return o;
-                });
-              });
-            } else if (payload.eventType === 'DELETE') {
-              setOrders((prev) => prev.filter(o => o.id !== payload.old.id));
-            }
+            });
+          } else if (payload.eventType === 'DELETE') {
+            setOrders((prev) => prev.filter(o => o.id !== payload.old.id));
           }
-        )
-        .subscribe((status) => {
-          console.log('[Realtime] Orders channel status:', status);
-          if (status === 'SUBSCRIBED') {
-            setSupabaseConnected(true);
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-            setSupabaseConnected(false);
-            if (!destroyed) {
-              console.warn('[Realtime] Connection lost. Re-fetching and reconnecting in 3s...');
-              reconnectTimeout = setTimeout(() => {
-                if (!destroyed) {
-                  fetchOrders(); // Re-sync any missed orders
-                  setupChannel(); // Re-subscribe
-                }
-              }, 3000);
-            }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Realtime] Orders channel status:', status);
+        if (status === 'SUBSCRIBED') {
+          setSupabaseConnected(true);
+          if (!destroyed) {
+            fetchMissedOrders();
           }
-        });
-
-      activeChannel = channel;
-    };
-
-    fetchOrders();
-    setupChannel();
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          setSupabaseConnected(false);
+        }
+      });
 
     return () => {
       destroyed = true;
-      if (reconnectTimeout) clearTimeout(reconnectTimeout);
-      if (activeChannel) supabase.removeChannel(activeChannel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [settings.merchantId, settings.soundAlert, settings.soundVolume]);
 
@@ -1290,6 +1291,29 @@ export const POSProvider = ({ children }) => {
     }
   };
 
+  const cancelAndRefundOrder = async (orderId) => {
+    try {
+      console.log(`Triggering Stripe refund and cancellation for Order ${orderId}...`);
+      const { data, error } = await supabase.functions.invoke('stripe-refund', {
+        body: { order_id: orderId }
+      });
+
+      if (error) throw error;
+      
+      if (data && data.success) {
+        // Update local React state immediately
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled', payment_status: 'refunded' } : o));
+        return { success: true };
+      } else {
+        throw new Error(data?.error || 'Refund function failed');
+      }
+    } catch (err) {
+      console.error('Cancel and refund order failed:', err);
+      alert('Failed to process refund: ' + err.message);
+      return { success: false, error: err.message };
+    }
+  };
+
   const updateOrderPrinted = async (orderId, printedState) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, printed: printedState } : o));
 
@@ -1885,6 +1909,7 @@ ${deliveryQRSection}========================================
       toggleRestaurantOpen,
       toggleItemStock,
       updateOrderStatus,
+      cancelAndRefundOrder,
       updateOrderPrinted,
       triggerTestPrint,
       playAlertSound,

@@ -18,7 +18,7 @@ const parseItems = (items) => {
 };
 
 export default function Dashboard() {
-  const { orders, updateOrderStatus, updateOrderPrinted, triggerTestPrint, setActiveIncomingOrder, assignOrderDriver, settings, drivers, availableMerchants } = usePOS();
+  const { orders, updateOrderStatus, cancelAndRefundOrder, updateOrderPrinted, triggerTestPrint, setActiveIncomingOrder, assignOrderDriver, settings, drivers, availableMerchants } = usePOS();
   const [activeTab, setActiveTab] = useState('prepare'); // prepare, handover, done
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [showMobileDetail, setShowMobileDetail] = useState(false);
@@ -574,18 +574,40 @@ export default function Dashboard() {
 
               {/* Order Status Shift Transition Button */}
               {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
-                <button
-                  type="button"
-                  onClick={() => handleNextStatus(selectedOrder)}
-                  className="flex-1 py-3.5 bg-brand-orange hover:bg-opacity-95 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-brand-orange/10 uppercase tracking-wide"
-                >
-                  {selectedOrder.status === 'incoming' 
-                    ? 'Accept Order' 
-                    : selectedOrder.status === 'preparing' 
-                      ? 'Order is Ready' 
-                      : 'Mark as Handed Over'
-                  }
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const isOnline = selectedOrder.payment_method === 'online';
+                      const msg = isOnline 
+                        ? "Are you sure you want to cancel and refund this online order?"
+                        : "Are you sure you want to cancel this order?";
+                      if (window.confirm(msg)) {
+                        if (isOnline) {
+                          await cancelAndRefundOrder(selectedOrder.id);
+                        } else {
+                          await updateOrderStatus(selectedOrder.id, 'cancelled');
+                        }
+                      }
+                    }}
+                    className="px-3.5 py-3.5 border border-rose-200 hover:bg-rose-50 text-rose-600 font-bold rounded-xl text-xs transition-all uppercase tracking-wider whitespace-nowrap"
+                  >
+                    {selectedOrder.payment_method === 'online' ? 'Cancel & Refund' : 'Cancel Order'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNextStatus(selectedOrder)}
+                    className="flex-1 py-3.5 bg-brand-orange hover:bg-opacity-95 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-brand-orange/10 uppercase tracking-wide"
+                  >
+                    {selectedOrder.status === 'incoming' 
+                      ? 'Accept Order' 
+                      : selectedOrder.status === 'preparing' 
+                        ? 'Order is Ready' 
+                        : 'Mark as Handed Over'
+                    }
+                  </button>
+                </>
               )}
             </div>
 
