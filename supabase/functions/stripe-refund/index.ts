@@ -50,7 +50,46 @@ serve(async (req) => {
       })
     }
 
-    // 2. Initialize Stripe & Search for Payment Intent by Order Number / ID metadata
+    // 2. Check for mock order prefix (TEST-REFUND- or TEST-MOCK-) to allow sandbox verification
+    if (order.order_number.startsWith("TEST-REFUND-") || order.order_number.startsWith("TEST-MOCK")) {
+      console.log(`[MOCK MODE] Simulating refund for test order #${order.order_number}`)
+      
+      const { error: updateError } = await supabase
+        .from("orders")
+        .update({
+          status: "cancelled",
+          payment_status: "refunded"
+        })
+        .eq("id", order_id)
+
+      if (updateError) throw updateError
+
+      try {
+        await supabase.functions.invoke('hyperzod-sync', {
+          body: {
+            table: 'orders',
+            type: 'UPDATE',
+            record: {
+              order_number: order.order_number,
+              hyperzod_order_id: order.hyperzod_order_id,
+              status: 'cancelled'
+            }
+          }
+        })
+      } catch (syncErr) {
+        console.warn("Failed to propagate status to Hyperzod inside mock refund:", syncErr)
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: "Successfully processed mock refund.",
+        refund: { id: "re_mock_test_123", amount: order.total * 100 }
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      })
+    }
+
+    // 3. Initialize Stripe & Search for Payment Intent by Order Number / ID metadata
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" })
     console.log(`Searching Stripe for Order #${order.order_number} or ID ${order.hyperzod_order_id}...`)
     
