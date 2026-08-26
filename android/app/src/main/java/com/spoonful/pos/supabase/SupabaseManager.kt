@@ -1148,6 +1148,44 @@ class SupabaseManager(
             }
         })
     }
+
+    fun triggerStripeRefund(orderId: String, onComplete: (Boolean) -> Unit) {
+        val url = "$supabaseUrl/functions/v1/stripe-refund"
+        
+        val payload = JsonObject().apply {
+            addProperty("order_id", orderId)
+        }
+        
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(payload).toRequestBody(mediaType)
+        
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .addHeader("Content-Type", "application/json")
+            .post(requestBody)
+            .build()
+            
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "Failed to invoke stripe-refund function", e)
+                mainHandler.post { onComplete(false) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Successfully invoked stripe-refund function for order $orderId")
+                        mainHandler.post { onComplete(true) }
+                    } else {
+                        Log.e(TAG, "stripe-refund failed: ${response.code}")
+                        mainHandler.post { onComplete(false) }
+                    }
+                }
+            }
+        })
+    }
 }
 
 class OrderItemsDeserializer : JsonDeserializer<List<OrderItem>> {

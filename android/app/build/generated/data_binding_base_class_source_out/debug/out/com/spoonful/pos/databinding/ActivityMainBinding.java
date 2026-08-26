@@ -5,14 +5,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
@@ -36,6 +40,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView btnDetailBack;
 
   @NonNull
+  public final Button btnDetailCancel;
+
+  @NonNull
   public final TextView btnDetailPrint;
 
   @NonNull
@@ -45,10 +52,10 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView btnDrawerClose;
 
   @NonNull
-  public final LinearLayout btnDrawerManagement;
+  public final LinearLayout btnDrawerHelp;
 
   @NonNull
-  public final LinearLayout btnDrawerRefresh;
+  public final LinearLayout btnDrawerManagement;
 
   @NonNull
   public final LinearLayout btnDrawerSettings;
@@ -60,13 +67,28 @@ public final class ActivityMainBinding implements ViewBinding {
   public final LinearLayout btnDrawerSwitchRestaurant;
 
   @NonNull
+  public final TextView btnDriversBack;
+
+  @NonNull
   public final TextView btnHamburger;
+
+  @NonNull
+  public final TextView btnHelpBack;
+
+  @NonNull
+  public final Button btnHelpSend;
 
   @NonNull
   public final TextView btnMenuBack;
 
   @NonNull
   public final TextView btnNotificationBell;
+
+  @NonNull
+  public final AppCompatButton btnOnboardingLinkCode;
+
+  @NonNull
+  public final AppCompatButton btnOnboardingLogin;
 
   @NonNull
   public final TextView btnReceiptsBack;
@@ -87,6 +109,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView btnSoundPlay;
 
   @NonNull
+  public final TextView btnSoundStop;
+
+  @NonNull
   public final TextView btnSoundsBack;
 
   @NonNull
@@ -94,6 +119,9 @@ public final class ActivityMainBinding implements ViewBinding {
 
   @NonNull
   public final TextView btnSubDeviceInfo;
+
+  @NonNull
+  public final TextView btnSubDriversManagement;
 
   @NonNull
   public final TextView btnSubLanguage;
@@ -135,6 +163,24 @@ public final class ActivityMainBinding implements ViewBinding {
   public final LinearLayout drawerPane;
 
   @NonNull
+  public final LinearLayout driversContainer;
+
+  @NonNull
+  public final EditText editHelpMessage;
+
+  @NonNull
+  public final EditText editHelpSubject;
+
+  @NonNull
+  public final EditText editOnboardingCode;
+
+  @NonNull
+  public final EditText editOnboardingEmail;
+
+  @NonNull
+  public final EditText editOnboardingPassword;
+
+  @NonNull
   public final LinearLayout headerBar;
 
   @NonNull
@@ -144,16 +190,28 @@ public final class ActivityMainBinding implements ViewBinding {
   public final LinearLayout layoutDetailItemsContainer;
 
   @NonNull
+  public final LinearLayout layoutDetailTip;
+
+  @NonNull
   public final LinearLayout layoutDrawerManagementSub;
 
   @NonNull
   public final LinearLayout layoutDrawerSettingsSub;
 
   @NonNull
+  public final LinearLayout layoutOnboardingRegister;
+
+  @NonNull
   public final LinearLayout layoutOrderDetail;
 
   @NonNull
   public final LinearLayout layoutOrderList;
+
+  @NonNull
+  public final LinearLayout layoutSettingsDrivers;
+
+  @NonNull
+  public final LinearLayout layoutSettingsHelp;
 
   @NonNull
   public final LinearLayout layoutSettingsMenu;
@@ -174,6 +232,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final LinearLayout ordersContainer;
 
   @NonNull
+  public final ProgressBar progressOnboarding;
+
+  @NonNull
   public final RadioGroup radioGroupSounds;
 
   @NonNull
@@ -190,6 +251,9 @@ public final class ActivityMainBinding implements ViewBinding {
 
   @NonNull
   public final SeekBar seekBarVolume;
+
+  @NonNull
+  public final Spinner spinnerSoundType;
 
   @NonNull
   public final SwitchMaterial switchAutoPrint;
@@ -228,6 +292,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView txtDetailAddress;
 
   @NonNull
+  public final TextView txtDetailCustomerLoyalty;
+
+  @NonNull
   public final TextView txtDetailCustomerName;
 
   @NonNull
@@ -252,6 +319,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView txtDetailPaidBadge;
 
   @NonNull
+  public final TextView txtDetailScheduledBadge;
+
+  @NonNull
   public final TextView txtDetailSubtotal;
 
   @NonNull
@@ -259,6 +329,9 @@ public final class ActivityMainBinding implements ViewBinding {
 
   @NonNull
   public final TextView txtDetailTimeVal;
+
+  @NonNull
+  public final TextView txtDetailTip;
 
   @NonNull
   public final TextView txtDetailTotal;
@@ -319,78 +392,97 @@ public final class ActivityMainBinding implements ViewBinding {
 
   private ActivityMainBinding(@NonNull DrawerLayout rootView, @NonNull Button btnDetailAction,
       @NonNull Button btnDetailAssignDriver, @NonNull TextView btnDetailBack,
-      @NonNull TextView btnDetailPrint, @NonNull LinearLayout btnDrawerAutoPrintToggle,
-      @NonNull TextView btnDrawerClose, @NonNull LinearLayout btnDrawerManagement,
-      @NonNull LinearLayout btnDrawerRefresh, @NonNull LinearLayout btnDrawerSettings,
-      @NonNull LinearLayout btnDrawerStopOrders, @NonNull LinearLayout btnDrawerSwitchRestaurant,
-      @NonNull TextView btnHamburger, @NonNull TextView btnMenuBack,
-      @NonNull TextView btnNotificationBell, @NonNull TextView btnReceiptsBack,
-      @NonNull TextView btnReceiptsMinus, @NonNull TextView btnReceiptsPlus,
-      @NonNull Button btnReceiptsPrintTest, @NonNull TextView btnReceiptsReset,
-      @NonNull TextView btnSoundPlay, @NonNull TextView btnSoundsBack,
+      @NonNull Button btnDetailCancel, @NonNull TextView btnDetailPrint,
+      @NonNull LinearLayout btnDrawerAutoPrintToggle, @NonNull TextView btnDrawerClose,
+      @NonNull LinearLayout btnDrawerHelp, @NonNull LinearLayout btnDrawerManagement,
+      @NonNull LinearLayout btnDrawerSettings, @NonNull LinearLayout btnDrawerStopOrders,
+      @NonNull LinearLayout btnDrawerSwitchRestaurant, @NonNull TextView btnDriversBack,
+      @NonNull TextView btnHamburger, @NonNull TextView btnHelpBack, @NonNull Button btnHelpSend,
+      @NonNull TextView btnMenuBack, @NonNull TextView btnNotificationBell,
+      @NonNull AppCompatButton btnOnboardingLinkCode, @NonNull AppCompatButton btnOnboardingLogin,
+      @NonNull TextView btnReceiptsBack, @NonNull TextView btnReceiptsMinus,
+      @NonNull TextView btnReceiptsPlus, @NonNull Button btnReceiptsPrintTest,
+      @NonNull TextView btnReceiptsReset, @NonNull TextView btnSoundPlay,
+      @NonNull TextView btnSoundStop, @NonNull TextView btnSoundsBack,
       @NonNull TextView btnSubConnectivity, @NonNull TextView btnSubDeviceInfo,
-      @NonNull TextView btnSubLanguage, @NonNull TextView btnSubMenuManagement,
-      @NonNull TextView btnSubReceipts, @NonNull TextView btnSubSounds,
-      @NonNull TextView btnSubTodaySales, @NonNull LinearLayout btnTabDone,
-      @NonNull LinearLayout btnTabHandover, @NonNull LinearLayout btnTabPrepare,
-      @NonNull LinearLayout btnToggleCustomerInfo, @NonNull View dotPrinter,
-      @NonNull View dotSupabase, @NonNull DrawerLayout drawerLayout,
-      @NonNull LinearLayout drawerPane, @NonNull LinearLayout headerBar,
+      @NonNull TextView btnSubDriversManagement, @NonNull TextView btnSubLanguage,
+      @NonNull TextView btnSubMenuManagement, @NonNull TextView btnSubReceipts,
+      @NonNull TextView btnSubSounds, @NonNull TextView btnSubTodaySales,
+      @NonNull LinearLayout btnTabDone, @NonNull LinearLayout btnTabHandover,
+      @NonNull LinearLayout btnTabPrepare, @NonNull LinearLayout btnToggleCustomerInfo,
+      @NonNull View dotPrinter, @NonNull View dotSupabase, @NonNull DrawerLayout drawerLayout,
+      @NonNull LinearLayout drawerPane, @NonNull LinearLayout driversContainer,
+      @NonNull EditText editHelpMessage, @NonNull EditText editHelpSubject,
+      @NonNull EditText editOnboardingCode, @NonNull EditText editOnboardingEmail,
+      @NonNull EditText editOnboardingPassword, @NonNull LinearLayout headerBar,
       @NonNull LinearLayout layoutCustomerDetails, @NonNull LinearLayout layoutDetailItemsContainer,
-      @NonNull LinearLayout layoutDrawerManagementSub,
-      @NonNull LinearLayout layoutDrawerSettingsSub, @NonNull LinearLayout layoutOrderDetail,
-      @NonNull LinearLayout layoutOrderList, @NonNull LinearLayout layoutSettingsMenu,
-      @NonNull LinearLayout layoutSettingsReceipts, @NonNull LinearLayout layoutSettingsSounds,
-      @NonNull LinearLayout mainTabContainer, @NonNull LinearLayout menuItemsContainer,
-      @NonNull LinearLayout ordersContainer, @NonNull RadioGroup radioGroupSounds,
+      @NonNull LinearLayout layoutDetailTip, @NonNull LinearLayout layoutDrawerManagementSub,
+      @NonNull LinearLayout layoutDrawerSettingsSub, @NonNull LinearLayout layoutOnboardingRegister,
+      @NonNull LinearLayout layoutOrderDetail, @NonNull LinearLayout layoutOrderList,
+      @NonNull LinearLayout layoutSettingsDrivers, @NonNull LinearLayout layoutSettingsHelp,
+      @NonNull LinearLayout layoutSettingsMenu, @NonNull LinearLayout layoutSettingsReceipts,
+      @NonNull LinearLayout layoutSettingsSounds, @NonNull LinearLayout mainTabContainer,
+      @NonNull LinearLayout menuItemsContainer, @NonNull LinearLayout ordersContainer,
+      @NonNull ProgressBar progressOnboarding, @NonNull RadioGroup radioGroupSounds,
       @NonNull RadioButton radioSoundDefault, @NonNull RadioButton radioSoundNoisy,
       @NonNull RadioButton radioSoundQuiet, @NonNull FrameLayout screenContainer,
-      @NonNull SeekBar seekBarVolume, @NonNull SwitchMaterial switchAutoPrint,
-      @NonNull SwitchMaterial switchDrawerAutoPrint, @NonNull SwitchMaterial switchEnlargeAddress,
-      @NonNull SwitchMaterial switchEnlargeNotes, @NonNull SwitchMaterial switchEnlargeOrderNo,
-      @NonNull SwitchMaterial switchEnlargePhone, @NonNull SwitchMaterial switchReceiptCategories,
+      @NonNull SeekBar seekBarVolume, @NonNull Spinner spinnerSoundType,
+      @NonNull SwitchMaterial switchAutoPrint, @NonNull SwitchMaterial switchDrawerAutoPrint,
+      @NonNull SwitchMaterial switchEnlargeAddress, @NonNull SwitchMaterial switchEnlargeNotes,
+      @NonNull SwitchMaterial switchEnlargeOrderNo, @NonNull SwitchMaterial switchEnlargePhone,
+      @NonNull SwitchMaterial switchReceiptCategories,
       @NonNull SwitchMaterial switchReceiptCustAddress,
       @NonNull SwitchMaterial switchReceiptCustPhone, @NonNull SwitchMaterial switchReceiptItemIds,
       @NonNull TextView txtCustomerChevron, @NonNull TextView txtDetailAddress,
-      @NonNull TextView txtDetailCustomerName, @NonNull TextView txtDetailCustomerNotes,
-      @NonNull TextView txtDetailCustomerPhone, @NonNull TextView txtDetailDeliveryFee,
-      @NonNull TextView txtDetailHeaderTitle, @NonNull TextView txtDetailItemsCountHeader,
-      @NonNull TextView txtDetailOrderCode, @NonNull TextView txtDetailPaidBadge,
+      @NonNull TextView txtDetailCustomerLoyalty, @NonNull TextView txtDetailCustomerName,
+      @NonNull TextView txtDetailCustomerNotes, @NonNull TextView txtDetailCustomerPhone,
+      @NonNull TextView txtDetailDeliveryFee, @NonNull TextView txtDetailHeaderTitle,
+      @NonNull TextView txtDetailItemsCountHeader, @NonNull TextView txtDetailOrderCode,
+      @NonNull TextView txtDetailPaidBadge, @NonNull TextView txtDetailScheduledBadge,
       @NonNull TextView txtDetailSubtotal, @NonNull TextView txtDetailTimeLabel,
-      @NonNull TextView txtDetailTimeVal, @NonNull TextView txtDetailTotal,
-      @NonNull TextView txtDetailType, @NonNull TextView txtDrawerActiveRestaurant,
-      @NonNull TextView txtDrawerAutoPrintStatus, @NonNull TextView txtDrawerManagementChevron,
-      @NonNull TextView txtDrawerSettingsChevron, @NonNull TextView txtDrawerStopOrdersDesc,
-      @NonNull TextView txtDrawerStopOrdersIcon, @NonNull TextView txtDrawerStopOrdersTitle,
-      @NonNull TextView txtHeaderTitle, @NonNull TextView txtNoOrders,
-      @NonNull TextView txtOrderQueueTitle, @NonNull TextView txtPrinterStatus,
-      @NonNull TextView txtReceiptsCount, @NonNull TextView txtSoundVolumeVal,
-      @NonNull TextView txtSupabaseStatus, @NonNull TextView txtTabDone,
-      @NonNull TextView txtTabHandover, @NonNull TextView txtTabPrepare) {
+      @NonNull TextView txtDetailTimeVal, @NonNull TextView txtDetailTip,
+      @NonNull TextView txtDetailTotal, @NonNull TextView txtDetailType,
+      @NonNull TextView txtDrawerActiveRestaurant, @NonNull TextView txtDrawerAutoPrintStatus,
+      @NonNull TextView txtDrawerManagementChevron, @NonNull TextView txtDrawerSettingsChevron,
+      @NonNull TextView txtDrawerStopOrdersDesc, @NonNull TextView txtDrawerStopOrdersIcon,
+      @NonNull TextView txtDrawerStopOrdersTitle, @NonNull TextView txtHeaderTitle,
+      @NonNull TextView txtNoOrders, @NonNull TextView txtOrderQueueTitle,
+      @NonNull TextView txtPrinterStatus, @NonNull TextView txtReceiptsCount,
+      @NonNull TextView txtSoundVolumeVal, @NonNull TextView txtSupabaseStatus,
+      @NonNull TextView txtTabDone, @NonNull TextView txtTabHandover,
+      @NonNull TextView txtTabPrepare) {
     this.rootView = rootView;
     this.btnDetailAction = btnDetailAction;
     this.btnDetailAssignDriver = btnDetailAssignDriver;
     this.btnDetailBack = btnDetailBack;
+    this.btnDetailCancel = btnDetailCancel;
     this.btnDetailPrint = btnDetailPrint;
     this.btnDrawerAutoPrintToggle = btnDrawerAutoPrintToggle;
     this.btnDrawerClose = btnDrawerClose;
+    this.btnDrawerHelp = btnDrawerHelp;
     this.btnDrawerManagement = btnDrawerManagement;
-    this.btnDrawerRefresh = btnDrawerRefresh;
     this.btnDrawerSettings = btnDrawerSettings;
     this.btnDrawerStopOrders = btnDrawerStopOrders;
     this.btnDrawerSwitchRestaurant = btnDrawerSwitchRestaurant;
+    this.btnDriversBack = btnDriversBack;
     this.btnHamburger = btnHamburger;
+    this.btnHelpBack = btnHelpBack;
+    this.btnHelpSend = btnHelpSend;
     this.btnMenuBack = btnMenuBack;
     this.btnNotificationBell = btnNotificationBell;
+    this.btnOnboardingLinkCode = btnOnboardingLinkCode;
+    this.btnOnboardingLogin = btnOnboardingLogin;
     this.btnReceiptsBack = btnReceiptsBack;
     this.btnReceiptsMinus = btnReceiptsMinus;
     this.btnReceiptsPlus = btnReceiptsPlus;
     this.btnReceiptsPrintTest = btnReceiptsPrintTest;
     this.btnReceiptsReset = btnReceiptsReset;
     this.btnSoundPlay = btnSoundPlay;
+    this.btnSoundStop = btnSoundStop;
     this.btnSoundsBack = btnSoundsBack;
     this.btnSubConnectivity = btnSubConnectivity;
     this.btnSubDeviceInfo = btnSubDeviceInfo;
+    this.btnSubDriversManagement = btnSubDriversManagement;
     this.btnSubLanguage = btnSubLanguage;
     this.btnSubMenuManagement = btnSubMenuManagement;
     this.btnSubReceipts = btnSubReceipts;
@@ -404,25 +496,37 @@ public final class ActivityMainBinding implements ViewBinding {
     this.dotSupabase = dotSupabase;
     this.drawerLayout = drawerLayout;
     this.drawerPane = drawerPane;
+    this.driversContainer = driversContainer;
+    this.editHelpMessage = editHelpMessage;
+    this.editHelpSubject = editHelpSubject;
+    this.editOnboardingCode = editOnboardingCode;
+    this.editOnboardingEmail = editOnboardingEmail;
+    this.editOnboardingPassword = editOnboardingPassword;
     this.headerBar = headerBar;
     this.layoutCustomerDetails = layoutCustomerDetails;
     this.layoutDetailItemsContainer = layoutDetailItemsContainer;
+    this.layoutDetailTip = layoutDetailTip;
     this.layoutDrawerManagementSub = layoutDrawerManagementSub;
     this.layoutDrawerSettingsSub = layoutDrawerSettingsSub;
+    this.layoutOnboardingRegister = layoutOnboardingRegister;
     this.layoutOrderDetail = layoutOrderDetail;
     this.layoutOrderList = layoutOrderList;
+    this.layoutSettingsDrivers = layoutSettingsDrivers;
+    this.layoutSettingsHelp = layoutSettingsHelp;
     this.layoutSettingsMenu = layoutSettingsMenu;
     this.layoutSettingsReceipts = layoutSettingsReceipts;
     this.layoutSettingsSounds = layoutSettingsSounds;
     this.mainTabContainer = mainTabContainer;
     this.menuItemsContainer = menuItemsContainer;
     this.ordersContainer = ordersContainer;
+    this.progressOnboarding = progressOnboarding;
     this.radioGroupSounds = radioGroupSounds;
     this.radioSoundDefault = radioSoundDefault;
     this.radioSoundNoisy = radioSoundNoisy;
     this.radioSoundQuiet = radioSoundQuiet;
     this.screenContainer = screenContainer;
     this.seekBarVolume = seekBarVolume;
+    this.spinnerSoundType = spinnerSoundType;
     this.switchAutoPrint = switchAutoPrint;
     this.switchDrawerAutoPrint = switchDrawerAutoPrint;
     this.switchEnlargeAddress = switchEnlargeAddress;
@@ -435,6 +539,7 @@ public final class ActivityMainBinding implements ViewBinding {
     this.switchReceiptItemIds = switchReceiptItemIds;
     this.txtCustomerChevron = txtCustomerChevron;
     this.txtDetailAddress = txtDetailAddress;
+    this.txtDetailCustomerLoyalty = txtDetailCustomerLoyalty;
     this.txtDetailCustomerName = txtDetailCustomerName;
     this.txtDetailCustomerNotes = txtDetailCustomerNotes;
     this.txtDetailCustomerPhone = txtDetailCustomerPhone;
@@ -443,9 +548,11 @@ public final class ActivityMainBinding implements ViewBinding {
     this.txtDetailItemsCountHeader = txtDetailItemsCountHeader;
     this.txtDetailOrderCode = txtDetailOrderCode;
     this.txtDetailPaidBadge = txtDetailPaidBadge;
+    this.txtDetailScheduledBadge = txtDetailScheduledBadge;
     this.txtDetailSubtotal = txtDetailSubtotal;
     this.txtDetailTimeLabel = txtDetailTimeLabel;
     this.txtDetailTimeVal = txtDetailTimeVal;
+    this.txtDetailTip = txtDetailTip;
     this.txtDetailTotal = txtDetailTotal;
     this.txtDetailType = txtDetailType;
     this.txtDrawerActiveRestaurant = txtDrawerActiveRestaurant;
@@ -512,6 +619,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.btnDetailCancel;
+      Button btnDetailCancel = ViewBindings.findChildViewById(rootView, id);
+      if (btnDetailCancel == null) {
+        break missingId;
+      }
+
       id = R.id.btnDetailPrint;
       TextView btnDetailPrint = ViewBindings.findChildViewById(rootView, id);
       if (btnDetailPrint == null) {
@@ -530,15 +643,15 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.btnDrawerManagement;
-      LinearLayout btnDrawerManagement = ViewBindings.findChildViewById(rootView, id);
-      if (btnDrawerManagement == null) {
+      id = R.id.btnDrawerHelp;
+      LinearLayout btnDrawerHelp = ViewBindings.findChildViewById(rootView, id);
+      if (btnDrawerHelp == null) {
         break missingId;
       }
 
-      id = R.id.btnDrawerRefresh;
-      LinearLayout btnDrawerRefresh = ViewBindings.findChildViewById(rootView, id);
-      if (btnDrawerRefresh == null) {
+      id = R.id.btnDrawerManagement;
+      LinearLayout btnDrawerManagement = ViewBindings.findChildViewById(rootView, id);
+      if (btnDrawerManagement == null) {
         break missingId;
       }
 
@@ -560,9 +673,27 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.btnDriversBack;
+      TextView btnDriversBack = ViewBindings.findChildViewById(rootView, id);
+      if (btnDriversBack == null) {
+        break missingId;
+      }
+
       id = R.id.btnHamburger;
       TextView btnHamburger = ViewBindings.findChildViewById(rootView, id);
       if (btnHamburger == null) {
+        break missingId;
+      }
+
+      id = R.id.btnHelpBack;
+      TextView btnHelpBack = ViewBindings.findChildViewById(rootView, id);
+      if (btnHelpBack == null) {
+        break missingId;
+      }
+
+      id = R.id.btnHelpSend;
+      Button btnHelpSend = ViewBindings.findChildViewById(rootView, id);
+      if (btnHelpSend == null) {
         break missingId;
       }
 
@@ -575,6 +706,18 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.btnNotificationBell;
       TextView btnNotificationBell = ViewBindings.findChildViewById(rootView, id);
       if (btnNotificationBell == null) {
+        break missingId;
+      }
+
+      id = R.id.btnOnboardingLinkCode;
+      AppCompatButton btnOnboardingLinkCode = ViewBindings.findChildViewById(rootView, id);
+      if (btnOnboardingLinkCode == null) {
+        break missingId;
+      }
+
+      id = R.id.btnOnboardingLogin;
+      AppCompatButton btnOnboardingLogin = ViewBindings.findChildViewById(rootView, id);
+      if (btnOnboardingLogin == null) {
         break missingId;
       }
 
@@ -614,6 +757,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.btnSoundStop;
+      TextView btnSoundStop = ViewBindings.findChildViewById(rootView, id);
+      if (btnSoundStop == null) {
+        break missingId;
+      }
+
       id = R.id.btnSoundsBack;
       TextView btnSoundsBack = ViewBindings.findChildViewById(rootView, id);
       if (btnSoundsBack == null) {
@@ -629,6 +778,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.btnSubDeviceInfo;
       TextView btnSubDeviceInfo = ViewBindings.findChildViewById(rootView, id);
       if (btnSubDeviceInfo == null) {
+        break missingId;
+      }
+
+      id = R.id.btnSubDriversManagement;
+      TextView btnSubDriversManagement = ViewBindings.findChildViewById(rootView, id);
+      if (btnSubDriversManagement == null) {
         break missingId;
       }
 
@@ -706,6 +861,42 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.driversContainer;
+      LinearLayout driversContainer = ViewBindings.findChildViewById(rootView, id);
+      if (driversContainer == null) {
+        break missingId;
+      }
+
+      id = R.id.editHelpMessage;
+      EditText editHelpMessage = ViewBindings.findChildViewById(rootView, id);
+      if (editHelpMessage == null) {
+        break missingId;
+      }
+
+      id = R.id.editHelpSubject;
+      EditText editHelpSubject = ViewBindings.findChildViewById(rootView, id);
+      if (editHelpSubject == null) {
+        break missingId;
+      }
+
+      id = R.id.editOnboardingCode;
+      EditText editOnboardingCode = ViewBindings.findChildViewById(rootView, id);
+      if (editOnboardingCode == null) {
+        break missingId;
+      }
+
+      id = R.id.editOnboardingEmail;
+      EditText editOnboardingEmail = ViewBindings.findChildViewById(rootView, id);
+      if (editOnboardingEmail == null) {
+        break missingId;
+      }
+
+      id = R.id.editOnboardingPassword;
+      EditText editOnboardingPassword = ViewBindings.findChildViewById(rootView, id);
+      if (editOnboardingPassword == null) {
+        break missingId;
+      }
+
       id = R.id.headerBar;
       LinearLayout headerBar = ViewBindings.findChildViewById(rootView, id);
       if (headerBar == null) {
@@ -724,6 +915,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.layoutDetailTip;
+      LinearLayout layoutDetailTip = ViewBindings.findChildViewById(rootView, id);
+      if (layoutDetailTip == null) {
+        break missingId;
+      }
+
       id = R.id.layoutDrawerManagementSub;
       LinearLayout layoutDrawerManagementSub = ViewBindings.findChildViewById(rootView, id);
       if (layoutDrawerManagementSub == null) {
@@ -736,6 +933,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.layoutOnboardingRegister;
+      LinearLayout layoutOnboardingRegister = ViewBindings.findChildViewById(rootView, id);
+      if (layoutOnboardingRegister == null) {
+        break missingId;
+      }
+
       id = R.id.layoutOrderDetail;
       LinearLayout layoutOrderDetail = ViewBindings.findChildViewById(rootView, id);
       if (layoutOrderDetail == null) {
@@ -745,6 +948,18 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.layoutOrderList;
       LinearLayout layoutOrderList = ViewBindings.findChildViewById(rootView, id);
       if (layoutOrderList == null) {
+        break missingId;
+      }
+
+      id = R.id.layoutSettingsDrivers;
+      LinearLayout layoutSettingsDrivers = ViewBindings.findChildViewById(rootView, id);
+      if (layoutSettingsDrivers == null) {
+        break missingId;
+      }
+
+      id = R.id.layoutSettingsHelp;
+      LinearLayout layoutSettingsHelp = ViewBindings.findChildViewById(rootView, id);
+      if (layoutSettingsHelp == null) {
         break missingId;
       }
 
@@ -784,6 +999,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.progressOnboarding;
+      ProgressBar progressOnboarding = ViewBindings.findChildViewById(rootView, id);
+      if (progressOnboarding == null) {
+        break missingId;
+      }
+
       id = R.id.radioGroupSounds;
       RadioGroup radioGroupSounds = ViewBindings.findChildViewById(rootView, id);
       if (radioGroupSounds == null) {
@@ -817,6 +1038,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.seekBarVolume;
       SeekBar seekBarVolume = ViewBindings.findChildViewById(rootView, id);
       if (seekBarVolume == null) {
+        break missingId;
+      }
+
+      id = R.id.spinnerSoundType;
+      Spinner spinnerSoundType = ViewBindings.findChildViewById(rootView, id);
+      if (spinnerSoundType == null) {
         break missingId;
       }
 
@@ -892,6 +1119,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.txtDetailCustomerLoyalty;
+      TextView txtDetailCustomerLoyalty = ViewBindings.findChildViewById(rootView, id);
+      if (txtDetailCustomerLoyalty == null) {
+        break missingId;
+      }
+
       id = R.id.txtDetailCustomerName;
       TextView txtDetailCustomerName = ViewBindings.findChildViewById(rootView, id);
       if (txtDetailCustomerName == null) {
@@ -940,6 +1173,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.txtDetailScheduledBadge;
+      TextView txtDetailScheduledBadge = ViewBindings.findChildViewById(rootView, id);
+      if (txtDetailScheduledBadge == null) {
+        break missingId;
+      }
+
       id = R.id.txtDetailSubtotal;
       TextView txtDetailSubtotal = ViewBindings.findChildViewById(rootView, id);
       if (txtDetailSubtotal == null) {
@@ -955,6 +1194,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.txtDetailTimeVal;
       TextView txtDetailTimeVal = ViewBindings.findChildViewById(rootView, id);
       if (txtDetailTimeVal == null) {
+        break missingId;
+      }
+
+      id = R.id.txtDetailTip;
+      TextView txtDetailTip = ViewBindings.findChildViewById(rootView, id);
+      if (txtDetailTip == null) {
         break missingId;
       }
 
@@ -1073,30 +1318,35 @@ public final class ActivityMainBinding implements ViewBinding {
       }
 
       return new ActivityMainBinding((DrawerLayout) rootView, btnDetailAction,
-          btnDetailAssignDriver, btnDetailBack, btnDetailPrint, btnDrawerAutoPrintToggle,
-          btnDrawerClose, btnDrawerManagement, btnDrawerRefresh, btnDrawerSettings,
-          btnDrawerStopOrders, btnDrawerSwitchRestaurant, btnHamburger, btnMenuBack,
-          btnNotificationBell, btnReceiptsBack, btnReceiptsMinus, btnReceiptsPlus,
-          btnReceiptsPrintTest, btnReceiptsReset, btnSoundPlay, btnSoundsBack, btnSubConnectivity,
-          btnSubDeviceInfo, btnSubLanguage, btnSubMenuManagement, btnSubReceipts, btnSubSounds,
-          btnSubTodaySales, btnTabDone, btnTabHandover, btnTabPrepare, btnToggleCustomerInfo,
-          dotPrinter, dotSupabase, drawerLayout, drawerPane, headerBar, layoutCustomerDetails,
-          layoutDetailItemsContainer, layoutDrawerManagementSub, layoutDrawerSettingsSub,
-          layoutOrderDetail, layoutOrderList, layoutSettingsMenu, layoutSettingsReceipts,
-          layoutSettingsSounds, mainTabContainer, menuItemsContainer, ordersContainer,
-          radioGroupSounds, radioSoundDefault, radioSoundNoisy, radioSoundQuiet, screenContainer,
-          seekBarVolume, switchAutoPrint, switchDrawerAutoPrint, switchEnlargeAddress,
+          btnDetailAssignDriver, btnDetailBack, btnDetailCancel, btnDetailPrint,
+          btnDrawerAutoPrintToggle, btnDrawerClose, btnDrawerHelp, btnDrawerManagement,
+          btnDrawerSettings, btnDrawerStopOrders, btnDrawerSwitchRestaurant, btnDriversBack,
+          btnHamburger, btnHelpBack, btnHelpSend, btnMenuBack, btnNotificationBell,
+          btnOnboardingLinkCode, btnOnboardingLogin, btnReceiptsBack, btnReceiptsMinus,
+          btnReceiptsPlus, btnReceiptsPrintTest, btnReceiptsReset, btnSoundPlay, btnSoundStop,
+          btnSoundsBack, btnSubConnectivity, btnSubDeviceInfo, btnSubDriversManagement,
+          btnSubLanguage, btnSubMenuManagement, btnSubReceipts, btnSubSounds, btnSubTodaySales,
+          btnTabDone, btnTabHandover, btnTabPrepare, btnToggleCustomerInfo, dotPrinter, dotSupabase,
+          drawerLayout, drawerPane, driversContainer, editHelpMessage, editHelpSubject,
+          editOnboardingCode, editOnboardingEmail, editOnboardingPassword, headerBar,
+          layoutCustomerDetails, layoutDetailItemsContainer, layoutDetailTip,
+          layoutDrawerManagementSub, layoutDrawerSettingsSub, layoutOnboardingRegister,
+          layoutOrderDetail, layoutOrderList, layoutSettingsDrivers, layoutSettingsHelp,
+          layoutSettingsMenu, layoutSettingsReceipts, layoutSettingsSounds, mainTabContainer,
+          menuItemsContainer, ordersContainer, progressOnboarding, radioGroupSounds,
+          radioSoundDefault, radioSoundNoisy, radioSoundQuiet, screenContainer, seekBarVolume,
+          spinnerSoundType, switchAutoPrint, switchDrawerAutoPrint, switchEnlargeAddress,
           switchEnlargeNotes, switchEnlargeOrderNo, switchEnlargePhone, switchReceiptCategories,
           switchReceiptCustAddress, switchReceiptCustPhone, switchReceiptItemIds,
-          txtCustomerChevron, txtDetailAddress, txtDetailCustomerName, txtDetailCustomerNotes,
-          txtDetailCustomerPhone, txtDetailDeliveryFee, txtDetailHeaderTitle,
-          txtDetailItemsCountHeader, txtDetailOrderCode, txtDetailPaidBadge, txtDetailSubtotal,
-          txtDetailTimeLabel, txtDetailTimeVal, txtDetailTotal, txtDetailType,
-          txtDrawerActiveRestaurant, txtDrawerAutoPrintStatus, txtDrawerManagementChevron,
-          txtDrawerSettingsChevron, txtDrawerStopOrdersDesc, txtDrawerStopOrdersIcon,
-          txtDrawerStopOrdersTitle, txtHeaderTitle, txtNoOrders, txtOrderQueueTitle,
-          txtPrinterStatus, txtReceiptsCount, txtSoundVolumeVal, txtSupabaseStatus, txtTabDone,
-          txtTabHandover, txtTabPrepare);
+          txtCustomerChevron, txtDetailAddress, txtDetailCustomerLoyalty, txtDetailCustomerName,
+          txtDetailCustomerNotes, txtDetailCustomerPhone, txtDetailDeliveryFee,
+          txtDetailHeaderTitle, txtDetailItemsCountHeader, txtDetailOrderCode, txtDetailPaidBadge,
+          txtDetailScheduledBadge, txtDetailSubtotal, txtDetailTimeLabel, txtDetailTimeVal,
+          txtDetailTip, txtDetailTotal, txtDetailType, txtDrawerActiveRestaurant,
+          txtDrawerAutoPrintStatus, txtDrawerManagementChevron, txtDrawerSettingsChevron,
+          txtDrawerStopOrdersDesc, txtDrawerStopOrdersIcon, txtDrawerStopOrdersTitle,
+          txtHeaderTitle, txtNoOrders, txtOrderQueueTitle, txtPrinterStatus, txtReceiptsCount,
+          txtSoundVolumeVal, txtSupabaseStatus, txtTabDone, txtTabHandover, txtTabPrepare);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

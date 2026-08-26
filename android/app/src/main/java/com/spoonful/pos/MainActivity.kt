@@ -99,6 +99,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtDetailTip: TextView
     private lateinit var btnDetailAction: android.widget.Button
     private lateinit var btnDetailAssignDriver: android.widget.Button
+    private lateinit var btnDetailCancel: android.widget.Button
     private lateinit var btnToggleCustomerInfo: LinearLayout
     private lateinit var btnDrawerSwitchRestaurant: LinearLayout
     private lateinit var txtDrawerActiveRestaurant: TextView
@@ -584,6 +585,7 @@ class MainActivity : AppCompatActivity() {
         txtDetailTip = findViewById(R.id.txtDetailTip)
         btnDetailAction = findViewById(R.id.btnDetailAction)
         btnDetailAssignDriver = findViewById(R.id.btnDetailAssignDriver)
+        btnDetailCancel = findViewById(R.id.btnDetailCancel)
         btnToggleCustomerInfo = findViewById(R.id.btnToggleCustomerInfo)
         btnDrawerSwitchRestaurant = findViewById(R.id.btnDrawerSwitchRestaurant)
         txtDrawerActiveRestaurant = findViewById(R.id.txtDrawerActiveRestaurant)
@@ -1387,6 +1389,41 @@ class MainActivity : AppCompatActivity() {
             txtCustomerChevron.text = if (isVisible) "⌵" else "⌃"
         }
 
+        btnDetailCancel.setOnClickListener {
+            val order = selectedOrder ?: return@setOnClickListener
+            val isOnline = order.paymentMethod.lowercase() == "online"
+            val msg = if (isOnline) 
+                "Are you sure you want to cancel and refund this online order?" 
+            else 
+                "Are you sure you want to cancel this order?"
+
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Cancel Order")
+                .setMessage(msg)
+                .setPositiveButton("Yes") { _, _ ->
+                    showScreen(Screen.ORDER_LIST)
+                    if (isOnline) {
+                        Toast.makeText(this@MainActivity, "Processing Stripe/Mock refund...", Toast.LENGTH_LONG).show()
+                        supabaseManager.triggerStripeRefund(order.id) { success ->
+                            if (success) {
+                                Toast.makeText(this@MainActivity, "Refund processed successfully", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(this@MainActivity, "Refund triggered", Toast.LENGTH_SHORT).show()
+                            }
+                            refreshOrderList()
+                        }
+                    } else {
+                        supabaseManager.updateOrderPrintedAndStatus(order.id, order.printed, "cancelled") { success ->
+                            supabaseManager.notifyHyperzodStatusUpdate(order.orderNumber, order.hyperzodOrderId, "cancelled")
+                            Toast.makeText(this@MainActivity, "Order cancelled", Toast.LENGTH_SHORT).show()
+                            refreshOrderList()
+                        }
+                    }
+                }
+                .setNegativeButton("No", null)
+                .show()
+        }
+
         btnDetailAction.setOnClickListener {
             val order = selectedOrder ?: return@setOnClickListener
             val targetStatus = when (order.status.lowercase()) {
@@ -1631,6 +1668,15 @@ class MainActivity : AppCompatActivity() {
             btnDetailAction.text = actionLabel
         } else {
             btnDetailAction.visibility = View.GONE
+        }
+
+        // Cancel / Refund button visibility
+        val canCancel = order.status.lowercase() != "completed" && order.status.lowercase() != "cancelled"
+        if (canCancel) {
+            btnDetailCancel.visibility = View.VISIBLE
+            btnDetailCancel.text = if (order.paymentMethod.lowercase() == "online") "CANCEL & REFUND" else "CANCEL ORDER"
+        } else {
+            btnDetailCancel.visibility = View.GONE
         }
 
         // Driver assignment visibility
@@ -2640,44 +2686,117 @@ class MainActivity : AppCompatActivity() {
                 layoutStep1Container.visibility = View.VISIBLE
             }
 
-            // Print & Confirm Order in Step 2
+            // Print & Confirm Order in Step 2 with Quantity Dropdown Dialog
             btnConfirm.setOnClickListener {
                 stopIncomingOrderSound()
-                dialog.dismiss()
-
-                // Check driver selection
-                var chosenDriver: String? = null
-                if (isDelivery && spinnerDialogDriver.selectedItemPosition > 0) {
-                    chosenDriver = driverNamesList[spinnerDialogDriver.selectedItemPosition]
-                    order.driverName = chosenDriver
+                
+                val context = this@MainActivity
+                val dialogBuilder = androidx.appcompat.app.AlertDialog.Builder(context)
+                dialogBuilder.setTitle("Print Receipt Copies")
+                
+                val container = LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(24), dp(16), dp(24), dp(16))
                 }
-
-                // 1. Update status to preparing and set prep time in Supabase
-                supabaseManager.updateOrderPrintedAndStatus(order.id, true, "preparing", currentPrepTime) { success ->
-                    if (chosenDriver != null) {
-                        supabaseManager.assignDriverToOrder(order.id, chosenDriver)
+                
+                val label = TextView(context).apply {
+                    text = "Select number of receipt copies to print:"
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                    setPadding(0, 0, 0, dp(12))
+                }
+                container.addView(label)
+                
+                val spinner = Spinner(context)
+                val printOptions = listOf("Do Not Print", "1 Copy", "2 Copies", "3 Copies", "4 Copies", "5 Copies")
+                val spinnerAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, printOptions)
+                spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                spinner.adapter = spinnerAdapter
+                
+                // Default selection is based on the global receiptCopiesCount configuration
+                val defaultSel = receiptCopiesCount.coerceIn(0, 5)
+                spinner.setSelection(defaultSel)
+                
+                container.addView(spinner)
+                dialogBuilder.setView(container)
+                
+                dialogBuilder.setPositiveButton("Accept & Print") { printDialog, _ ->
+                    printDialog.dismiss()
+                    dialog.dismiss() // Dismiss incoming order dialog
+                    
+                    val selectedQty = spinner.selectedItemPosition // 0 = Do Not Print, 1 = 1 copy, 2 = 2 copies, etc.
+                    
+                    // Check driver selection
+                    var chosenDriver: String? = null
+                    if (isDelivery && spinnerDialogDriver.selectedItemPosition > 0) {
+                        chosenDriver = driverNamesList[spinnerDialogDriver.selectedItemPosition]
+                        order.driverName = chosenDriver
                     }
-                    supabaseManager.notifyHyperzodStatusUpdate(order.orderNumber, order.hyperzodOrderId, "preparing")
-                    runOnUiThread { refreshOrderList() }
-                }
 
-                // 2. Print receipt if not already printed
-                if (!printedOrderIds.contains(order.id)) {
-                    printedOrderIds.add(order.id)
-                    order.printed = true
-                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) {
+                    // 1. Update status to preparing and set prep time in Supabase
+                    supabaseManager.updateOrderPrintedAndStatus(order.id, selectedQty > 0, "preparing", currentPrepTime) { success ->
+                        if (chosenDriver != null) {
+                            supabaseManager.assignDriverToOrder(order.id, chosenDriver)
+                        }
+                        supabaseManager.notifyHyperzodStatusUpdate(order.orderNumber, order.hyperzodOrderId, "preparing")
                         runOnUiThread { refreshOrderList() }
                     }
+
+                    // 2. Print receipt if selected quantity is greater than 0
+                    if (selectedQty > 0) {
+                        var copiesLeft = selectedQty
+                        fun printNext() {
+                            if (copiesLeft <= 0) {
+                                runOnUiThread {
+                                    val msg = if (selectedQty > 1) "$selectedQty receipts sent to printer!" else "Receipt sent to printer!"
+                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    if (!order.printed) {
+                                        order.printed = true
+                                        printedOrderIds.add(order.id)
+                                        refreshOrderList()
+                                    }
+                                }
+                                return
+                            }
+                            copiesLeft--
+                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
+                                if (success) {
+                                    printNext()
+                                } else {
+                                    runOnUiThread {
+                                        Toast.makeText(context, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        }
+                        printNext()
+                    } else {
+                        order.printed = false
+                    }
                 }
+                dialogBuilder.setNegativeButton("Cancel", null)
+                dialogBuilder.show()
             }
 
             // Decline Order
             btnDecline.setOnClickListener {
                 stopIncomingOrderSound()
                 dialog.dismiss()
-                supabaseManager.updateOrderPrintedAndStatus(order.id, false, "cancelled") { success ->
-                    supabaseManager.notifyHyperzodStatusUpdate(order.orderNumber, order.hyperzodOrderId, "cancelled")
-                    runOnUiThread { refreshOrderList() }
+                val isOnline = order.paymentMethod.lowercase() == "online"
+                if (isOnline) {
+                    Toast.makeText(this@MainActivity, "Cancelling and refunding online payment...", Toast.LENGTH_LONG).show()
+                    supabaseManager.triggerStripeRefund(order.id) { success ->
+                        if (success) {
+                            Toast.makeText(this@MainActivity, "Refund processed successfully", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this@MainActivity, "Refund request sent", Toast.LENGTH_SHORT).show()
+                        }
+                        runOnUiThread { refreshOrderList() }
+                    }
+                } else {
+                    supabaseManager.updateOrderPrintedAndStatus(order.id, false, "cancelled") { success ->
+                        supabaseManager.notifyHyperzodStatusUpdate(order.orderNumber, order.hyperzodOrderId, "cancelled")
+                        runOnUiThread { refreshOrderList() }
+                    }
                 }
             }
 

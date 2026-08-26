@@ -4,12 +4,12 @@ package com.spoonful.pos.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.spoonful.pos.R;
@@ -22,10 +22,34 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
   private final LinearLayout rootView;
 
   @NonNull
-  public final Button btnDialogAccept;
+  public final AppCompatButton btnDialogAccept;
 
   @NonNull
-  public final Button btnDialogDecline;
+  public final AppCompatButton btnDialogBackStep2;
+
+  @NonNull
+  public final AppCompatButton btnDialogConfirm;
+
+  @NonNull
+  public final AppCompatButton btnDialogDecline;
+
+  @NonNull
+  public final AppCompatButton btnDialogPrepAdd10;
+
+  @NonNull
+  public final AppCompatButton btnDialogPrepAdd15;
+
+  @NonNull
+  public final AppCompatButton btnDialogPrepAdd20;
+
+  @NonNull
+  public final AppCompatButton btnDialogPrepAdd5;
+
+  @NonNull
+  public final AppCompatButton btnDialogPrepMinus;
+
+  @NonNull
+  public final AppCompatButton btnDialogPrepPlus;
 
   @NonNull
   public final LinearLayout containerDialogItems;
@@ -34,10 +58,19 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
   public final LinearLayout layoutDialogDriver;
 
   @NonNull
-  public final Spinner spinnerDialogDriver;
+  public final LinearLayout layoutDialogNotes;
 
   @NonNull
-  public final Spinner spinnerDialogPrepTime;
+  public final LinearLayout layoutDialogTip;
+
+  @NonNull
+  public final LinearLayout layoutStep1Container;
+
+  @NonNull
+  public final LinearLayout layoutStep2Container;
+
+  @NonNull
+  public final Spinner spinnerDialogDriver;
 
   @NonNull
   public final TextView txtDialogAddress;
@@ -52,35 +85,74 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
   public final TextView txtDialogCustomerPhone;
 
   @NonNull
+  public final TextView txtDialogNewOrderBadge;
+
+  @NonNull
+  public final TextView txtDialogNotes;
+
+  @NonNull
   public final TextView txtDialogOrderNo;
+
+  @NonNull
+  public final TextView txtDialogPrepVal;
+
+  @NonNull
+  public final TextView txtDialogScheduledBadge;
 
   @NonNull
   public final TextView txtDialogTimer;
 
   @NonNull
+  public final TextView txtDialogTip;
+
+  @NonNull
   public final TextView txtDialogTotal;
 
   private DialogIncomingOrderBinding(@NonNull LinearLayout rootView,
-      @NonNull Button btnDialogAccept, @NonNull Button btnDialogDecline,
+      @NonNull AppCompatButton btnDialogAccept, @NonNull AppCompatButton btnDialogBackStep2,
+      @NonNull AppCompatButton btnDialogConfirm, @NonNull AppCompatButton btnDialogDecline,
+      @NonNull AppCompatButton btnDialogPrepAdd10, @NonNull AppCompatButton btnDialogPrepAdd15,
+      @NonNull AppCompatButton btnDialogPrepAdd20, @NonNull AppCompatButton btnDialogPrepAdd5,
+      @NonNull AppCompatButton btnDialogPrepMinus, @NonNull AppCompatButton btnDialogPrepPlus,
       @NonNull LinearLayout containerDialogItems, @NonNull LinearLayout layoutDialogDriver,
-      @NonNull Spinner spinnerDialogDriver, @NonNull Spinner spinnerDialogPrepTime,
-      @NonNull TextView txtDialogAddress, @NonNull TextView txtDialogCustomerLoyalty,
-      @NonNull TextView txtDialogCustomerName, @NonNull TextView txtDialogCustomerPhone,
-      @NonNull TextView txtDialogOrderNo, @NonNull TextView txtDialogTimer,
+      @NonNull LinearLayout layoutDialogNotes, @NonNull LinearLayout layoutDialogTip,
+      @NonNull LinearLayout layoutStep1Container, @NonNull LinearLayout layoutStep2Container,
+      @NonNull Spinner spinnerDialogDriver, @NonNull TextView txtDialogAddress,
+      @NonNull TextView txtDialogCustomerLoyalty, @NonNull TextView txtDialogCustomerName,
+      @NonNull TextView txtDialogCustomerPhone, @NonNull TextView txtDialogNewOrderBadge,
+      @NonNull TextView txtDialogNotes, @NonNull TextView txtDialogOrderNo,
+      @NonNull TextView txtDialogPrepVal, @NonNull TextView txtDialogScheduledBadge,
+      @NonNull TextView txtDialogTimer, @NonNull TextView txtDialogTip,
       @NonNull TextView txtDialogTotal) {
     this.rootView = rootView;
     this.btnDialogAccept = btnDialogAccept;
+    this.btnDialogBackStep2 = btnDialogBackStep2;
+    this.btnDialogConfirm = btnDialogConfirm;
     this.btnDialogDecline = btnDialogDecline;
+    this.btnDialogPrepAdd10 = btnDialogPrepAdd10;
+    this.btnDialogPrepAdd15 = btnDialogPrepAdd15;
+    this.btnDialogPrepAdd20 = btnDialogPrepAdd20;
+    this.btnDialogPrepAdd5 = btnDialogPrepAdd5;
+    this.btnDialogPrepMinus = btnDialogPrepMinus;
+    this.btnDialogPrepPlus = btnDialogPrepPlus;
     this.containerDialogItems = containerDialogItems;
     this.layoutDialogDriver = layoutDialogDriver;
+    this.layoutDialogNotes = layoutDialogNotes;
+    this.layoutDialogTip = layoutDialogTip;
+    this.layoutStep1Container = layoutStep1Container;
+    this.layoutStep2Container = layoutStep2Container;
     this.spinnerDialogDriver = spinnerDialogDriver;
-    this.spinnerDialogPrepTime = spinnerDialogPrepTime;
     this.txtDialogAddress = txtDialogAddress;
     this.txtDialogCustomerLoyalty = txtDialogCustomerLoyalty;
     this.txtDialogCustomerName = txtDialogCustomerName;
     this.txtDialogCustomerPhone = txtDialogCustomerPhone;
+    this.txtDialogNewOrderBadge = txtDialogNewOrderBadge;
+    this.txtDialogNotes = txtDialogNotes;
     this.txtDialogOrderNo = txtDialogOrderNo;
+    this.txtDialogPrepVal = txtDialogPrepVal;
+    this.txtDialogScheduledBadge = txtDialogScheduledBadge;
     this.txtDialogTimer = txtDialogTimer;
+    this.txtDialogTip = txtDialogTip;
     this.txtDialogTotal = txtDialogTotal;
   }
 
@@ -112,14 +184,62 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
     int id;
     missingId: {
       id = R.id.btnDialogAccept;
-      Button btnDialogAccept = ViewBindings.findChildViewById(rootView, id);
+      AppCompatButton btnDialogAccept = ViewBindings.findChildViewById(rootView, id);
       if (btnDialogAccept == null) {
         break missingId;
       }
 
+      id = R.id.btnDialogBackStep2;
+      AppCompatButton btnDialogBackStep2 = ViewBindings.findChildViewById(rootView, id);
+      if (btnDialogBackStep2 == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDialogConfirm;
+      AppCompatButton btnDialogConfirm = ViewBindings.findChildViewById(rootView, id);
+      if (btnDialogConfirm == null) {
+        break missingId;
+      }
+
       id = R.id.btnDialogDecline;
-      Button btnDialogDecline = ViewBindings.findChildViewById(rootView, id);
+      AppCompatButton btnDialogDecline = ViewBindings.findChildViewById(rootView, id);
       if (btnDialogDecline == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDialogPrepAdd10;
+      AppCompatButton btnDialogPrepAdd10 = ViewBindings.findChildViewById(rootView, id);
+      if (btnDialogPrepAdd10 == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDialogPrepAdd15;
+      AppCompatButton btnDialogPrepAdd15 = ViewBindings.findChildViewById(rootView, id);
+      if (btnDialogPrepAdd15 == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDialogPrepAdd20;
+      AppCompatButton btnDialogPrepAdd20 = ViewBindings.findChildViewById(rootView, id);
+      if (btnDialogPrepAdd20 == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDialogPrepAdd5;
+      AppCompatButton btnDialogPrepAdd5 = ViewBindings.findChildViewById(rootView, id);
+      if (btnDialogPrepAdd5 == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDialogPrepMinus;
+      AppCompatButton btnDialogPrepMinus = ViewBindings.findChildViewById(rootView, id);
+      if (btnDialogPrepMinus == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDialogPrepPlus;
+      AppCompatButton btnDialogPrepPlus = ViewBindings.findChildViewById(rootView, id);
+      if (btnDialogPrepPlus == null) {
         break missingId;
       }
 
@@ -135,15 +255,33 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.spinnerDialogDriver;
-      Spinner spinnerDialogDriver = ViewBindings.findChildViewById(rootView, id);
-      if (spinnerDialogDriver == null) {
+      id = R.id.layoutDialogNotes;
+      LinearLayout layoutDialogNotes = ViewBindings.findChildViewById(rootView, id);
+      if (layoutDialogNotes == null) {
         break missingId;
       }
 
-      id = R.id.spinnerDialogPrepTime;
-      Spinner spinnerDialogPrepTime = ViewBindings.findChildViewById(rootView, id);
-      if (spinnerDialogPrepTime == null) {
+      id = R.id.layoutDialogTip;
+      LinearLayout layoutDialogTip = ViewBindings.findChildViewById(rootView, id);
+      if (layoutDialogTip == null) {
+        break missingId;
+      }
+
+      id = R.id.layoutStep1Container;
+      LinearLayout layoutStep1Container = ViewBindings.findChildViewById(rootView, id);
+      if (layoutStep1Container == null) {
+        break missingId;
+      }
+
+      id = R.id.layoutStep2Container;
+      LinearLayout layoutStep2Container = ViewBindings.findChildViewById(rootView, id);
+      if (layoutStep2Container == null) {
+        break missingId;
+      }
+
+      id = R.id.spinnerDialogDriver;
+      Spinner spinnerDialogDriver = ViewBindings.findChildViewById(rootView, id);
+      if (spinnerDialogDriver == null) {
         break missingId;
       }
 
@@ -171,15 +309,45 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.txtDialogNewOrderBadge;
+      TextView txtDialogNewOrderBadge = ViewBindings.findChildViewById(rootView, id);
+      if (txtDialogNewOrderBadge == null) {
+        break missingId;
+      }
+
+      id = R.id.txtDialogNotes;
+      TextView txtDialogNotes = ViewBindings.findChildViewById(rootView, id);
+      if (txtDialogNotes == null) {
+        break missingId;
+      }
+
       id = R.id.txtDialogOrderNo;
       TextView txtDialogOrderNo = ViewBindings.findChildViewById(rootView, id);
       if (txtDialogOrderNo == null) {
         break missingId;
       }
 
+      id = R.id.txtDialogPrepVal;
+      TextView txtDialogPrepVal = ViewBindings.findChildViewById(rootView, id);
+      if (txtDialogPrepVal == null) {
+        break missingId;
+      }
+
+      id = R.id.txtDialogScheduledBadge;
+      TextView txtDialogScheduledBadge = ViewBindings.findChildViewById(rootView, id);
+      if (txtDialogScheduledBadge == null) {
+        break missingId;
+      }
+
       id = R.id.txtDialogTimer;
       TextView txtDialogTimer = ViewBindings.findChildViewById(rootView, id);
       if (txtDialogTimer == null) {
+        break missingId;
+      }
+
+      id = R.id.txtDialogTip;
+      TextView txtDialogTip = ViewBindings.findChildViewById(rootView, id);
+      if (txtDialogTip == null) {
         break missingId;
       }
 
@@ -190,9 +358,13 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
       }
 
       return new DialogIncomingOrderBinding((LinearLayout) rootView, btnDialogAccept,
-          btnDialogDecline, containerDialogItems, layoutDialogDriver, spinnerDialogDriver,
-          spinnerDialogPrepTime, txtDialogAddress, txtDialogCustomerLoyalty, txtDialogCustomerName,
-          txtDialogCustomerPhone, txtDialogOrderNo, txtDialogTimer, txtDialogTotal);
+          btnDialogBackStep2, btnDialogConfirm, btnDialogDecline, btnDialogPrepAdd10,
+          btnDialogPrepAdd15, btnDialogPrepAdd20, btnDialogPrepAdd5, btnDialogPrepMinus,
+          btnDialogPrepPlus, containerDialogItems, layoutDialogDriver, layoutDialogNotes,
+          layoutDialogTip, layoutStep1Container, layoutStep2Container, spinnerDialogDriver,
+          txtDialogAddress, txtDialogCustomerLoyalty, txtDialogCustomerName, txtDialogCustomerPhone,
+          txtDialogNewOrderBadge, txtDialogNotes, txtDialogOrderNo, txtDialogPrepVal,
+          txtDialogScheduledBadge, txtDialogTimer, txtDialogTip, txtDialogTotal);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));
