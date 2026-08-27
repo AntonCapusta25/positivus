@@ -286,7 +286,16 @@ class SunmiPrinterHelper(private val context: Context) {
             }
             
             // Customer comment / notes (parsed correctly from JSON webhook payload)
-            val parsedNotes = parseCustomerNotes(order.notes)
+            var parsedNotes = parseCustomerNotes(order.notes)
+            if (parsedNotes.isNotEmpty() && !order.customerAddress.isNullOrEmpty()) {
+                val cleanAddress = order.customerAddress.replace("\\s".toRegex(), "").lowercase(Locale.getDefault())
+                parsedNotes = parsedNotes.split("\n")
+                    .filter { line ->
+                        val cleanLine = line.replace("\\s".toRegex(), "").lowercase(Locale.getDefault())
+                        cleanLine.isNotEmpty() && cleanLine != cleanAddress && !cleanAddress.contains(cleanLine) && !cleanLine.contains(cleanAddress)
+                    }
+                    .joinToString("\n")
+            }
             if (parsedNotes.isNotEmpty()) {
                 bodyBuilder.append("--------------------------------\n")
                 bodyBuilder.append("Opmerking:\n").append(parsedNotes).append("\n")
@@ -410,7 +419,7 @@ class SunmiPrinterHelper(private val context: Context) {
             }
             
             // Feed paper
-            service.lineWrap(4, printCallback)
+            service.lineWrap(8, printCallback)
             onComplete(true)
         } catch (e: Exception) {
             Log.e(TAG, "Error printing receipt", e)
