@@ -188,6 +188,26 @@ class SunmiPrinterHelper(private val context: Context) {
         }
     }
 
+    private fun parseScheduledDelivery(rawNotes: String?): String? {
+        if (rawNotes.isNullOrEmpty()) return null
+        return try {
+            var obj = JsonParser.parseString(rawNotes).asJsonObject
+            if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                obj = obj.getAsJsonObject("payload")
+            }
+            val isScheduled = obj.has("is_scheduled") && obj.get("is_scheduled").asBoolean
+            if (!isScheduled) return null
+            if (obj.has("delivery_timestamp_human") && obj.get("delivery_timestamp_human").isJsonObject) {
+                val t = obj.getAsJsonObject("delivery_timestamp_human")
+                val date = if (t.has("local_date") && !t.get("local_date").isJsonNull) t.get("local_date").asString else ""
+                val time = if (t.has("local_time") && !t.get("local_time").isJsonNull) t.get("local_time").asString else ""
+                "$date $time".trim().ifEmpty { null }
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun printReceipt(order: Order, merchantName: String = "Spoonfull POS", onComplete: (Boolean) -> Unit = {}) {
         val service = woyouService
         if (service == null) {
@@ -230,8 +250,11 @@ class SunmiPrinterHelper(private val context: Context) {
             service.setFontSize(24f, printCallback)
             val metaBuilder = java.lang.StringBuilder()
             metaBuilder.append(formatDate(order.createdAt)).append("\n")
-            metaBuilder.append("Pre order tijd:\n")
-            metaBuilder.append(formatDate(order.createdAt)).append("\n")
+            val scheduledTime = parseScheduledDelivery(order.notes)
+            if (scheduledTime != null) {
+                metaBuilder.append("Pre order tijd:\n")
+                metaBuilder.append(scheduledTime).append("\n")
+            }
             
             val typeStr = when (order.type.lowercase(Locale.getDefault())) {
                 "pickup" -> "Afhalen"

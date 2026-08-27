@@ -204,25 +204,41 @@ class MainActivity : AppCompatActivity() {
             listener = object : SupabaseManager.SupabaseListener {
                 override fun onOrderInserted(order: Order) {
                     runOnUiThread {
-                        // Prevent duplicate list entries
-                        if (ordersList.none { it.id == order.id }) {
-                            ordersList.add(0, order)
-                            refreshOrderList()
+                        val isCurrentMerchant = order.merchantId == merchantId ||
+                                (merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
+                                 order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1")) ||
+                                order.merchantId.isNullOrEmpty()
 
-                            // Show Incoming Order Popup Screen (just like web version!) for incoming/pending orders only
+                        val isOurMerchant = order.merchantId != null && (
+                                merchantNamesMap.containsKey(order.merchantId) || 
+                                merchantNamesMap.containsKey(order.merchantId.lowercase(Locale.getDefault())) ||
+                                (order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
+                                 (merchantNamesMap.containsKey("restaurant_1") || merchantNamesMap.containsKey("6a0f03b4500ed5db150be1a1")))
+                            )
+
+                        if (isOurMerchant || isCurrentMerchant) {
+                            // 1. If it belongs to currently active context, add it to the screen list
+                            if (isCurrentMerchant) {
+                                if (ordersList.none { it.id == order.id }) {
+                                    ordersList.add(0, order)
+                                    refreshOrderList()
+                                }
+                            }
+
+                            // 2. Play sound & Show Incoming Order Popup Screen for incoming/pending orders only
                             val status = (order.status ?: "").lowercase()
                             if (status == "incoming" || status == "pending") {
                                 showIncomingOrderDialog(order)
                             }
-                        }
 
-                        // Auto-print: only once per order ID, never on reconnect re-deliveries
-                        if (isAutoPrintEnabled && !printedOrderIds.contains(order.id)) {
-                            printedOrderIds.add(order.id)
-                            order.printed = true
-                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
-                                if (success) {
-                                    runOnUiThread { refreshOrderList() }
+                            // 3. Auto-print if enabled (only once per order ID)
+                            if (isAutoPrintEnabled && !printedOrderIds.contains(order.id)) {
+                                printedOrderIds.add(order.id)
+                                order.printed = true
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
+                                    if (success && isCurrentMerchant) {
+                                        runOnUiThread { refreshOrderList() }
+                                    }
                                 }
                             }
                         }
@@ -231,62 +247,90 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onOrderUpdated(order: Order) {
                     runOnUiThread {
-                        val index = ordersList.indexOfFirst { it.id == order.id }
-                        if (index != -1) {
-                            val existingOrder = ordersList[index]
-                            val printTs = order.printRequestedAt
-                            val isNewPrintRequest = printTs != null && printTs != existingOrder.printRequestedAt
+                        val isCurrentMerchant = order.merchantId == merchantId ||
+                                (merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
+                                 order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1")) ||
+                                order.merchantId.isNullOrEmpty()
 
-                            val mergedOrder = order.copy(
-                                notes = if (order.notes.isNullOrEmpty()) existingOrder.notes else order.notes,
-                                customerAddress = if (order.customerAddress.isNullOrEmpty()) existingOrder.customerAddress else order.customerAddress,
-                                items = if (order.items.isEmpty()) existingOrder.items else order.items,
-                                customerName = if (order.customerName.isNullOrEmpty()) existingOrder.customerName else order.customerName,
-                                customerPhone = if (order.customerPhone.isNullOrEmpty()) existingOrder.customerPhone else order.customerPhone
+                        val isOurMerchant = order.merchantId != null && (
+                                merchantNamesMap.containsKey(order.merchantId) || 
+                                merchantNamesMap.containsKey(order.merchantId.lowercase(Locale.getDefault())) ||
+                                (order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
+                                 (merchantNamesMap.containsKey("restaurant_1") || merchantNamesMap.containsKey("6a0f03b4500ed5db150be1a1")))
                             )
-                            ordersList[index] = mergedOrder
-                            refreshOrderList()
-                            
-                            if (selectedOrder?.id == order.id) {
-                                openOrderDetail(mergedOrder)
-                            }
-                            
-                            // Remote print requests: only print if isAutoPrintEnabled IS TRUE, OR if the request was made manually (> 5 seconds after creation)
-                            val isAutoTriggerOnCreation = try {
-                                val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
-                                val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(printTs, java.time.Instant::from).toEpochMilli()
-                                Math.abs(printTime - createdTime) < 5000
-                            } catch (e: Exception) {
-                                false
-                            }
 
-                            val shouldPrint = isAutoPrintEnabled || !isAutoTriggerOnCreation
+                        if (isOurMerchant || isCurrentMerchant) {
+                            val index = ordersList.indexOfFirst { it.id == order.id }
+                            if (index != -1) {
+                                val existingOrder = ordersList[index]
+                                val printTs = order.printRequestedAt
+                                val isNewPrintRequest = printTs != null && printTs != existingOrder.printRequestedAt
 
-                            if (shouldPrint && isNewPrintRequest && printTs != null && !printedOrderIds.contains(printTs)) {
-                                printedOrderIds.add(printTs)
-                                android.util.Log.d("MainActivity", "Remote print request executed for order: ${order.orderNumber}")
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
-                                    if (success) {
-                                        supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                val mergedOrder = order.copy(
+                                    notes = if (order.notes.isNullOrEmpty()) existingOrder.notes else order.notes,
+                                    customerAddress = if (order.customerAddress.isNullOrEmpty()) existingOrder.customerAddress else order.customerAddress,
+                                    items = if (order.items.isEmpty()) existingOrder.items else order.items,
+                                    customerName = if (order.customerName.isNullOrEmpty()) existingOrder.customerName else order.customerName,
+                                    customerPhone = if (order.customerPhone.isNullOrEmpty()) existingOrder.customerPhone else order.customerPhone
+                                )
+                                ordersList[index] = mergedOrder
+                                refreshOrderList()
+                                
+                                if (selectedOrder?.id == order.id) {
+                                    openOrderDetail(mergedOrder)
+                                }
+                                
+                                // Remote print requests: print if isAutoPrintEnabled IS TRUE, OR if the request was made manually (> 5 seconds after creation)
+                                if (printTs != null && isNewPrintRequest && !printedOrderIds.contains(printTs)) {
+                                    val isAutoTriggerOnCreation = try {
+                                        val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
+                                        val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(printTs, java.time.Instant::from).toEpochMilli()
+                                        Math.abs(printTime - createdTime) < 5000
+                                    } catch (e: Exception) {
+                                        false
+                                    }
+
+                                    val shouldPrint = isAutoPrintEnabled || !isAutoTriggerOnCreation
+                                    if (shouldPrint) {
+                                        printedOrderIds.add(printTs)
+                                        android.util.Log.d("MainActivity", "Remote print request executed for order: ${order.orderNumber}")
+                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
+                                            if (success) {
+                                                supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                            }
+                                        }
                                     }
                                 }
-                            } else if (isNewPrintRequest) {
-                                android.util.Log.d("MainActivity", "Remote print request BLOCKED (Auto-print is OFF and request was automatic on creation)")
-                            }
-                        } else {
-                            // If it's not in the list for some reason, add it
-                            ordersList.add(0, order)
-                            refreshOrderList()
-                            if (isAutoPrintEnabled && order.printRequestedAt != null && !printedOrderIds.contains(order.id)) {
-                                printedOrderIds.add(order.id)
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
-                                    if (success) {
-                                        supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                            } else {
+                                // If it matches the current active screen but wasn't in the list, add it
+                                if (isCurrentMerchant) {
+                                    ordersList.add(0, order)
+                                    refreshOrderList()
+                                }
+                                
+                                // Remote print request for our stores even if not currently listed on screen
+                                val printTs = order.printRequestedAt
+                                if (printTs != null && !printedOrderIds.contains(order.id)) {
+                                    val isAutoTriggerOnCreation = try {
+                                        val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
+                                        val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(printTs, java.time.Instant::from).toEpochMilli()
+                                        Math.abs(printTime - createdTime) < 5000
+                                    } catch (e: Exception) {
+                                        false
+                                    }
+
+                                    val shouldPrint = isAutoPrintEnabled || !isAutoTriggerOnCreation
+                                    if (shouldPrint) {
+                                        printedOrderIds.add(order.id)
+                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
+                                            if (success) {
+                                                supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-
                     }
                 }
 

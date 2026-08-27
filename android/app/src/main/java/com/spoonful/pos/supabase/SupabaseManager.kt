@@ -188,7 +188,6 @@ class SupabaseManager(
     }
 
     private fun joinOrdersChannel(ws: WebSocket) {
-        val filterId = if (merchantId == "restaurant_1") "6a0f03b4500ed5db150be1a1" else merchantId
         val joinMsg = """
         {
           "topic": "realtime:public",
@@ -199,14 +198,12 @@ class SupabaseManager(
                 {
                   "event": "INSERT",
                   "schema": "public",
-                  "table": "orders",
-                  "filter": "merchant_id=eq.$filterId"
+                  "table": "orders"
                 },
                 {
                   "event": "UPDATE",
                   "schema": "public",
-                  "table": "orders",
-                  "filter": "merchant_id=eq.$filterId"
+                  "table": "orders"
                 }
               ]
             }
@@ -215,7 +212,7 @@ class SupabaseManager(
         }
         """.trimIndent()
         ws.send(joinMsg)
-        Log.d(TAG, "Sent join channel request for orders table with merchant_id filter: $filterId")
+        Log.d(TAG, "Sent join channel request for all orders (unfiltered)")
     }
 
 
@@ -250,20 +247,13 @@ class SupabaseManager(
                         val record = data.getAsJsonObject("record")
                         if (record != null) {
                             val order = gson.fromJson(record, Order::class.java)
-                            val isMatch = order.merchantId == merchantId ||
-                                    (merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
-                                     order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1")) ||
-                                    order.merchantId.isNullOrEmpty()
-
-                            if (isMatch) {
-                                mainHandler.post {
-                                    if (type == "INSERT") {
-                                        listener.onOrderInserted(order)
-                                    } else if (type == "UPDATE") {
-                                        listener.onOrderUpdated(order)
-                                    }
-                                }
-                            }
+                             mainHandler.post {
+                                 if (type == "INSERT") {
+                                     listener.onOrderInserted(order)
+                                 } else if (type == "UPDATE") {
+                                     listener.onOrderUpdated(order)
+                                 }
+                             }
                         }
                     }
                 }
