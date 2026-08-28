@@ -7,6 +7,7 @@
 
   const SUPABASE_URL = "https://qttdcibitumvwsrxqeld.supabase.co";
   const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dGRjaWJpdHVtdndzcnhxZWxkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTI5NDUzNSwiZXhwIjoyMDk2ODcwNTM1fQ.JpDFwAdN-kRzhRWSQcfVZVKJjnDfGb1fZ6M52iWP0OA";
+  const MIN_ORDER_TOTAL_FOR_COUPONS = 0; // Set to 50 for production threshold, or 0 to allow test orders
 
   // 1. Inject the Glassmorphism CSS dynamically
   function injectPremiumStyles() {
@@ -259,9 +260,9 @@
       `;
 
       card.addEventListener('click', (e) => {
-        // Disable selection if total < 50
+        // Disable selection if total < threshold
         const total = getCartTotal();
-        if (total < 50) return;
+        if (total < MIN_ORDER_TOTAL_FOR_COUPONS) return;
 
         // Skip selection check if clicking info button
         if (e.target.classList.contains('pro-info-btn')) return;
@@ -355,10 +356,10 @@
         const badge = document.getElementById('pro-actions-status-badge');
         const cards = document.querySelectorAll('.pro-card');
 
-        if (total < 50) {
+        if (total < MIN_ORDER_TOTAL_FOR_COUPONS) {
           // Locked State
           if (warning) {
-            warning.innerText = `${total.toFixed(2)}/50 €, no coupons available`;
+            warning.innerText = `${total.toFixed(2)}/${MIN_ORDER_TOTAL_FOR_COUPONS} €, no coupons available`;
             warning.style.display = 'block';
           }
           if (badge) {
