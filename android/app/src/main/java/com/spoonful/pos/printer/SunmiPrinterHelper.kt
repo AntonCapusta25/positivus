@@ -208,6 +208,65 @@ class SunmiPrinterHelper(private val context: Context) {
         }
     }
 
+    private class MerchantDetails(
+        val city: String = "",
+        val street: String = "",
+        val phone: String = ""
+    )
+
+    private fun parseMerchantDetails(rawNotes: String?, fallbackId: String?): MerchantDetails {
+        val isRajCurryFallback = fallbackId == "restaurant_1" || fallbackId == "6a0f03b4500ed5db150be1a1" || fallbackId == "restaurant_2"
+        val defCity = if (isRajCurryFallback) "Enschede" else ""
+        val defStreet = if (isRajCurryFallback) "Deurningerstraat 91B" else ""
+        val defPhone = if (isRajCurryFallback) "053-3030011" else ""
+
+        if (rawNotes.isNullOrEmpty()) {
+            return MerchantDetails(defCity, defStreet, defPhone)
+        }
+        return try {
+            var obj = JsonParser.parseString(rawNotes).asJsonObject
+            if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                obj = obj.getAsJsonObject("payload")
+            }
+            
+            // Try pickup_address first
+            if (obj.has("pickup_address") && obj.get("pickup_address").isJsonObject) {
+                val addr = obj.getAsJsonObject("pickup_address")
+                val city = if (addr.has("city") && !addr.get("city").isJsonNull) addr.get("city").asString else ""
+                val street = if (addr.has("address") && !addr.get("address").isJsonNull) addr.get("address").asString else ""
+                val phone = if (addr.has("contact_phone_number") && !addr.get("contact_phone_number").isJsonNull) addr.get("contact_phone_number").asString else ""
+                
+                if (city.isNotEmpty() || street.isNotEmpty() || phone.isNotEmpty()) {
+                    return MerchantDetails(
+                        city = city.ifEmpty { defCity },
+                        street = street.ifEmpty { defStreet },
+                        phone = phone.ifEmpty { defPhone }
+                    )
+                }
+            }
+            
+            // Try merchant next
+            if (obj.has("merchant") && obj.get("merchant").isJsonObject) {
+                val merchant = obj.getAsJsonObject("merchant")
+                val city = if (merchant.has("city") && !merchant.get("city").isJsonNull) merchant.get("city").asString else ""
+                val street = if (merchant.has("address") && !merchant.get("address").isJsonNull) merchant.get("address").asString else ""
+                val phone = if (merchant.has("phone") && !merchant.get("phone").isJsonNull) merchant.get("phone").asString else ""
+                
+                if (city.isNotEmpty() || street.isNotEmpty() || phone.isNotEmpty()) {
+                    return MerchantDetails(
+                        city = city.ifEmpty { defCity },
+                        street = street.ifEmpty { defStreet },
+                        phone = phone.ifEmpty { defPhone }
+                    )
+                }
+            }
+            
+            MerchantDetails(defCity, defStreet, defPhone)
+        } catch (e: Exception) {
+            MerchantDetails(defCity, defStreet, defPhone)
+        }
+    }
+
     fun printReceipt(order: Order, merchantName: String = "Spoonfull POS", onComplete: (Boolean) -> Unit = {}) {
         val service = woyouService
         if (service == null) {
@@ -221,9 +280,10 @@ class SunmiPrinterHelper(private val context: Context) {
             service.printerInit(printCallback)
             
             val isRajCurry = order.merchantId == "restaurant_1" || order.merchantId == "6a0f03b4500ed5db150be1a1" || order.merchantId == "restaurant_2"
-            val merchantCity = if (isRajCurry) "Enschede" else ""
-            val merchantStreet = if (isRajCurry) "Deurningerstraat91B" else ""
-            val merchantPhone = if (isRajCurry) "053-3030011" else ""
+            val mDetails = parseMerchantDetails(order.notes, order.merchantId)
+            val merchantCity = mDetails.city
+            val merchantStreet = mDetails.street
+            val merchantPhone = mDetails.phone
 
             // --- Center Aligned Top Section ---
             service.setAlignment(1, printCallback)
