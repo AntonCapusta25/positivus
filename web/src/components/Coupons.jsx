@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { usePOS } from '../context/POSContext';
 import { Search, CheckCircle2, AlertTriangle, Clock, RefreshCw, Ticket, Plus, X } from 'lucide-react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 export default function Coupons() {
   const { playAlertSound } = usePOS();
@@ -257,9 +258,7 @@ export default function Coupons() {
     }
   };
 
-  const handleScanVerify = async (e) => {
-    if (e) e.preventDefault();
-    const id = scanInputVal.trim();
+  const redeemCouponById = async (id) => {
     if (!id) return;
 
     try {
@@ -318,6 +317,59 @@ export default function Coupons() {
       setScanResult({ success: false, errorType: 'error', message: 'Redemption failed: ' + err.message });
     }
   };
+
+  const handleScanVerify = async (e) => {
+    if (e) e.preventDefault();
+    const id = scanInputVal.trim();
+    if (!id) return;
+    await redeemCouponById(id);
+  };
+
+  // QR Code Scanner Lifecycle
+  useEffect(() => {
+    if (!isScanModalOpen) return;
+
+    let scanner = null;
+    const timer = setTimeout(() => {
+      try {
+        scanner = new Html5QrcodeScanner(
+          "qr-reader-container",
+          { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 },
+            rememberLastUsedCamera: true
+          },
+          /* verbose= */ false
+        );
+
+        scanner.render(
+          async (decodedText) => {
+            setScanInputVal(decodedText);
+            await redeemCouponById(decodedText.trim());
+            try {
+              scanner.clear();
+            } catch (e) {}
+          },
+          (error) => {
+            // Frame scan failure warnings, safe to ignore
+          }
+        );
+      } catch (err) {
+        console.error("Scanner initialization failed", err);
+      }
+    }, 450);
+
+    return () => {
+      clearTimeout(timer);
+      if (scanner) {
+        try {
+          scanner.clear();
+        } catch (e) {
+          console.error("Scanner clean on unmount failed", e);
+        }
+      }
+    };
+  }, [isScanModalOpen]);
 
   // Group coupons by coupon_code to show unique campaigns
   const campaigns = [];
@@ -841,6 +893,11 @@ export default function Coupons() {
               </button>
             </div>
 
+            {/* QR/Barcode Camera Scanner Reader Box */}
+            <div className="bg-slate-50 border border-slate-150 rounded-2xl overflow-hidden shadow-inner p-1">
+              <div id="qr-reader-container" className="w-full overflow-hidden rounded-xl" />
+            </div>
+
             <form onSubmit={handleScanVerify} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scan or Type Coupon UUID</label>
@@ -851,7 +908,7 @@ export default function Coupons() {
                   placeholder="Scan QR code or paste unique UUID..."
                   value={scanInputVal}
                   onChange={(e) => setScanInputVal(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-850 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-all font-mono"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-850 rounded-xl px-3.5 py-2.5 text-base font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-all font-mono"
                 />
               </div>
 
