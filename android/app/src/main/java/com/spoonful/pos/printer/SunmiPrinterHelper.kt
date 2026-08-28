@@ -325,25 +325,35 @@ class SunmiPrinterHelper(private val context: Context) {
             metaBuilder.append("--------------------------------\n")
             sendText(service, metaBuilder.toString())
 
+            // Customer Details Block (Prominent, Big Letters on Top)
+            service.setAlignment(0, printCallback)
+            val customerBuilder = java.lang.StringBuilder()
+            
+            val orderCount = order.customerOrderCount ?: 1
+            if (orderCount > 1) {
+                customerBuilder.append("REPEATING CUSTOMER\n(${orderCount}e bestelling)\n\n")
+            } else {
+                customerBuilder.append("NEW CUSTOMER\n\n")
+            }
+
+            if (!order.customerName.isNullOrEmpty()) {
+                customerBuilder.append(order.customerName).append("\n")
+            }
+            if (!order.customerAddress.isNullOrEmpty()) {
+                customerBuilder.append(order.customerAddress).append("\n")
+            }
+            if (!order.customerPhone.isNullOrEmpty()) {
+                customerBuilder.append(order.customerPhone).append("\n")
+            }
+            customerBuilder.append("--------------------------------\n")
+            
+            service.setFontSize(28f, printCallback)
+            sendText(service, customerBuilder.toString())
+            service.setFontSize(24f, printCallback) // reset to normal size
+
             // --- Left Aligned Body Section ---
             service.setAlignment(0, printCallback)
             val bodyBuilder = java.lang.StringBuilder()
-
-            // Customer Name
-            if (!order.customerName.isNullOrEmpty()) {
-                val nameParts = order.customerName.split(" ")
-                for (part in nameParts) {
-                    bodyBuilder.append(part).append("\n")
-                }
-            }
-            // Customer Address
-            if (!order.customerAddress.isNullOrEmpty()) {
-                bodyBuilder.append(order.customerAddress).append("\n")
-            }
-            // Customer Phone
-            if (!order.customerPhone.isNullOrEmpty()) {
-                bodyBuilder.append(order.customerPhone).append("\n")
-            }
             
             // Customer comment / notes (parsed correctly from JSON webhook payload)
             var parsedNotes = parseCustomerNotes(order.notes)
@@ -422,30 +432,24 @@ class SunmiPrinterHelper(private val context: Context) {
             
             bodyBuilder.append("--------------------------------\n")
 
-            // Calculations
+            // Calculations (Taxes and BTW/Netto removed completely)
             val totalValStr = String.format(Locale.US, "%.2f", order.total).replace(".", ",") + "€"
-            val taxValStr = String.format(Locale.US, "%.2f", order.tax).replace(".", ",") + "€"
-            val nettoValStr = String.format(Locale.US, "%.2f", order.total - order.tax).replace(".", ",") + "€"
+            val totalLine = formatLine("Totaal", totalValStr, MAX_LINE_CHAR_58MM)
 
-            val totalLine1 = formatLine("Totaal", totalValStr, MAX_LINE_CHAR_58MM)
-            val nettoLine = formatLine("Netto:", nettoValStr, MAX_LINE_CHAR_58MM)
-            val taxLine = formatLine("BTW.:", taxValStr, MAX_LINE_CHAR_58MM)
-            val totalLine2 = formatLine("Totaal", totalValStr, MAX_LINE_CHAR_58MM)
-
-            bodyBuilder.append(totalLine1).append("\n")
+            bodyBuilder.append(totalLine).append("\n")
             bodyBuilder.append("--------------------------------\n")
-            bodyBuilder.append(nettoLine).append("\n")
-            bodyBuilder.append(taxLine).append("\n")
             
             val tipAmount = parseTipAmount(order.notes)
             if (tipAmount > 0.0) {
                 val tipValStr = String.format(Locale.US, "%.2f", tipAmount).replace(".", ",") + "€"
                 val tipLine = formatLine("Tip/Fooi:", tipValStr, MAX_LINE_CHAR_58MM)
                 bodyBuilder.append(tipLine).append("\n")
+                
+                val finalTotalValStr = String.format(Locale.US, "%.2f", order.total + tipAmount).replace(".", ",") + "€"
+                val finalTotalLine = formatLine("Totaal", finalTotalValStr, MAX_LINE_CHAR_58MM)
+                bodyBuilder.append(finalTotalLine).append("\n")
+                bodyBuilder.append("--------------------------------\n")
             }
-            
-            bodyBuilder.append(totalLine2).append("\n")
-            bodyBuilder.append("--------------------------------\n")
 
             // Payment Info
             val paymentSource = if (order.paymentMethod.lowercase(Locale.getDefault()) == "online") "Online" else "Cash"
@@ -467,6 +471,11 @@ class SunmiPrinterHelper(private val context: Context) {
                 footerBuilder.append("Bestel via onze eigen webshop\n")
             }
             sendText(service, footerBuilder.toString())
+
+            // Big Bold Promo Section
+            service.setFontSize(28f, printCallback)
+            sendText(service, "\nNo commission\nNo delivery charges\n\n")
+            service.setFontSize(24f, printCallback) // reset to normal size
 
             // QR code & spacing
             if (order.type.lowercase(Locale.getDefault()) == "delivery") {

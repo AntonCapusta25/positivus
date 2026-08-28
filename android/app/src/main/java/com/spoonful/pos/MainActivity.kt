@@ -1206,6 +1206,11 @@ class MainActivity : AppCompatActivity() {
     // ORDER LIST RENDERING
     // ─────────────────────────────────────────────
     private fun refreshOrderList() {
+        val uniqueOrders = ordersList.distinctBy { it.id }
+        if (uniqueOrders.size != ordersList.size) {
+            ordersList.clear()
+            ordersList.addAll(uniqueOrders)
+        }
         updateTabSelection()
         ordersContainer.removeAllViews()
 
@@ -1230,7 +1235,11 @@ class MainActivity : AppCompatActivity() {
         val card = androidx.cardview.widget.CardView(this).apply {
             radius = dp(12).toFloat()
             cardElevation = dp(1).toFloat()
-            setCardBackgroundColor(Color.WHITE)
+            if (order.status.lowercase() == "cancelled") {
+                setCardBackgroundColor(Color.parseColor("#FEF2F2"))
+            } else {
+                setCardBackgroundColor(Color.WHITE)
+            }
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -1376,19 +1385,34 @@ class MainActivity : AppCompatActivity() {
             layoutParams = FrameLayout.LayoutParams(size, size)
         }
 
-        val isDone = order.status.lowercase() in listOf("completed", "cancelled")
+        val statusLower = order.status.lowercase()
+        val isDone = statusLower in listOf("completed", "cancelled")
         if (isDone) {
-            bg.setColor(Color.parseColor("#E8FFF5"))
-            bg.setStroke(dp(2), Color.parseColor("#00A389"))
-            frame.background = bg
-            val check = TextView(this).apply {
-                text = "✓"
-                setTextColor(Color.parseColor("#00A389"))
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
-                setTypeface(null, Typeface.BOLD)
-                gravity = Gravity.CENTER
+            if (statusLower == "cancelled") {
+                bg.setColor(Color.parseColor("#FFF0F0"))
+                bg.setStroke(dp(2), Color.parseColor("#EF4444"))
+                frame.background = bg
+                val cross = TextView(this).apply {
+                    text = "✗"
+                    setTextColor(Color.parseColor("#EF4444"))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+                    setTypeface(null, Typeface.BOLD)
+                    gravity = Gravity.CENTER
+                }
+                inner.addView(cross)
+            } else {
+                bg.setColor(Color.parseColor("#E8FFF5"))
+                bg.setStroke(dp(2), Color.parseColor("#00A389"))
+                frame.background = bg
+                val check = TextView(this).apply {
+                    text = "✓"
+                    setTextColor(Color.parseColor("#00A389"))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+                    setTypeface(null, Typeface.BOLD)
+                    gravity = Gravity.CENTER
+                }
+                inner.addView(check)
             }
-            inner.addView(check)
         } else {
             val minutes = minutesSince(order.createdAt)
             val (bgColor, strokeColor, textColor) = when {
@@ -2557,6 +2581,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun showIncomingOrderDialog(order: Order) {
         try {
+            if (showingDialogOrderIds.contains(order.id)) {
+                return // Already showing popup for this order
+            }
+            showingDialogOrderIds.add(order.id)
             playIncomingOrderSound()
 
             val dialogView = layoutInflater.inflate(R.layout.dialog_incoming_order, null, false)
@@ -2697,6 +2725,7 @@ class MainActivity : AppCompatActivity() {
             dialog.setOnDismissListener {
                 stopIncomingOrderSound()
                 timerHandler.removeCallbacks(timerRunnable)
+                showingDialogOrderIds.remove(order.id)
             }
 
             val layoutDialogDriver = dialogView.findViewById<LinearLayout>(R.id.layoutDialogDriver)
@@ -2854,6 +2883,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val showingDialogOrderIds = HashSet<String>()
+
     private var soundThread: Thread? = null
     private var currentRingtone: android.media.Ringtone? = null
     private var toneGenerator: android.media.ToneGenerator? = null
@@ -2861,7 +2892,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun playIncomingOrderSound() {
         synchronized(this) {
-            stopIncomingOrderSoundInternal()
+            if (isSoundAlertPlaying) {
+                return
+            }
             isSoundAlertPlaying = true
 
             val newThread = Thread {

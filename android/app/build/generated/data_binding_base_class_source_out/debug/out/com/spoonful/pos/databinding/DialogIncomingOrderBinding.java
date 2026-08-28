@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -19,7 +20,7 @@ import java.lang.String;
 
 public final class DialogIncomingOrderBinding implements ViewBinding {
   @NonNull
-  private final LinearLayout rootView;
+  private final ScrollView rootView;
 
   @NonNull
   public final AppCompatButton btnDialogAccept;
@@ -108,7 +109,7 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
   @NonNull
   public final TextView txtDialogTotal;
 
-  private DialogIncomingOrderBinding(@NonNull LinearLayout rootView,
+  private DialogIncomingOrderBinding(@NonNull ScrollView rootView,
       @NonNull AppCompatButton btnDialogAccept, @NonNull AppCompatButton btnDialogBackStep2,
       @NonNull AppCompatButton btnDialogConfirm, @NonNull AppCompatButton btnDialogDecline,
       @NonNull AppCompatButton btnDialogPrepAdd10, @NonNull AppCompatButton btnDialogPrepAdd15,
@@ -158,7 +159,7 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
 
   @Override
   @NonNull
-  public LinearLayout getRoot() {
+  public ScrollView getRoot() {
     return rootView;
   }
 
@@ -357,7 +358,7 @@ public final class DialogIncomingOrderBinding implements ViewBinding {
         break missingId;
       }
 
-      return new DialogIncomingOrderBinding((LinearLayout) rootView, btnDialogAccept,
+      return new DialogIncomingOrderBinding((ScrollView) rootView, btnDialogAccept,
           btnDialogBackStep2, btnDialogConfirm, btnDialogDecline, btnDialogPrepAdd10,
           btnDialogPrepAdd15, btnDialogPrepAdd20, btnDialogPrepAdd5, btnDialogPrepMinus,
           btnDialogPrepPlus, containerDialogItems, layoutDialogDriver, layoutDialogNotes,
