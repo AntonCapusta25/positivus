@@ -257,7 +257,7 @@ serve(async (req) => {
     // Store the raw numeric order_id from Hyperzod so we can push status updates back
     const hyperzodOrderId = Number(data.order_id) || null;
     const customerName = data.customer_name || data.customer?.name || data.user?.full_name || (data.user?.first_name ? `${data.user.first_name} ${data.user.last_name || ""}`.trim() : "") || "Guest Customer";
-    const customerPhone = data.customer_phone || data.customer?.phone || data.user?.mobile || data.user?.phone || "";
+    const customerPhone = data.customer_phone || data.customer?.phone || data.user?.mobile || data.user?.phone || data.delivery_address?.contact_phone_number || data.pickup_address?.contact_phone_number || "";
     const merchantId = data.merchant_id || "restaurant_1";
 
     // Map cart items
@@ -297,7 +297,28 @@ serve(async (req) => {
     let customerAddress = "";
     if (data.delivery_address) {
       const addr = data.delivery_address;
-      const streetAndNumber = [addr.address, addr.building].filter((p: any) => p && p.toString().trim() !== "").join(" ");
+      let buildingVal = (addr.building || "").toString().trim();
+      let addressVal = (addr.address || "").toString().trim();
+      
+      // Clean up building details if it duplicates the address or looks like a full second address
+      if (buildingVal && addressVal) {
+        const normAddr = addressVal.toLowerCase().replace(/[\s,\.-]/g, "");
+        const normBuild = buildingVal.toLowerCase().replace(/[\s,\.-]/g, "");
+        
+        // If building duplicates address
+        if (normAddr === normBuild || normAddr.includes(normBuild) || normBuild.includes(normAddr)) {
+          buildingVal = "";
+        } else {
+          // If building contains city/country/zip keywords, it's a full second address
+          const addressKeywords = ["enschede", "hengelo", "netherlands", "nederland", "germany", "duitsland", "7522", "7553", "7555"];
+          const isFullAddress = addressKeywords.some(kw => normBuild.includes(kw)) || buildingVal.length > 25;
+          if (isFullAddress) {
+            buildingVal = "";
+          }
+        }
+      }
+
+      const streetAndNumber = [addressVal, buildingVal].filter((p: any) => p && p.toString().trim() !== "").join(" ");
       const zipAndCity = [addr.zip_code, addr.city].filter((p: any) => p && p.toString().trim() !== "").join(" ");
       const parts = [streetAndNumber, zipAndCity].filter((p: any) => p && p.toString().trim() !== "");
       customerAddress = parts.join("\n");
