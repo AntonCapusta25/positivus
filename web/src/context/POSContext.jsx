@@ -1792,9 +1792,9 @@ export const POSProvider = ({ children }) => {
 
     if (targetOrder && targetOrder.id) {
       try {
-        const isoStr = new Date().toISOString();
-        const ts = printType && printType !== 'BOTH' ? `${printType}:${isoStr}` : isoStr;
-        console.log(`Sending remote print command (${printType}) to Sunmi device via Supabase for order ${targetOrder.order_number || targetOrder.id} (ts: ${ts})`);
+        const typePrefix = printType || 'BOTH';
+        const ts = `${typePrefix}:${new Date().toISOString()}`;
+        console.log(`Sending remote print command (${typePrefix}) to Sunmi device via Supabase for order ${targetOrder.order_number || targetOrder.id} (ts: ${ts})`);
         const { error } = await supabase
           .from('orders')
           .update({ 
