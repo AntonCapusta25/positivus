@@ -23,7 +23,6 @@ export default function Dashboard() {
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [showMobileDetail, setShowMobileDetail] = useState(false);
   const [itemChecklist, setItemChecklist] = useState({});
-  const [printPreviewOrder, setPrintPreviewOrder] = useState(null);
   const [isSavingDriver, setIsSavingDriver] = useState(false);
   const [printToast, setPrintToast] = useState(null);
 
@@ -90,7 +89,9 @@ export default function Dashboard() {
   };
 
   const handlePrint = (order) => {
-    setPrintPreviewOrder(order);
+    triggerTestPrint(order, 'BOTH');
+    setPrintToast(`✓ Print request sent for #${order.order_number || order.id.slice(0, 8)}`);
+    setTimeout(() => setPrintToast(null), 3000);
   };
 
 
@@ -629,215 +630,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Side-by-Side Thermal Receipt Print Preview Modal */}
-      {printPreviewOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-center items-start p-4 md:p-8 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl flex flex-col shadow-2xl animate-fade-in my-4 md:my-8 h-fit">
-            
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between shrink-0">
-              <div className="flex items-center space-x-2">
-                <Printer className="text-brand-orange" size={20} />
-                <h3 className="text-base font-extrabold text-white">Dual Thermal Receipt Copies</h3>
-              </div>
-              <button
-                onClick={() => setPrintPreviewOrder(null)}
-                className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-950/50">
-              
-              {/* COPY 1: KITCHEN & DELIVERY RECEIPT */}
-              <div className="thermal-receipt p-6 rounded-xl space-y-4 text-slate-850">
-                <div className="text-center space-y-1">
-                  <h4 className="font-black text-sm uppercase tracking-wide text-slate-900">Spoonfull Delivery</h4>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Copy 1: Courier & Kitchen</p>
-                </div>
-                <div className="border-t border-b border-dashed border-slate-300 py-2.5 text-xs space-y-1">
-                  <div className="flex justify-between font-bold">
-                    <span>Order No:</span>
-                    <span>#{printPreviewOrder.order_number || printPreviewOrder.id.slice(0,8)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Date:</span>
-                    <span>{new Date(printPreviewOrder.created_at || Date.now()).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Courier:</span>
-                    <span className="font-extrabold text-brand-orange">{printPreviewOrder.driver_name || 'Unassigned'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>ETA Limit:</span>
-                    <span className="font-extrabold">{printPreviewOrder.delivery_duration || 15} mins</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1 text-xs">
-                  <p className="font-extrabold text-[11px] uppercase tracking-wider mb-1">Destination Address</p>
-                  <p className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 font-semibold leading-relaxed text-slate-700">
-                    {printPreviewOrder.customer_address || 'No destination address specified'}
-                  </p>
-                </div>
-
-                {/* Items List */}
-                <div className="space-y-1.5 text-xs">
-                  <p className="font-extrabold text-[11px] uppercase tracking-wider mb-1">Items Checklist</p>
-                  <div className="space-y-1.5">
-                    {parseItems(printPreviewOrder.items).map((item, idx) => (
-                      <div key={idx} className="flex justify-between font-semibold">
-                        <span>{item.name} x{item.quantity}</span>
-                        <span>€{Number(item.price * item.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Driver App QR Code */}
-                <div className="text-center border-t border-dashed border-slate-300 pt-4 space-y-1.5">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">
-                    Scan for driver route GPS
-                  </span>
-                  {(() => {
-                    const driverUrl = getDriverUrl(printPreviewOrder.id);
-                    return (
-                      <div className="space-y-1.5">
-                        <div className="mx-auto w-32 h-32 bg-white p-1 border border-slate-200 rounded-lg shadow-sm flex items-center justify-center">
-                          <QRCodeSVG value={driverUrl} size={120} />
-                        </div>
-                        <span className="text-[8px] font-mono text-slate-400 block truncate max-w-full">
-                          {driverUrl}
-                        </span>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {/* COPY 2: CUSTOMER RECEIPT */}
-              <div className="thermal-receipt p-6 rounded-xl space-y-4 text-slate-850">
-                <div className="text-center space-y-1">
-                  <h4 className="font-black text-sm uppercase tracking-wide text-slate-900">Spoonfull Guest</h4>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Copy 2: Customer Copy</p>
-                </div>
-                <div className="border-t border-b border-dashed border-slate-300 py-2.5 text-xs space-y-1">
-                  <div className="flex justify-between font-bold">
-                    <span>Order No:</span>
-                    <span>#{printPreviewOrder.order_number || printPreviewOrder.id.slice(0,8)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Customer Name:</span>
-                    <span>{printPreviewOrder.customer_name || 'Guest'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Phone:</span>
-                    <span>{printPreviewOrder.customer_phone || 'None'}</span>
-                  </div>
-                </div>
-
-                {/* Items List */}
-                <div className="space-y-1.5 text-xs">
-                  <p className="font-extrabold text-[11px] uppercase tracking-wider mb-1">Receipt Summary</p>
-                  <div className="space-y-1 border-b border-dashed border-slate-300 pb-2">
-                    {parseItems(printPreviewOrder.items).map((item, idx) => (
-                      <div key={idx} className="flex justify-between font-semibold">
-                        <span>{item.name} x{item.quantity}</span>
-                        <span>€{Number(item.price * item.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="space-y-1 pt-1 font-semibold text-slate-650">
-                    <div className="flex justify-between text-[11px]">
-                      <span>Subtotal:</span>
-                      <span>€{Number(printPreviewOrder.subtotal || 0).toFixed(2)}</span>
-                    </div>
-                    {printPreviewOrder.delivery_fee > 0 && (
-                      <div className="flex justify-between text-[11px]">
-                        <span>Delivery Fee:</span>
-                        <span>€{Number(printPreviewOrder.delivery_fee || 0).toFixed(2)}</span>
-                      </div>
-                    )}
-                    {printPreviewOrder.discount > 0 && (
-                      <div className="flex justify-between text-[11px] text-rose-500">
-                        <span>Discount:</span>
-                        <span>-€{Number(printPreviewOrder.discount || 0).toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-xs font-black text-slate-800 border-t border-slate-200 pt-1.5">
-                      <span>Total Paid:</span>
-                      <span>€{Number(printPreviewOrder.total || 0).toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* App Download QR Code */}
-                <div className="text-center border-t border-dashed border-slate-300 pt-4 space-y-1.5">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">
-                    Download customer order App
-                  </span>
-                  <div className="space-y-1">
-                    <div className="mx-auto w-32 h-32 bg-white p-1 border border-slate-200 rounded-lg shadow-sm flex items-center justify-center">
-                      <QRCodeSVG value={settings.appStoreLink || 'https://spoonfull.com/app'} size={120} />
-                    </div>
-                    <div className="flex justify-center space-x-1.5 text-[8px] font-extrabold text-slate-400 uppercase">
-                      <span>App Store</span>
-                      <span>•</span>
-                      <span>Play Store</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-800 bg-slate-900 flex flex-wrap items-center justify-between gap-3 shrink-0">
-              <button
-                onClick={() => setPrintPreviewOrder(null)}
-                className="py-2 px-4 bg-slate-800 hover:bg-slate-750 text-white text-xs font-bold rounded-xl transition-all"
-              >
-                Close Preview
-              </button>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => {
-                    triggerTestPrint(printPreviewOrder, 'BOTH');
-                    setPrintToast('✓ Print request sent (1 Store + 1 Customer)');
-                    setTimeout(() => setPrintToast(null), 3000);
-                  }}
-                  className="py-2 px-4 bg-brand-orange hover:bg-opacity-95 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-brand-orange/15"
-                >
-                  Print 1 Store + 1 Customer
-                </button>
-                <button
-                  onClick={() => {
-                    triggerTestPrint(printPreviewOrder, 'STORE');
-                    setPrintToast('✓ Print request sent (1 Store Copy)');
-                    setTimeout(() => setPrintToast(null), 3000);
-                  }}
-                  className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-all border border-slate-700"
-                >
-                  Store Only
-                </button>
-                <button
-                  onClick={() => {
-                    triggerTestPrint(printPreviewOrder, 'CUSTOMER');
-                    setPrintToast('✓ Print request sent (1 Customer Copy)');
-                    setTimeout(() => setPrintToast(null), 3000);
-                  }}
-                  className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-all border border-slate-700"
-                >
-                  Customer Only (No QR)
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
     </div>
   );
 }
