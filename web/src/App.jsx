@@ -164,11 +164,11 @@ function MainLayout() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-50">
+    <div className="flex flex-col md:flex-row h-dvh w-screen overflow-hidden bg-slate-50">
       
       {/* ── Mobile Full-Screen Nav Overlay ── */}
       {mobileNavOpen && (
-        <div className="md:hidden fixed inset-0 z-[200] bg-slate-950 flex flex-col">
+        <div className="md:hidden fixed inset-0 z-[200] bg-slate-950 flex flex-col pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
           {/* Overlay header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0">
             <div className="flex items-center space-x-3">
@@ -196,7 +196,7 @@ function MainLayout() {
               <select
                 value={settings.merchantId}
                 onChange={(e) => setSettings(prev => ({ ...prev, merchantId: e.target.value }))}
-                className="bg-slate-800 text-white text-xs font-bold rounded-xl border border-slate-700 px-3 py-2.5 focus:outline-none cursor-pointer w-full"
+                className="bg-slate-800 text-white text-xs font-bold rounded-xl border border-slate-700 p-2.5 w-full focus:outline-none"
               >
                 {availableMerchants.map(m => (
                   <option key={m.id} value={m.id}>{m.name || m.id}</option>
@@ -262,10 +262,10 @@ function MainLayout() {
       )}
 
       {/* ── Sidebar / Top Bar ── */}
-      <aside className="w-full md:w-64 bg-slate-900 text-white flex flex-col justify-between shrink-0 border-b border-slate-800 md:border-b-0">
+      <aside className="w-full md:w-64 bg-slate-900 text-white flex flex-col justify-between shrink-0 border-b border-slate-800 md:border-b-0 pt-[env(safe-area-inset-top,0px)]">
         <div className="flex flex-col">
           {/* Header row */}
-          <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-800">
+          <div className="flex items-center justify-between px-4 py-3 md:p-6 border-b border-slate-800">
             <div className="flex items-center space-x-3">
               <img src="/favicon.png" alt="Spoonfull Logo" className="w-8 h-8 md:w-9 md:h-9 rounded-xl object-cover" />
               <div>

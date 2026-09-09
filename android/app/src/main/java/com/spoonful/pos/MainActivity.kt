@@ -1,5 +1,6 @@
 package com.spoonful.pos
 
+import android.content.Context
 import android.graphics.Color
 import android.content.res.ColorStateList
 import android.graphics.Typeface
@@ -30,6 +31,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var btnHamburger: TextView
     private lateinit var btnDrawerClose: TextView
+    private lateinit var btnNotificationBell: TextView
+    private lateinit var txtHeaderTitle: TextView
     private lateinit var btnDrawerStopOrders: LinearLayout
     private lateinit var btnDrawerHelp: LinearLayout
     private lateinit var layoutSettingsHelp: LinearLayout
@@ -116,6 +119,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtReceiptsCount: TextView
     private lateinit var btnReceiptsPrintTest: android.widget.Button
     private lateinit var switchAutoPrint: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var switchReceiptCustAddress: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var switchReceiptCustPhone: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var switchReceiptItemIds: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var switchReceiptCategories: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var switchEnlargeOrderNo: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var switchEnlargeAddress: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var switchEnlargePhone: com.google.android.material.switchmaterial.SwitchMaterial
 
     // Sounds settings views
     private lateinit var btnSoundsBack: TextView
@@ -181,7 +191,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_main)
+
+        // Start Foreground Service & WakeLock for persistent background order listening
+        PosForegroundService.startService(this)
+        requestIgnoreBatteryOptimizations()
 
         // Load saved merchant ID & POS status
         val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
@@ -283,20 +298,36 @@ class MainActivity : AppCompatActivity() {
                                 // Remote print requests: print if isAutoPrintEnabled IS TRUE, OR if the request was made manually (> 5 seconds after creation)
                                 if (printTs != null && isNewPrintRequest && !printedOrderIds.contains(printTs)) {
                                     val isAutoTriggerOnCreation = try {
+                                        val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
                                         val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
-                                        val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(printTs, java.time.Instant::from).toEpochMilli()
+                                        val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
                                         Math.abs(printTime - createdTime) < 5000
                                     } catch (e: Exception) {
                                         false
                                     }
 
-                                    val shouldPrint = isAutoPrintEnabled || !isAutoTriggerOnCreation
+                                    val isExplicitRemotePrint = printTs.startsWith("BOTH:") || printTs.startsWith("CUSTOMER:") || printTs.startsWith("STORE:")
+                                    val shouldPrint = isExplicitRemotePrint || isAutoPrintEnabled || !isAutoTriggerOnCreation
                                     if (shouldPrint) {
                                         printedOrderIds.add(printTs)
-                                        android.util.Log.d("MainActivity", "Remote print request executed for order: ${order.orderNumber}")
-                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
-                                            if (success) {
-                                                supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                        android.util.Log.d("MainActivity", "Remote print request executed for order: ${order.orderNumber} (ts: $printTs)")
+                                        
+                                        if (printTs.startsWith("CUSTOMER:")) {
+                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { success ->
+                                                if (success) supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                            }
+                                        } else if (printTs.startsWith("STORE:")) {
+                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { success ->
+                                                if (success) supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                            }
+                                        } else {
+                                            // Default (BOTH): 1 Store Copy + 1 Customer Copy (No Driver QR)
+                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
+                                                if (s1) {
+                                                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
+                                                        supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -312,19 +343,33 @@ class MainActivity : AppCompatActivity() {
                                 val printTs = order.printRequestedAt
                                 if (printTs != null && !printedOrderIds.contains(order.id)) {
                                     val isAutoTriggerOnCreation = try {
+                                        val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
                                         val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
-                                        val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(printTs, java.time.Instant::from).toEpochMilli()
+                                        val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
                                         Math.abs(printTime - createdTime) < 5000
                                     } catch (e: Exception) {
                                         false
                                     }
 
-                                    val shouldPrint = isAutoPrintEnabled || !isAutoTriggerOnCreation
+                                    val isExplicitRemotePrint = printTs.startsWith("BOTH:") || printTs.startsWith("CUSTOMER:") || printTs.startsWith("STORE:")
+                                    val shouldPrint = isExplicitRemotePrint || isAutoPrintEnabled || !isAutoTriggerOnCreation
                                     if (shouldPrint) {
                                         printedOrderIds.add(order.id)
-                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
-                                            if (success) {
-                                                supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                        if (printTs.startsWith("CUSTOMER:")) {
+                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { success ->
+                                                if (success) supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                            }
+                                        } else if (printTs.startsWith("STORE:")) {
+                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { success ->
+                                                if (success) supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                            }
+                                        } else {
+                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
+                                                if (s1) {
+                                                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
+                                                        supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -554,6 +599,7 @@ class MainActivity : AppCompatActivity() {
         drawerLayout = findViewById(R.id.drawerLayout)
         btnHamburger = findViewById(R.id.btnHamburger)
         btnDrawerClose = findViewById(R.id.btnDrawerClose)
+        btnNotificationBell = findViewById(R.id.btnNotificationBell)
         btnDrawerStopOrders = findViewById(R.id.btnDrawerStopOrders)
         btnDrawerManagement = findViewById(R.id.btnDrawerManagement)
         btnDrawerSettings = findViewById(R.id.btnDrawerSettings)
@@ -642,6 +688,13 @@ class MainActivity : AppCompatActivity() {
         txtReceiptsCount = findViewById(R.id.txtReceiptsCount)
         btnReceiptsPrintTest = findViewById(R.id.btnReceiptsPrintTest)
         switchAutoPrint = findViewById(R.id.switchAutoPrint)
+        switchReceiptCustAddress = findViewById(R.id.switchReceiptCustAddress)
+        switchReceiptCustPhone = findViewById(R.id.switchReceiptCustPhone)
+        switchReceiptItemIds = findViewById(R.id.switchReceiptItemIds)
+        switchReceiptCategories = findViewById(R.id.switchReceiptCategories)
+        switchEnlargeOrderNo = findViewById(R.id.switchEnlargeOrderNo)
+        switchEnlargeAddress = findViewById(R.id.switchEnlargeAddress)
+        switchEnlargePhone = findViewById(R.id.switchEnlargePhone)
 
         btnSoundsBack = findViewById(R.id.btnSoundsBack)
         seekBarVolume = findViewById(R.id.seekBarVolume)
@@ -677,6 +730,9 @@ class MainActivity : AppCompatActivity() {
     private fun setupDrawer() {
         btnHamburger.setOnClickListener { drawerLayout.openDrawer(GravityCompat.START) }
         btnDrawerClose.setOnClickListener { drawerLayout.closeDrawer(GravityCompat.START) }
+        btnNotificationBell.setOnClickListener {
+            showScreen(Screen.SETTINGS_SOUNDS)
+        }
 
         // Stop taking orders toggle
         btnDrawerStopOrders.setOnClickListener {
@@ -730,8 +786,23 @@ class MainActivity : AppCompatActivity() {
         }
         btnSubTodaySales.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
-            val todayStr = SimpleDateFormat("yyyy-MM-day", Locale.getDefault()).format(Date())
-            val todayOrders = ordersList.filter { it.createdAt.startsWith(todayStr.substring(0, 10)) }
+            val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val todayOrders = ordersList.filter { order ->
+                try {
+                    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+                        timeZone = TimeZone.getTimeZone("UTC")
+                    }
+                    val date = sdf.parse(order.createdAt)
+                    if (date != null) {
+                        val localFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        localFormat.format(date) == todayStr
+                    } else {
+                        order.createdAt.startsWith(todayStr)
+                    }
+                } catch (e: Exception) {
+                    order.createdAt.startsWith(todayStr)
+                }
+            }
             val count = todayOrders.size
             val revenue = todayOrders.sumOf { it.total }
             val onlineCount = todayOrders.count { it.paymentMethod.lowercase() == "online" }
@@ -1367,6 +1438,26 @@ class MainActivity : AppCompatActivity() {
         }
         rightCol.addView(printDot)
 
+        // Payment status badge (PAID vs NOT PAID)
+        val isPaid = order.paymentStatus.lowercase() == "paid" || order.paymentMethod.lowercase() == "online"
+        val paidBadge = TextView(this).apply {
+            text = if (isPaid) "PAID" else "NOT PAID"
+            setTextColor(Color.parseColor(if (isPaid) "#00A389" else "#EF4444"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 8f)
+            setTypeface(null, Typeface.BOLD)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(3).toFloat()
+                setColor(Color.parseColor(if (isPaid) "#E8FFF5" else "#FEF2F2"))
+            }
+            setPadding(dp(4), dp(1), dp(4), dp(1))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(3); gravity = Gravity.END }
+        }
+        rightCol.addView(paidBadge)
+
         root.addView(rightCol)
         card.addView(root)
         return card
@@ -1549,33 +1640,109 @@ class MainActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
-                // Print receiptCopiesCount copies
-                var copiesLeft = receiptCopiesCount
-                fun printNext() {
-                    if (copiesLeft <= 0) {
-                        runOnUiThread {
-                            val msg = if (receiptCopiesCount > 1) "$receiptCopiesCount receipts sent to printer!" else "Receipt sent to printer!"
-                            Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
-                            if (!order.printed) {
-                                order.printed = true
-                                printedOrderIds.add(order.id ?: "")
-                                refreshOrderList()
+                val options = arrayOf(
+                    "1 Store + 1 Customer (No Driver QR)",
+                    "1 Store Copy Only",
+                    "1 Customer Copy Only (No Driver QR)",
+                    "2 Store Copies",
+                    "3 Store Copies"
+                )
+
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Print Receipt")
+                    .setItems(options) { _, which ->
+                        when (which) {
+                            0 -> {
+                                // 1 Store + 1 Customer
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
+                                    if (s1) {
+                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
+                                            runOnUiThread {
+                                                Toast.makeText(this@MainActivity, "2 Receipts printed (1 Store + 1 Customer)!", Toast.LENGTH_SHORT).show()
+                                                if (!order.printed) {
+                                                    order.printed = true
+                                                    printedOrderIds.add(order.id)
+                                                    refreshOrderList()
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        runOnUiThread {
+                                            Toast.makeText(this@MainActivity, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                            1 -> {
+                                // 1 Store Copy Only
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s ->
+                                    runOnUiThread {
+                                        if (s) {
+                                            Toast.makeText(this@MainActivity, "Store receipt printed!", Toast.LENGTH_SHORT).show()
+                                            if (!order.printed) {
+                                                order.printed = true
+                                                printedOrderIds.add(order.id)
+                                                refreshOrderList()
+                                            }
+                                        } else {
+                                            Toast.makeText(this@MainActivity, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                            2 -> {
+                                // 1 Customer Copy Only
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s ->
+                                    runOnUiThread {
+                                        if (s) {
+                                            Toast.makeText(this@MainActivity, "Customer receipt printed!", Toast.LENGTH_SHORT).show()
+                                            if (!order.printed) {
+                                                order.printed = true
+                                                printedOrderIds.add(order.id)
+                                                refreshOrderList()
+                                            }
+                                        } else {
+                                            Toast.makeText(this@MainActivity, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                            3 -> {
+                                // 2 Store Copies
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) {
+                                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) {
+                                        runOnUiThread {
+                                            Toast.makeText(this@MainActivity, "2 Store receipts printed!", Toast.LENGTH_SHORT).show()
+                                            if (!order.printed) {
+                                                order.printed = true
+                                                printedOrderIds.add(order.id)
+                                                refreshOrderList()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            4 -> {
+                                // 3 Store Copies
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) {
+                                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) {
+                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) {
+                                            runOnUiThread {
+                                                Toast.makeText(this@MainActivity, "3 Store receipts printed!", Toast.LENGTH_SHORT).show()
+                                                if (!order.printed) {
+                                                    order.printed = true
+                                                    printedOrderIds.add(order.id)
+                                                    refreshOrderList()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
-                        return
                     }
-                    copiesLeft--
-                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
-                        if (success) {
-                            printNext()
-                        } else {
-                            runOnUiThread {
-                                Toast.makeText(this@MainActivity, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
-                }
-                printNext()
+                    .setNegativeButton("Cancel", null)
+                    .show()
             }
         }
 
@@ -1666,9 +1833,34 @@ class MainActivity : AppCompatActivity() {
         val firstName = order.customerName?.split(" ")?.firstOrNull() ?: "Customer"
         txtDetailCustomerName.text = firstName
 
-        val isPaid = order.paymentStatus.lowercase() == "paid"
-        txtDetailPaidBadge.text = if (isPaid) "Paid" else "Unpaid"
+        val isPaid = order.paymentStatus.lowercase() == "paid" || order.paymentMethod.lowercase() == "online"
+        txtDetailPaidBadge.text = if (isPaid) "PAID" else "NOT PAID"
         txtDetailPaidBadge.setTextColor(Color.parseColor(if (isPaid) "#00A389" else "#EF4444"))
+        txtDetailPaidBadge.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(4).toFloat()
+            setColor(Color.parseColor(if (isPaid) "#E8FFF5" else "#FEF2F2"))
+        }
+        txtDetailPaidBadge.setOnClickListener {
+            val newStatus = if (isPaid) "unpaid" else "paid"
+            val newLabel = if (isPaid) "NOT PAID" else "PAID"
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Update Payment Status")
+                .setMessage("Change payment status for Order #${order.orderNumber} to $newLabel?")
+                .setPositiveButton("Update") { dialog, _ ->
+                    dialog.dismiss()
+                    supabaseManager.updateOrderPaymentStatus(order.id, newStatus) { success ->
+                        if (success) {
+                            order.paymentStatus = newStatus
+                            refreshOrderList()
+                            openOrderDetail(order)
+                            Toast.makeText(this@MainActivity, "Payment status updated to $newLabel", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
 
         // Customer loyalty badge
         val orderCount = order.customerOrderCount ?: 1
@@ -1852,6 +2044,45 @@ class MainActivity : AppCompatActivity() {
             txtDrawerAutoPrintStatus.text = if (isChecked) "Enabled" else "Disabled"
             txtDrawerAutoPrintStatus.setTextColor(Color.parseColor(if (isChecked) "#00A389" else "#EF4444"))
         }
+
+        val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
+        switchReceiptCustAddress.isChecked = prefs.getBoolean("receipt_show_address", true)
+        switchReceiptCustPhone.isChecked = prefs.getBoolean("receipt_show_phone", true)
+        switchReceiptItemIds.isChecked = prefs.getBoolean("receipt_show_item_notes", true)
+        switchReceiptCategories.isChecked = prefs.getBoolean("receipt_show_categories", true)
+        switchEnlargeOrderNo.isChecked = prefs.getBoolean("receipt_enlarge_order_no", true)
+        switchEnlargeAddress.isChecked = prefs.getBoolean("receipt_enlarge_address", false)
+        switchEnlargePhone.isChecked = prefs.getBoolean("receipt_enlarge_phone", false)
+
+        setupSwitchColorStates(switchReceiptCustAddress)
+        setupSwitchColorStates(switchReceiptCustPhone)
+        setupSwitchColorStates(switchReceiptItemIds)
+        setupSwitchColorStates(switchReceiptCategories)
+        setupSwitchColorStates(switchEnlargeOrderNo)
+        setupSwitchColorStates(switchEnlargeAddress)
+        setupSwitchColorStates(switchEnlargePhone)
+
+        switchReceiptCustAddress.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("receipt_show_address", isChecked).apply()
+        }
+        switchReceiptCustPhone.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("receipt_show_phone", isChecked).apply()
+        }
+        switchReceiptItemIds.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("receipt_show_item_notes", isChecked).apply()
+        }
+        switchReceiptCategories.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("receipt_show_categories", isChecked).apply()
+        }
+        switchEnlargeOrderNo.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("receipt_enlarge_order_no", isChecked).apply()
+        }
+        switchEnlargeAddress.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("receipt_enlarge_address", isChecked).apply()
+        }
+        switchEnlargePhone.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("receipt_enlarge_phone", isChecked).apply()
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -1879,6 +2110,12 @@ class MainActivity : AppCompatActivity() {
                 if (fromUser) {
                     radioGroupSounds.clearCheck()
                     prefs.edit().putInt("sound_volume", progress).apply()
+                    if (isTestSoundPlaying) {
+                        stopIncomingOrderSound(force = true)
+                        isTestSoundPlaying = true
+                        btnSoundPlay.text = "▶ Playing"
+                        playIncomingOrderSound()
+                    }
                 }
             }
             override fun onStartTrackingTouch(sb: SeekBar?) {}
@@ -1896,12 +2133,18 @@ class MainActivity : AppCompatActivity() {
                 seekBarVolume.progress = targetVolume
                 txtSoundVolumeVal.text = "Volume $targetVolume%"
                 prefs.edit().putInt("sound_volume", targetVolume).apply()
+                if (isTestSoundPlaying) {
+                    stopIncomingOrderSound(force = true)
+                    isTestSoundPlaying = true
+                    btnSoundPlay.text = "▶ Playing"
+                    playIncomingOrderSound()
+                }
             }
         }
 
         // Setup Sound Type Spinner
-        val soundOptions = arrayOf("Siren Alarm", "Beeps", "Chime", "System Notification", "System Alarm")
-        val soundOptionKeys = arrayOf("siren", "beeps", "chime", "system_notification", "system_alarm")
+        val soundOptions = arrayOf("Siren Alarm 🚨", "Rapid Beeps 🔔", "Soft Chime 🎵", "Fast Pulse Alert ⚡", "System Notification 📲", "System Alarm ⏰")
+        val soundOptionKeys = arrayOf("siren", "beeps", "chime", "pulse", "system_notification", "system_alarm")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, soundOptions)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerSoundType.adapter = adapter
@@ -1914,12 +2157,20 @@ class MainActivity : AppCompatActivity() {
         spinnerSoundType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val selectedKey = soundOptionKeys[position]
+                val oldKey = prefs.getString("sound_type", "siren")
                 prefs.edit().putString("sound_type", selectedKey).apply()
+                if (selectedKey != oldKey && isTestSoundPlaying) {
+                    stopIncomingOrderSound(force = true)
+                    isTestSoundPlaying = true
+                    btnSoundPlay.text = "▶ Playing"
+                    playIncomingOrderSound()
+                }
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
         btnSoundPlay.setOnClickListener {
+            stopIncomingOrderSound(force = true)
             isTestSoundPlaying = true
             btnSoundPlay.text = "▶ Playing"
             playIncomingOrderSound()
@@ -1927,13 +2178,13 @@ class MainActivity : AppCompatActivity() {
             // Auto stop after 6 seconds
             handler.postDelayed({
                 if (isTestSoundPlaying) {
-                    stopIncomingOrderSound()
+                    stopIncomingOrderSound(force = true)
                 }
             }, 6000)
         }
 
         btnSoundStop.setOnClickListener {
-            stopIncomingOrderSound()
+            stopIncomingOrderSound(force = true)
         }
     }
 
@@ -2581,6 +2832,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showIncomingOrderDialog(order: Order) {
         try {
+            wakeUpDeviceScreen()
             if (showingDialogOrderIds.contains(order.id)) {
                 return // Already showing popup for this order
             }
@@ -2723,9 +2975,9 @@ class MainActivity : AppCompatActivity() {
             timerHandler.post(timerRunnable)
 
             dialog.setOnDismissListener {
+                showingDialogOrderIds.remove(order.id)
                 stopIncomingOrderSound()
                 timerHandler.removeCallbacks(timerRunnable)
-                showingDialogOrderIds.remove(order.id)
             }
 
             val layoutDialogDriver = dialogView.findViewById<LinearLayout>(R.id.layoutDialogDriver)
@@ -2761,6 +3013,7 @@ class MainActivity : AppCompatActivity() {
 
             // Print & Confirm Order in Step 2 with Quantity Dropdown Dialog
             btnConfirm.setOnClickListener {
+                showingDialogOrderIds.remove(order.id)
                 stopIncomingOrderSound()
                 
                 val context = this@MainActivity
@@ -2780,13 +3033,21 @@ class MainActivity : AppCompatActivity() {
                 container.addView(label)
                 
                 val spinner = Spinner(context)
-                val printOptions = listOf("Do Not Print", "1 Copy", "2 Copies", "3 Copies", "4 Copies", "5 Copies")
+                val printOptions = listOf(
+                    "Do Not Print",
+                    "1 Store + 1 Customer (No Driver QR)",
+                    "1 Copy (Store)",
+                    "2 Copies (Store)",
+                    "3 Copies (Store)",
+                    "4 Copies (Store)",
+                    "5 Copies (Store)"
+                )
                 val spinnerAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, printOptions)
                 spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 spinner.adapter = spinnerAdapter
                 
                 // Default selection is based on the global receiptCopiesCount configuration
-                val defaultSel = receiptCopiesCount.coerceIn(0, 5)
+                val defaultSel = receiptCopiesCount.coerceIn(0, 6)
                 spinner.setSelection(defaultSel)
                 
                 container.addView(spinner)
@@ -2796,7 +3057,7 @@ class MainActivity : AppCompatActivity() {
                     printDialog.dismiss()
                     dialog.dismiss() // Dismiss incoming order dialog
                     
-                    val selectedQty = spinner.selectedItemPosition // 0 = Do Not Print, 1 = 1 copy, 2 = 2 copies, etc.
+                    val selectedQty = spinner.selectedItemPosition // 0 = Do Not Print, 1 = 1 Store + 1 Customer, 2 = 1 Copy, 3 = 2 Copies...
                     
                     // Check driver selection
                     var chosenDriver: String? = null
@@ -2815,12 +3076,33 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     // 2. Print receipt if selected quantity is greater than 0
-                    if (selectedQty > 0) {
-                        var copiesLeft = selectedQty
+                    if (selectedQty == 1) {
+                        // 1 Store Copy + 1 Customer Copy (No Driver QR)
+                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { success1 ->
+                            if (success1) {
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { success2 ->
+                                    runOnUiThread {
+                                        Toast.makeText(context, "2 Receipts printed (1 Store + 1 Customer)!", Toast.LENGTH_SHORT).show()
+                                        if (!order.printed) {
+                                            order.printed = true
+                                            printedOrderIds.add(order.id)
+                                            refreshOrderList()
+                                        }
+                                    }
+                                }
+                            } else {
+                                runOnUiThread {
+                                    Toast.makeText(context, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    } else if (selectedQty > 1) {
+                        val numCopies = selectedQty - 1
+                        var copiesLeft = numCopies
                         fun printNext() {
                             if (copiesLeft <= 0) {
                                 runOnUiThread {
-                                    val msg = if (selectedQty > 1) "$selectedQty receipts sent to printer!" else "Receipt sent to printer!"
+                                    val msg = if (numCopies > 1) "$numCopies receipts sent to printer!" else "Receipt sent to printer!"
                                     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                     if (!order.printed) {
                                         order.printed = true
@@ -2831,7 +3113,7 @@ class MainActivity : AppCompatActivity() {
                                 return
                             }
                             copiesLeft--
-                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
+                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { success ->
                                 if (success) {
                                     printNext()
                                 } else {
@@ -2852,6 +3134,7 @@ class MainActivity : AppCompatActivity() {
 
             // Decline Order
             btnDecline.setOnClickListener {
+                showingDialogOrderIds.remove(order.id)
                 stopIncomingOrderSound()
                 dialog.dismiss()
                 val isOnline = order.paymentMethod.lowercase() == "online"
@@ -2954,12 +3237,14 @@ class MainActivity : AppCompatActivity() {
                             val tone = when (soundType) {
                                 "beeps" -> android.media.ToneGenerator.TONE_CDMA_PIP
                                 "chime" -> android.media.ToneGenerator.TONE_CDMA_CONFIRM
+                                "pulse" -> android.media.ToneGenerator.TONE_CDMA_ABBR_ALERT
                                 else -> if (high) android.media.ToneGenerator.TONE_CDMA_HIGH_L else android.media.ToneGenerator.TONE_CDMA_MED_L
                             }
-                            localToneGenerator?.startTone(tone, if (soundType == "beeps") 150 else 300)
+                            localToneGenerator?.startTone(tone, if (soundType == "beeps" || soundType == "pulse") 150 else 300)
                             
                             val sleepMs = when (soundType) {
                                 "beeps" -> 300L
+                                "pulse" -> 250L
                                 "chime" -> 800L
                                 else -> 400L
                             }
@@ -3000,8 +3285,12 @@ class MainActivity : AppCompatActivity() {
         soundThread = null
     }
 
-    private fun stopIncomingOrderSound() {
+    private fun stopIncomingOrderSound(force: Boolean = false) {
         synchronized(this) {
+            if (!force && showingDialogOrderIds.isNotEmpty()) {
+                // Keep sound playing continuously until all incoming order popups are accepted/declined!
+                return
+            }
             stopIncomingOrderSoundInternal()
             if (isTestSoundPlaying) {
                 isTestSoundPlaying = false
@@ -3011,6 +3300,51 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun wakeUpDeviceScreen() {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true)
+                setTurnScreenOn(true)
+            } else {
+                @Suppress("DEPRECATION")
+                window.addFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
+                    android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                )
+            }
+            val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            @Suppress("DEPRECATION")
+            val wakeLock = pm.newWakeLock(
+                android.os.PowerManager.FULL_WAKE_LOCK or
+                android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                android.os.PowerManager.ON_AFTER_RELEASE,
+                "SpoonfulPOS:IncomingOrderWakeLock"
+            )
+            wakeLock.acquire(3000L)
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error waking up screen", e)
+        }
+    }
+
+    private fun requestIgnoreBatteryOptimizations() {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                val pkgName = packageName
+                val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                if (!pm.isIgnoringBatteryOptimizations(pkgName)) {
+                    val intent = android.content.Intent().apply {
+                        action = android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                        data = android.net.Uri.parse("package:$pkgName")
+                    }
+                    startActivity(intent)
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error requesting battery optimization ignore", e)
         }
     }
 

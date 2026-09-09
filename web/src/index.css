@@ -10,6 +10,14 @@
 }
 
 @layer base {
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overscroll-behavior-y: none;
+  }
+
   body {
     font-family: 'Inter', sans-serif;
     @apply bg-slate-50 text-slate-900 antialiased;
@@ -18,6 +26,19 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif;
   }
+}
+
+/* Safe Area Inset Helper Utilities */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+/* Prevent iOS auto-zoom on input focus by setting minimum font size to 16px */
+input, select, textarea {
+  font-size: 16px !important;
 }
 
 /* Custom scrollbars for details panel and sidebar */

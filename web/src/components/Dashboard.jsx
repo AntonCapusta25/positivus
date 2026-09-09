@@ -89,15 +89,8 @@ export default function Dashboard() {
     updateOrderStatus(order.id, next);
   };
 
-  const handlePrint = async (order) => {
-    setPrintToast(`Sending print request for Order #${order.order_number || order.id.slice(0,6)}...`);
-    const res = await triggerTestPrint(order);
-    if (res && res.success) {
-      setPrintToast(`✓ Receipt sent to Sunmi POS printer!`);
-    } else {
-      setPrintToast(`✓ Print signal sent.`);
-    }
-    setTimeout(() => setPrintToast(null), 3500);
+  const handlePrint = (order) => {
+    setPrintPreviewOrder(order);
   };
 
 
@@ -161,7 +154,7 @@ export default function Dashboard() {
         </div>
 
         {/* Scrollable Orders List Container */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 pb-[max(2rem,calc(env(safe-area-inset-bottom)+1.5rem))] space-y-3">
           {filteredOrders.length === 0 ? (
             <div className="h-48 flex flex-col items-center justify-center text-slate-400 space-y-2">
               <ClipboardList size={36} className="text-slate-300" />
@@ -323,13 +316,29 @@ export default function Dashboard() {
               <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h4 className="font-bold text-slate-800 text-sm">Customer contact details</h4>
-                  <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-md ${
-                    selectedOrder.payment_status?.toLowerCase() === 'paid'
-                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                      : 'bg-amber-50 text-amber-600 border border-amber-100'
-                  }`}>
-                    {selectedOrder.payment_status || 'Pending'}
-                  </span>
+                  {(() => {
+                    const isPaid = selectedOrder.payment_status?.toLowerCase() === 'paid' || selectedOrder.payment_method?.toLowerCase() === 'online';
+                    return (
+                      <button
+                        onClick={async () => {
+                          const nextStatus = isPaid ? 'unpaid' : 'paid';
+                          const confirmMsg = `Change payment status to ${nextStatus.toUpperCase()}?`;
+                          if (window.confirm(confirmMsg)) {
+                            await updateOrderStatus(selectedOrder.id, selectedOrder.status, nextStatus);
+                            setSelectedOrder(prev => prev ? { ...prev, payment_status: nextStatus } : prev);
+                          }
+                        }}
+                        className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                          isPaid
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100'
+                        }`}
+                        title="Click to toggle payment status"
+                      >
+                        {isPaid ? '✓ PAID' : '⚠️ NOT PAID'}
+                      </button>
+                    );
+                  })()}
                 </div>
 
                 <div className="space-y-2.5 text-sm">
@@ -785,21 +794,45 @@ export default function Dashboard() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-800 bg-slate-900 flex items-center justify-end space-x-3 shrink-0">
+            <div className="px-6 py-4 border-t border-slate-800 bg-slate-900 flex flex-wrap items-center justify-between gap-3 shrink-0">
               <button
                 onClick={() => setPrintPreviewOrder(null)}
                 className="py-2 px-4 bg-slate-800 hover:bg-slate-750 text-white text-xs font-bold rounded-xl transition-all"
               >
                 Close Preview
               </button>
-              <button
-                onClick={() => {
-                  triggerTestPrint(printPreviewOrder);
-                }}
-                className="py-2 px-5 bg-brand-orange hover:bg-opacity-95 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-brand-orange/15"
-              >
-                Print / Reprint Receipt
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => {
+                    triggerTestPrint(printPreviewOrder, 'BOTH');
+                    setPrintToast('✓ Print request sent (1 Store + 1 Customer)');
+                    setTimeout(() => setPrintToast(null), 3000);
+                  }}
+                  className="py-2 px-4 bg-brand-orange hover:bg-opacity-95 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-brand-orange/15"
+                >
+                  Print 1 Store + 1 Customer
+                </button>
+                <button
+                  onClick={() => {
+                    triggerTestPrint(printPreviewOrder, 'STORE');
+                    setPrintToast('✓ Print request sent (1 Store Copy)');
+                    setTimeout(() => setPrintToast(null), 3000);
+                  }}
+                  className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-all border border-slate-700"
+                >
+                  Store Only
+                </button>
+                <button
+                  onClick={() => {
+                    triggerTestPrint(printPreviewOrder, 'CUSTOMER');
+                    setPrintToast('✓ Print request sent (1 Customer Copy)');
+                    setTimeout(() => setPrintToast(null), 3000);
+                  }}
+                  className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-all border border-slate-700"
+                >
+                  Customer Only (No QR)
+                </button>
+              </div>
             </div>
 
           </div>

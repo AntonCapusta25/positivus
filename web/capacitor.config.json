@@ -1,0 +1,8 @@
+{
+  "appId": "com.spoonful.pos",
+  "appName": "Spoonful POS",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

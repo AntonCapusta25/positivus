@@ -1738,34 +1738,69 @@ export const POSProvider = ({ children }) => {
     }
   };
 
-  const triggerTestPrint = async (order) => {
-    console.log('[PrintTrigger] triggerTestPrint called for order:', order?.order_number || order?.id, 'autoPrint setting:', settingsRef.current.autoPrint, 'Stack:', new Error().stack);
-    // 1. Android Native Webview Bridge Integration
-    if (window.SunmiPrinterBridge) {
-      try {
-        console.log("Sunmi native bridge detected. Redirecting print job.");
-        const orderToSend = {
-          ...order,
-          items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items
-        };
-        window.SunmiPrinterBridge.printReceipt(JSON.stringify(orderToSend));
-        return;
-      } catch (err) {
-        console.warn("Sunmi bridge printing failed, falling back to database/browser print:", err);
+  const triggerTestPrint = async (order = null, printType = 'BOTH') => {
+    console.log('[PrintTrigger] triggerTestPrint called for order:', order?.order_number || order?.id, 'printType:', printType);
+    let targetOrder = order;
+
+    // Resolve test or null orders to a valid database order so remote print works 100%
+    if (!targetOrder || targetOrder.id === 'test') {
+      const realOrder = orders.find(o => o.id && o.id !== 'test');
+      if (realOrder) {
+        targetOrder = realOrder;
+      } else {
+        try {
+          const { data } = await supabase.from('orders').select('*').limit(1).maybeSingle();
+          if (data) {
+            targetOrder = data;
+          } else {
+            const { data: created } = await supabase.from('orders').insert([{
+              order_number: 'TEST-1234',
+              customer_name: 'Test Customer',
+              customer_phone: '+31612345678',
+              items: JSON.stringify([{ name: 'Test Butter Chicken', quantity: 1, price: 14.50 }]),
+              total: 14.50,
+              subtotal: 14.50,
+              status: 'preparing',
+              type: 'delivery',
+              payment_method: 'online',
+              payment_status: 'paid',
+              merchant_id: settingsRef.current.merchantId || 'restaurant_1',
+              customer_address: '123 Test Street, Enschede'
+            }]).select().single();
+            if (created) targetOrder = created;
+          }
+        } catch (err) {
+          console.warn("Failed to resolve DB order for test print:", err);
+        }
       }
     }
 
-    // 2. Notify remote Sunmi printer (Android POS app) via Supabase print_requested_at field
-    if (order && order.id && order.id !== 'test') {
+    if (window.SunmiPrinterBridge && targetOrder) {
       try {
-        console.log(`Sending remote print command to Sunmi device via Supabase for order ${order.order_number || order.id}`);
+        console.log("Sunmi native bridge detected. Redirecting print job.");
+        const orderToSend = {
+          ...targetOrder,
+          items: typeof targetOrder.items === 'string' ? JSON.parse(targetOrder.items) : targetOrder.items,
+          printType: printType
+        };
+        window.SunmiPrinterBridge.printReceipt(JSON.stringify(orderToSend));
+        return { success: true };
+      } catch (err) {
+        console.warn("Sunmi bridge printing failed, falling back to database print:", err);
+      }
+    }
+
+    if (targetOrder && targetOrder.id) {
+      try {
+        const ts = `${printType}:${new Date().toISOString()}`;
+        console.log(`Sending remote print command (${printType}) to Sunmi device via Supabase for order ${targetOrder.order_number || targetOrder.id}`);
         const { error } = await supabase
           .from('orders')
           .update({ 
-            print_requested_at: new Date().toISOString(),
+            print_requested_at: ts,
             printed: false 
           })
-          .eq('id', order.id);
+          .eq('id', targetOrder.id);
         if (error) throw error;
         console.log("Remote print request successfully sent to Sunmi device via Supabase DB.");
         return { success: true, remote: true };
@@ -1774,6 +1809,8 @@ export const POSProvider = ({ children }) => {
         return { success: false, error: err.message };
       }
     }
+    return { success: false, error: "No valid order found to print" };
+  };
 
 
 

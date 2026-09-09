@@ -4,3 +4,6 @@ node_modules/
 .env
 window_dump*
 dist/
+android/app/build/
+android/.gradle/
+*.apk

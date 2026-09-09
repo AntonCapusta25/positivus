@@ -260,14 +260,40 @@ serve(async (req) => {
     const customerPhone = data.customer_phone || data.customer?.phone || data.user?.mobile || data.user?.phone || data.delivery_address?.contact_phone_number || data.pickup_address?.contact_phone_number || "";
     const merchantId = data.merchant_id || "restaurant_1";
 
-    // Map cart items
+    // Map cart items with choices/extras/options formatted into notes
     const rawItems = data.cart?.cart_items || data.cart_items || data.items || [];
-    const items = rawItems.map((item: any) => ({
-      name: item.product_name || item.name || "Unknown Item",
-      quantity: Number(item.quantity) || 1,
-      price: Number(item.product_price || item.price || item.total_amount) || 0.0,
-      notes: item.product_instruction || item.item_note || item.notes || ""
-    }));
+    const items = rawItems.map((item: any) => {
+      let notes = item.product_instruction || item.item_note || item.notes || "";
+      
+      // Parse product options (extras, choice, etc.)
+      if (item.product_options && Array.isArray(item.product_options) && item.product_options.length > 0) {
+        const optionsList: string[] = [];
+        item.product_options.forEach((opt: any) => {
+          if (opt.options && Array.isArray(opt.options) && opt.options.length > 0) {
+            const selectedChoiceNames = opt.options.map((o: any) => {
+              const qtyStr = o.quantity && o.quantity > 1 ? `${o.quantity}x ` : "";
+              const priceStr = o.price && o.price > 0 ? ` (+€${Number(o.price).toFixed(2)})` : "";
+              return `${qtyStr}${o.name}${priceStr}`;
+            }).join(", ");
+            if (selectedChoiceNames) {
+              optionsList.push(`${opt.option_name}: ${selectedChoiceNames}`);
+            }
+          }
+        });
+        
+        if (optionsList.length > 0) {
+          const optionsStr = optionsList.join(" | ");
+          notes = notes ? `${notes} (${optionsStr})` : optionsStr;
+        }
+      }
+
+      return {
+        name: item.product_name || item.name || "Unknown Item",
+        quantity: Number(item.quantity) || 1,
+        price: Number(item.product_price || item.price || item.total_amount) || 0.0,
+        notes: notes
+      };
+    });
 
     const subtotal = Number(data.cart?.sub_total_amount || data.subtotal || data.sub_total_amount) || 0.0;
     const tax = Number(data.cart?.tax || data.tax) || 0.0;

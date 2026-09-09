@@ -17,7 +17,7 @@ data class Order(
     @SerializedName("status") var status: String, // incoming, preparing, ready, completed, cancelled
     @SerializedName("type") val type: String, // delivery, pickup, dine_in
     @SerializedName("payment_method") val paymentMethod: String, // cash, card, online
-    @SerializedName("payment_status") val paymentStatus: String, // pending, paid, refunded
+    @SerializedName("payment_status") var paymentStatus: String, // pending, paid, unpaid, refunded
     @SerializedName("notes") val notes: String?,
     @SerializedName("printed") var printed: Boolean,
     @SerializedName("print_requested_at") var printRequestedAt: String? = null,

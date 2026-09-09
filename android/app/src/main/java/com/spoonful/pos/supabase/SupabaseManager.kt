@@ -317,6 +317,50 @@ class SupabaseManager(
     }
 
     /**
+     * Update order payment status (paid / unpaid) in Supabase database
+     */
+    fun updateOrderPaymentStatus(
+        orderId: String,
+        paymentStatus: String,
+        onComplete: (Boolean) -> Unit = {}
+    ) {
+        val url = "$supabaseUrl/rest/v1/orders?id=eq.$orderId"
+        
+        val updatePayload = JsonObject().apply {
+            addProperty("payment_status", paymentStatus)
+        }
+
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(updatePayload).toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .addHeader("Content-Type", "application/json")
+            .patch(requestBody)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, "Failed to update order payment status", e)
+                mainHandler.post { onComplete(false) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    val success = response.isSuccessful
+                    if (!success) {
+                        val err = response.body?.string() ?: ""
+                        Log.e(TAG, "Update order payment status failed: code ${response.code}, body $err")
+                    }
+                    mainHandler.post { onComplete(success) }
+                }
+            }
+        })
+    }
+
+    /**
      * Update assigned driver name for an order in Supabase database
      */
     fun assignDriverToOrder(orderId: String, driverName: String, onComplete: (Boolean) -> Unit = {}) {

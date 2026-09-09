@@ -458,15 +458,93 @@ export default function Settings() {
           </div>
 
           {/* Test Printing button */}
-          <div className="pt-4 flex space-x-3">
+          <div className="pt-4 flex flex-col space-y-2">
             <button
               type="button"
-              onClick={() => triggerTestPrint({ id: 'test', order_number: 'TEST-1234-99' })}
-              className="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-semibold transition-all flex items-center justify-center space-x-2"
+              onClick={async () => {
+                const res = await triggerTestPrint(null, 'BOTH');
+                if (res && res.success) {
+                  alert("✓ Test receipt print command sent to Sunmi POS terminal!");
+                } else {
+                  alert("Failed to send test print: " + (res?.error || "Unknown error"));
+                }
+              }}
+              className="w-full py-3.5 bg-brand-orange hover:bg-opacity-95 text-white rounded-xl text-sm font-extrabold transition-all flex items-center justify-center space-x-2 shadow-md shadow-brand-orange/15 cursor-pointer"
             >
-              <Printer size={16} />
-              <span>Print Test Receipt</span>
+              <Printer size={18} />
+              <span>Print Test Receipt on POS Terminal</span>
             </button>
+          </div>
+
+          {/* Live Receipt Structure Preview */}
+          <div className="pt-4 space-y-3">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Live Thermal Receipt Structure Preview</span>
+            
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 font-mono text-[11px] text-slate-800 space-y-2 shadow-inner">
+              <div className="text-center font-bold">
+                <p className="text-xs font-black">================================</p>
+                <p className="text-sm font-black">{availableMerchants.find(m => m.id === settings.merchantId)?.name || 'Raj Curry House'} Online</p>
+                <p className="text-xs font-black">================================</p>
+              </div>
+
+              <div className="border-b border-dashed border-slate-300 pb-2 space-y-0.5">
+                <div className="flex justify-between font-extrabold">
+                  <span>Order:</span>
+                  <span>#TEST-1234</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Type:</span>
+                  <span>DELIVERY</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Customer:</span>
+                  <span>John Doe</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Address:</span>
+                  <span>123 Test Street, Enschede</span>
+                </div>
+              </div>
+
+              <div className="space-y-1 border-b border-dashed border-slate-300 pb-2">
+                <div className="flex justify-between font-bold">
+                  <span>1x Butter Chicken</span>
+                  <span>€14.50</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span>1x Garlic Naan</span>
+                  <span>€3.50</span>
+                </div>
+              </div>
+
+              <div className="space-y-0.5 font-bold">
+                <div className="flex justify-between">
+                  <span>Subtotaal:</span>
+                  <span>€18.00</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Bezorgkosten:</span>
+                  <span>€2.50</span>
+                </div>
+                <div className="flex justify-between text-xs font-black text-slate-900 border-t border-slate-400 pt-1">
+                  <span>TOTAAL:</span>
+                  <span>€20.50</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-600">
+                  <span>Betaling Spoonfull:</span>
+                  <span>Online (PAID)</span>
+                </div>
+              </div>
+
+              <div className="text-center border-t border-dashed border-slate-300 pt-3 space-y-1">
+                <p className="font-bold text-[10px]">================================</p>
+                <p className="font-extrabold text-[10px]">Bestel via onze eigen webshop</p>
+                <p className="font-bold text-[10px]">================================</p>
+                <div className="w-16 h-16 bg-white border border-slate-300 mx-auto rounded flex items-center justify-center text-xs font-sans text-slate-400">
+                  [QR]
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

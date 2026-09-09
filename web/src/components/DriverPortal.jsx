@@ -92,6 +92,7 @@ export default function DriverPortal() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanningBeam, setScanningBeam] = useState(false);
   const [scannerError, setScannerError] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
@@ -425,36 +426,90 @@ export default function DriverPortal() {
     setScanningBeam(false);
   };
 
-  // Simulate scanning of the QR receipt code
-  const simulateScan = () => {
-    // Pick the most recent delivery order that is not completed
-    const pendingDelivery = orders.find(o =>
-      (o.type || '').toLowerCase() === 'delivery' &&
-      (o.status || '').toLowerCase() !== 'completed'
-    );
-
-    if (pendingDelivery) {
-      setTimeout(() => {
-        stopCamera();
-        setActiveOrder(pendingDelivery);
-        setSelectedOrderId(pendingDelivery.order_number || pendingDelivery.id);
-      }, 1500);
-    } else {
-      alert("No active delivery orders available to scan right now.");
-      stopCamera();
+  const handleScannedData = (scannedText) => {
+    if (!scannedText) return;
+    console.log('[QR Scanner] Detected raw QR code data:', scannedText);
+    
+    // Extract order_id if URL or raw ID
+    let extractedId = scannedText.trim();
+    if (extractedId.includes('order_id=')) {
+      try {
+        const match = extractedId.match(/order_id=([^&]+)/);
+        if (match) extractedId = match[1];
+      } catch (e) {}
     }
+
+    stopCamera();
+    loadOrder(extractedId);
   };
 
+  // Continuous Camera Frame Decoder using jsQR
+  useEffect(() => {
+    if (!showScanner) return;
+
+    let animId;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    const scanFrame = () => {
+      if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+        canvas.height = videoRef.current.videoHeight;
+        canvas.width = videoRef.current.videoWidth;
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        if (window.jsQR) {
+          const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          if (code && code.data) {
+            handleScannedData(code.data);
+            return;
+          }
+        }
+      }
+      animId = requestAnimationFrame(scanFrame);
+    };
+
+    if (!window.jsQR) {
+      const script = document.createElement('script');
+      script.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+      script.onload = () => {
+        animId = requestAnimationFrame(scanFrame);
+      };
+      document.body.appendChild(script);
+    } else {
+      animId = requestAnimationFrame(scanFrame);
+    }
+
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+    };
+  }, [showScanner]);
+
   // Update order status from driver phone
-  const handleUpdateStatus = async (status) => {
+  const handleUpdateStatus = async (status, paymentStatus = null) => {
     if (!activeOrder) return;
-    await updateOrderStatus(activeOrder.id, status);
+    await updateOrderStatus(activeOrder.id, status, paymentStatus);
 
     // Refresh local copy
-    setActiveOrder(prev => ({ ...prev, status }));
+    setActiveOrder(prev => ({
+      ...prev,
+      status,
+      ...(paymentStatus ? { payment_status: paymentStatus } : {})
+    }));
 
     if (status === 'completed') {
       setShowCongrats(true);
+    }
+  };
+
+  const handleMarkDeliveredClick = () => {
+    if (!activeOrder) return;
+    const pm = (activeOrder.payment_method || '').toLowerCase();
+    if (pm === 'online') {
+      handleUpdateStatus('completed', 'paid');
+    } else {
+      setShowPaymentModal(true);
     }
   };
 
@@ -494,6 +549,49 @@ export default function DriverPortal() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col items-center justify-between pb-8">
+      {/* Delivery Driver Payment Confirmation Modal */}
+      {showPaymentModal && activeOrder && (
+        <div className="fixed inset-0 bg-black/85 z-[300] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative animate-fade-in text-center">
+            <div className="w-14 h-14 bg-brand-orange/10 text-brand-orange rounded-full flex items-center justify-center text-2xl mx-auto">
+              💵
+            </div>
+            <h3 className="text-lg font-black text-white">Payment Confirmation</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Order #{activeOrder.order_number || activeOrder.id.slice(0, 6)}<br/>
+              Amount to collect: <strong className="text-emerald-400 text-sm">€{Number(activeOrder.total || 0).toFixed(2)}</strong> ({activeOrder.payment_method || 'Cash'})
+            </p>
+
+            <div className="space-y-2 pt-2">
+              <button
+                onClick={async () => {
+                  setShowPaymentModal(false);
+                  await handleUpdateStatus('completed', 'paid');
+                }}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all flex items-center justify-center space-x-2 shadow-md shadow-emerald-600/20"
+              >
+                <span>✓ PAID - Payment Collected</span>
+              </button>
+              <button
+                onClick={async () => {
+                  setShowPaymentModal(false);
+                  await handleUpdateStatus('completed', 'unpaid');
+                }}
+                className="w-full bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 font-bold py-3 px-4 rounded-xl text-sm transition-all border border-rose-500/30 flex items-center justify-center space-x-2"
+              >
+                <span>⚠️ NOT PAID - Customer Unpaid</span>
+              </button>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded-xl text-xs transition-all mt-1"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Congrats Popup Modal */}
       {showCongrats && (
         <div className="fixed inset-0 bg-black/85 z-[300] flex items-center justify-center p-4">
@@ -714,16 +812,11 @@ export default function DriverPortal() {
                         <p className="text-xs text-rose-400 font-bold">{scannerError}</p>
                       </div>
                     )}
-                    <div className="absolute bottom-3 flex space-x-2">
-                      <button
-                        onClick={simulateScan}
-                        className="bg-emerald-600 text-white font-bold text-xs py-1.5 px-3 rounded-lg shadow-md hover:bg-emerald-500 transition-all"
-                      >
-                        Mock QR Detection
-                      </button>
+                    <div className="absolute bottom-3 flex items-center space-x-3 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800">
+                      <span className="text-[11px] font-semibold text-slate-300">Point camera at receipt QR code...</span>
                       <button
                         onClick={stopCamera}
-                        className="bg-slate-800 text-white font-bold text-xs py-1.5 px-3 rounded-lg hover:bg-slate-700 transition-all"
+                        className="bg-slate-800 text-white font-bold text-xs py-1 px-2.5 rounded-lg hover:bg-slate-700 transition-all border border-slate-700"
                       >
                         Cancel
                       </button>
@@ -970,7 +1063,7 @@ export default function DriverPortal() {
 
                       {activeOrder.status !== 'completed' && activeOrder.status !== 'ready' && (
                         <button
-                          onClick={() => handleUpdateStatus('completed')} // Deliver complete
+                          onClick={handleMarkDeliveredClick}
                           className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl text-sm flex items-center justify-center space-x-2 transition-all shadow-md"
                         >
                           <CheckCircle2 size={18} />

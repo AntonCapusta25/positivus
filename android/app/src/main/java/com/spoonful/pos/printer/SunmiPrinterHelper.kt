@@ -267,7 +267,12 @@ class SunmiPrinterHelper(private val context: Context) {
         }
     }
 
-    fun printReceipt(order: Order, merchantName: String = "Spoonfull POS", onComplete: (Boolean) -> Unit = {}) {
+    fun printReceipt(
+        order: Order,
+        merchantName: String = "Spoonfull POS",
+        isCustomerCopy: Boolean = false,
+        onComplete: (Boolean) -> Unit = {}
+    ) {
         val service = woyouService
         if (service == null) {
             Log.e(TAG, "Printer service is not bound.")
@@ -276,6 +281,14 @@ class SunmiPrinterHelper(private val context: Context) {
         }
 
         try {
+            val prefs = context.getSharedPreferences("spoonful_prefs", Context.MODE_PRIVATE)
+            val showCustAddress = prefs.getBoolean("receipt_show_address", true)
+            val showCustPhone = prefs.getBoolean("receipt_show_phone", true)
+            val showItemNotes = prefs.getBoolean("receipt_show_item_notes", true)
+            val enlargeOrderNo = prefs.getBoolean("receipt_enlarge_order_no", true)
+            val enlargeAddress = prefs.getBoolean("receipt_enlarge_address", false)
+            val enlargePhone = prefs.getBoolean("receipt_enlarge_phone", false)
+
             // 1. Initialize printer
             service.printerInit(printCallback)
             
@@ -288,9 +301,10 @@ class SunmiPrinterHelper(private val context: Context) {
             // --- Center Aligned Top Section ---
             service.setAlignment(1, printCallback)
             
-            // Header Title
+            // Header Title (Store Copy vs Customer Copy)
+            val headerLabel = if (isCustomerCopy) "Klantenbon" else "Winkelbon"
             service.setFontSize(28f, printCallback)
-            sendText(service, "Klantenbon\n$merchantName\n")
+            sendText(service, "$headerLabel\n$merchantName\n")
             
             // Header Details
             service.setFontSize(24f, printCallback)
@@ -301,9 +315,10 @@ class SunmiPrinterHelper(private val context: Context) {
             headerBuilder.append("--------------------------------\n")
             sendText(service, headerBuilder.toString())
 
-            // Sequential Order Identifier (Large Text)
+            // Sequential Order Identifier (Configurable Font Size)
             val seqNo = order.orderNumber.substringAfterLast("-").substringAfterLast("_")
-            service.setFontSize(32f, printCallback)
+            val orderNoFontSize = if (enlargeOrderNo) 34f else 28f
+            service.setFontSize(orderNoFontSize, printCallback)
             sendText(service, "$seqNo\n")
 
             // Metadata & Order Type
@@ -325,7 +340,7 @@ class SunmiPrinterHelper(private val context: Context) {
             metaBuilder.append("--------------------------------\n")
             sendText(service, metaBuilder.toString())
 
-            // Customer Details Block (Prominent, Big Letters on Top)
+            // Customer Details Block (Configurable display & font size)
             service.setAlignment(0, printCallback)
             val customerBuilder = java.lang.StringBuilder()
             
@@ -339,15 +354,16 @@ class SunmiPrinterHelper(private val context: Context) {
             if (!order.customerName.isNullOrEmpty()) {
                 customerBuilder.append(order.customerName).append("\n")
             }
-            if (!order.customerAddress.isNullOrEmpty()) {
+            if (showCustAddress && !order.customerAddress.isNullOrEmpty()) {
                 customerBuilder.append(order.customerAddress).append("\n")
             }
-            if (!order.customerPhone.isNullOrEmpty()) {
+            if (showCustPhone && !order.customerPhone.isNullOrEmpty()) {
                 customerBuilder.append(order.customerPhone).append("\n")
             }
             customerBuilder.append("--------------------------------\n")
             
-            service.setFontSize(28f, printCallback)
+            val custFontSize = if (enlargeAddress || enlargePhone) 30f else 28f
+            service.setFontSize(custFontSize, printCallback)
             sendText(service, customerBuilder.toString())
             service.setFontSize(24f, printCallback) // reset to normal size
 
@@ -425,14 +441,14 @@ class SunmiPrinterHelper(private val context: Context) {
                     }
                 }
                 
-                if (!item.notes.isNullOrEmpty()) {
+                if (showItemNotes && !item.notes.isNullOrEmpty()) {
                     bodyBuilder.append("  * Note: ").append(item.notes).append("\n")
                 }
             }
             
             bodyBuilder.append("--------------------------------\n")
 
-            // Calculations (Taxes and BTW/Netto removed completely)
+            // Calculations
             val totalValStr = String.format(Locale.US, "%.2f", order.total).replace(".", ",") + "€"
             val totalLine = formatLine("Totaal", totalValStr, MAX_LINE_CHAR_58MM)
 
@@ -465,24 +481,20 @@ class SunmiPrinterHelper(private val context: Context) {
             footerBuilder.append(merchantName).append(" Online\n")
             footerBuilder.append("================================\n")
             
-            if (order.type.lowercase(Locale.getDefault()) == "delivery") {
+            val isDelivery = order.type.lowercase(Locale.getDefault()) == "delivery"
+            if (isDelivery && !isCustomerCopy) {
+                // Store Copy for Delivery order -> Driver Claim QR Code
                 footerBuilder.append("Bezorging Claim QR Code\n")
-            } else {
-                footerBuilder.append("Bestel via onze eigen webshop\n")
-            }
-            sendText(service, footerBuilder.toString())
+                sendText(service, footerBuilder.toString())
 
-            // Big Bold Promo Section
-            service.setFontSize(28f, printCallback)
-            sendText(service, "\nNo commission\nNo delivery charges\n\n")
-            service.setFontSize(24f, printCallback) // reset to normal size
-
-            // QR code & spacing
-            if (order.type.lowercase(Locale.getDefault()) == "delivery") {
                 val driverParam = if (!order.driverName.isNullOrEmpty()) "&driver=" + java.net.URLEncoder.encode(order.driverName, "UTF-8") else ""
                 val driverUrl = "https://positivus-two-iota.vercel.app/driver?order_id=${order.id}$driverParam"
                 service.printQRCode(driverUrl, 6, 1, printCallback)
             } else {
+                // Customer Copy OR Pickup Order -> Webshop QR Code (NO Driver Claim QR!)
+                footerBuilder.append("Bestel via onze eigen webshop\n")
+                sendText(service, footerBuilder.toString())
+
                 val shopUrl = if (isRajCurry) "https://rajcurryhouse.nl" else "https://spoonful.nl"
                 service.printQRCode(shopUrl, 6, 1, printCallback)
             }
