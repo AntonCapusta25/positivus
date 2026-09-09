@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { usePOS, getDriverUrl } from '../context/POSContext';
 import { ShoppingCart, Phone, MapPin, ClipboardList, CheckCircle, Clock, Check, Printer, UserCheck, Navigation, Download, CheckCircle2, ChevronRight, X, QrCode, ChevronLeft } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
