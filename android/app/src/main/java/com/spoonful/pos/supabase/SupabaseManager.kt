@@ -119,6 +119,45 @@ class SupabaseManager(
     }
 
     /**
+     * Fetch a single order by ID to ensure full items data before remote printing
+     */
+    fun fetchOrderById(orderId: String, onResult: (Order?) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/orders?id=eq.$orderId&select=*"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .get()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, "Failed to fetch order by ID: $orderId", e)
+                mainHandler.post { onResult(null) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        mainHandler.post { onResult(null) }
+                        return
+                    }
+                    val json = response.body?.string()
+                    try {
+                        val listType = object : TypeToken<List<Order>>() {}.type
+                        val orders: List<Order> = gson.fromJson(json, listType)
+                        val fullOrder = orders.firstOrNull()
+                        mainHandler.post { onResult(fullOrder) }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parsing fetched order by ID: $orderId", e)
+                        mainHandler.post { onResult(null) }
+                    }
+                }
+            }
+        })
+    }
+
+    /**
      * Start the Supabase Realtime WebSocket connection
      */
     fun start() {

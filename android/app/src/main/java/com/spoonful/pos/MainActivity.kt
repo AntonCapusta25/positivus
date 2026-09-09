@@ -311,27 +311,7 @@ class MainActivity : AppCompatActivity() {
                                     if (shouldPrint) {
                                         printedOrderIds.add(printTs)
                                         android.util.Log.d("MainActivity", "Remote print request executed for order: ${order.orderNumber} (ts: $printTs)")
-                                        
-                                        if (printTs.startsWith("CUSTOMER:")) {
-                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { success ->
-                                                if (success) supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
-                                            }
-                                        } else if (printTs.startsWith("STORE:")) {
-                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { success ->
-                                                if (success) supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
-                                            }
-                                        } else {
-                                            // Default (BOTH): 1 Store Copy + 1 Customer Copy (No Driver QR)
-                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
-                                                if (s1) {
-                                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
-                                                            supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
-                                                        }
-                                                    }, 1200)
-                                                }
-                                            }
-                                        }
+                                        executeRemotePrint(mergedOrder, printTs)
                                     }
                                 }
                             } else {
@@ -357,31 +337,51 @@ class MainActivity : AppCompatActivity() {
                                     val shouldPrint = isExplicitRemotePrint || isAutoPrintEnabled || !isAutoTriggerOnCreation
                                     if (shouldPrint) {
                                         printedOrderIds.add(printTs)
-                                        if (printTs.startsWith("CUSTOMER:")) {
-                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { success ->
-                                                if (success) supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
-                                            }
-                                        } else if (printTs.startsWith("STORE:")) {
-                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { success ->
-                                                if (success) supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
-                                            }
-                                        } else {
-                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
-                                                if (s1) {
-                                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
-                                                            supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
-                                                        }
-                                                    }, 1200)
-                                                }
-                                            }
-                                        }
+                                        executeRemotePrint(order, printTs)
                                     }
                                 }
                             }
                         }
                     }
                 }
+
+    private fun executeRemotePrint(targetOrder: Order, printTs: String) {
+        fun doPrint(finalOrder: Order) {
+            val storeName = txtDrawerActiveRestaurant.text.toString()
+            if (printTs.startsWith("CUSTOMER:")) {
+                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { success ->
+                    if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                }
+            } else if (printTs.startsWith("STORE:")) {
+                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { success ->
+                    if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                }
+            } else {
+                // Default (BOTH): 1 Store Copy + 1 Customer Copy
+                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
+                    if (s1) {
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { _ ->
+                                supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                            }
+                        }, 1200)
+                    }
+                }
+            }
+        }
+
+        if (targetOrder.items.isEmpty()) {
+            supabaseManager.fetchOrderById(targetOrder.id) { fetched ->
+                if (fetched != null && fetched.items.isNotEmpty()) {
+                    doPrint(fetched)
+                } else {
+                    doPrint(targetOrder)
+                }
+            }
+        } else {
+            doPrint(targetOrder)
+        }
+    }
 
                 override fun onOrdersLoaded(orders: List<Order>) {
                     runOnUiThread {
