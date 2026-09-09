@@ -295,13 +295,15 @@ class MainActivity : AppCompatActivity() {
                                     openOrderDetail(mergedOrder)
                                 }
                                 
-                                // Remote print requests: print if isAutoPrintEnabled IS TRUE, OR if the request was made manually (> 5 seconds after creation)
-                                if (printTs != null && isNewPrintRequest && !printedOrderIds.contains(printTs)) {
+                                // Remote print requests: print if explicit remote print, or isAutoPrintEnabled IS TRUE, OR if the request was made manually (> 5 seconds after creation)
+                                if (printTs != null && !printedOrderIds.contains(printTs)) {
                                     val isAutoTriggerOnCreation = try {
-                                        val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
-                                        val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
-                                        val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
-                                        Math.abs(printTime - createdTime) < 5000
+                                        if (order.createdAt.isNullOrEmpty()) false else {
+                                            val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
+                                            val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
+                                            val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
+                                            Math.abs(printTime - createdTime) < 5000
+                                        }
                                     } catch (e: Exception) {
                                         false
                                     }
@@ -325,10 +327,12 @@ class MainActivity : AppCompatActivity() {
                                 val printTs = order.printRequestedAt
                                 if (printTs != null && !printedOrderIds.contains(printTs)) {
                                     val isAutoTriggerOnCreation = try {
-                                        val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
-                                        val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
-                                        val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
-                                        Math.abs(printTime - createdTime) < 5000
+                                        if (order.createdAt.isNullOrEmpty()) false else {
+                                            val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
+                                            val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
+                                            val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
+                                            Math.abs(printTime - createdTime) < 5000
+                                        }
                                     } catch (e: Exception) {
                                         false
                                     }
