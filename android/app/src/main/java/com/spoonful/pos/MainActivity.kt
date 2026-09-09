@@ -324,9 +324,11 @@ class MainActivity : AppCompatActivity() {
                                             // Default (BOTH): 1 Store Copy + 1 Customer Copy (No Driver QR)
                                             printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
                                                 if (s1) {
-                                                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
-                                                        supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
-                                                    }
+                                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
+                                                            supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                                        }
+                                                    }, 1200)
                                                 }
                                             }
                                         }
@@ -341,7 +343,7 @@ class MainActivity : AppCompatActivity() {
                                 
                                 // Remote print request for our stores even if not currently listed on screen
                                 val printTs = order.printRequestedAt
-                                if (printTs != null && !printedOrderIds.contains(order.id)) {
+                                if (printTs != null && !printedOrderIds.contains(printTs)) {
                                     val isAutoTriggerOnCreation = try {
                                         val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
                                         val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
@@ -354,7 +356,7 @@ class MainActivity : AppCompatActivity() {
                                     val isExplicitRemotePrint = printTs.startsWith("BOTH:") || printTs.startsWith("CUSTOMER:") || printTs.startsWith("STORE:")
                                     val shouldPrint = isExplicitRemotePrint || isAutoPrintEnabled || !isAutoTriggerOnCreation
                                     if (shouldPrint) {
-                                        printedOrderIds.add(order.id)
+                                        printedOrderIds.add(printTs)
                                         if (printTs.startsWith("CUSTOMER:")) {
                                             printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { success ->
                                                 if (success) supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
@@ -366,9 +368,11 @@ class MainActivity : AppCompatActivity() {
                                         } else {
                                             printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
                                                 if (s1) {
-                                                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
-                                                        supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
-                                                    }
+                                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
+                                                            supabaseManager.updateOrderPrintedAndStatus(order.id, true, order.status)
+                                                        }
+                                                    }, 1200)
                                                 }
                                             }
                                         }
@@ -1656,16 +1660,18 @@ class MainActivity : AppCompatActivity() {
                                 // 1 Store + 1 Customer
                                 printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
                                     if (s1) {
-                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
-                                            runOnUiThread {
-                                                Toast.makeText(this@MainActivity, "2 Receipts printed (1 Store + 1 Customer)!", Toast.LENGTH_SHORT).show()
-                                                if (!order.printed) {
-                                                    order.printed = true
-                                                    printedOrderIds.add(order.id)
-                                                    refreshOrderList()
+                                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
+                                                runOnUiThread {
+                                                    Toast.makeText(this@MainActivity, "2 Receipts printed (1 Store + 1 Customer)!", Toast.LENGTH_SHORT).show()
+                                                    if (!order.printed) {
+                                                        order.printed = true
+                                                        printedOrderIds.add(order.id)
+                                                        refreshOrderList()
+                                                    }
                                                 }
                                             }
-                                        }
+                                        }, 1200)
                                     } else {
                                         runOnUiThread {
                                             Toast.makeText(this@MainActivity, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
@@ -1709,33 +1715,45 @@ class MainActivity : AppCompatActivity() {
                             }
                             3 -> {
                                 // 2 Store Copies
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) {
-                                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) {
-                                        runOnUiThread {
-                                            Toast.makeText(this@MainActivity, "2 Store receipts printed!", Toast.LENGTH_SHORT).show()
-                                            if (!order.printed) {
-                                                order.printed = true
-                                                printedOrderIds.add(order.id)
-                                                refreshOrderList()
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
+                                    if (s1) {
+                                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s2 ->
+                                                runOnUiThread {
+                                                    Toast.makeText(this@MainActivity, "2 Store receipts printed!", Toast.LENGTH_SHORT).show()
+                                                    if (!order.printed) {
+                                                        order.printed = true
+                                                        printedOrderIds.add(order.id)
+                                                        refreshOrderList()
+                                                    }
+                                                }
                                             }
-                                        }
+                                        }, 1200)
                                     }
                                 }
                             }
                             4 -> {
                                 // 3 Store Copies
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) {
-                                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) {
-                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) {
-                                            runOnUiThread {
-                                                Toast.makeText(this@MainActivity, "3 Store receipts printed!", Toast.LENGTH_SHORT).show()
-                                                if (!order.printed) {
-                                                    order.printed = true
-                                                    printedOrderIds.add(order.id)
-                                                    refreshOrderList()
+                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
+                                    if (s1) {
+                                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s2 ->
+                                                if (s2) {
+                                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s3 ->
+                                                            runOnUiThread {
+                                                                Toast.makeText(this@MainActivity, "3 Store receipts printed!", Toast.LENGTH_SHORT).show()
+                                                                if (!order.printed) {
+                                                                    order.printed = true
+                                                                    printedOrderIds.add(order.id)
+                                                                    refreshOrderList()
+                                                                }
+                                                            }
+                                                        }
+                                                    }, 1200)
                                                 }
                                             }
-                                        }
+                                        }, 1200)
                                     }
                                 }
                             }
@@ -3080,16 +3098,18 @@ class MainActivity : AppCompatActivity() {
                         // 1 Store Copy + 1 Customer Copy (No Driver QR)
                         printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { success1 ->
                             if (success1) {
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { success2 ->
-                                    runOnUiThread {
-                                        Toast.makeText(context, "2 Receipts printed (1 Store + 1 Customer)!", Toast.LENGTH_SHORT).show()
-                                        if (!order.printed) {
-                                            order.printed = true
-                                            printedOrderIds.add(order.id)
-                                            refreshOrderList()
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { success2 ->
+                                        runOnUiThread {
+                                            Toast.makeText(context, "2 Receipts printed (1 Store + 1 Customer)!", Toast.LENGTH_SHORT).show()
+                                            if (!order.printed) {
+                                                order.printed = true
+                                                printedOrderIds.add(order.id)
+                                                refreshOrderList()
+                                            }
                                         }
                                     }
-                                }
+                                }, 1200)
                             } else {
                                 runOnUiThread {
                                     Toast.makeText(context, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()
@@ -3115,7 +3135,9 @@ class MainActivity : AppCompatActivity() {
                             copiesLeft--
                             printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { success ->
                                 if (success) {
-                                    printNext()
+                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                        printNext()
+                                    }, 1200)
                                 } else {
                                     runOnUiThread {
                                         Toast.makeText(context, "Printing failed. Please check printer.", Toast.LENGTH_SHORT).show()

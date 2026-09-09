@@ -1792,21 +1792,107 @@ export const POSProvider = ({ children }) => {
 
     if (targetOrder && targetOrder.id) {
       try {
-        const ts = `${printType}:${new Date().toISOString()}`;
+        const ts = `${printType}:${Date.now()}`;
         console.log(`Sending remote print command (${printType}) to Sunmi device via Supabase for order ${targetOrder.order_number || targetOrder.id}`);
-        const { error } = await supabase
+        await supabase
           .from('orders')
           .update({ 
             print_requested_at: ts,
             printed: false 
           })
           .eq('id', targetOrder.id);
-        if (error) throw error;
         console.log("Remote print request successfully sent to Sunmi device via Supabase DB.");
-        return { success: true, remote: true };
       } catch (err) {
         console.error("Failed to set print_requested_at in Supabase:", err);
-        return { success: false, error: err.message };
+      }
+
+      // 3. Real Browser print (Web / PWA / Chrome on desktop or mobile)
+      try {
+        const activeMerchant = availableMerchants.find(m => m.id === settingsRef.current.merchantId) || { name: 'Spoonfull' };
+
+        let itemsListText = '';
+        try {
+          const parsedItems = typeof targetOrder.items === 'string' ? JSON.parse(targetOrder.items) : targetOrder.items;
+          if (Array.isArray(parsedItems)) {
+            itemsListText = parsedItems.map(item => 
+              `   ${(item.name || '').padEnd(24)} x${(item.quantity || 1).toString().padStart(2)}  €${((item.price || 0) * (item.quantity || 1)).toFixed(2).padStart(6)}`
+            ).join('\n');
+          }
+        } catch (e) {
+          itemsListText = '   (Failed to parse order items)';
+        }
+
+        let formattedNotes = targetOrder.notes || 'None';
+        if (targetOrder.notes) {
+          try {
+            const parsed = JSON.parse(targetOrder.notes);
+            formattedNotes = parsed.order_comment || parsed.delivery_instructions || parsed.notes || parsed.order_instruction || 'None';
+          } catch (e) {
+            // Keep raw
+          }
+        }
+
+        let deliveryQRSection = '';
+        if ((targetOrder.type || '').toLowerCase() === 'delivery' || (targetOrder.type || '').toLowerCase() === 'pickup') {
+          const driverUrl = getDriverUrl(targetOrder.id);
+          deliveryQRSection = `----------------------------------------
+Bezorging Claim QR Code:
+  [█▀▀▀█ ▄ █▄▀█▀ █▀▀▀█]
+  [█ ██ █ █ ▀█▀  █ ██ █]
+  [█▄▄▄█ ▀ ▀▀▀▀▀ █▄▄▄█]
+  [▄▄ ▄▄▄▄ █  ▀  ▄  ▄ ▄]
+  [█▄ ▀█ ▄█▄ ▀▄█▄▀▀▀  ▀]
+  [█▀ ▄▀▀ ▀▄█ ▀  █  ▀ █]
+  [█▄▄█▄▄▄  ▀▄ █▄▄ █ ▄▀]
+Link: ${driverUrl}
+`;
+        }
+
+        const headerLabel = printType === 'CUSTOMER' ? 'Klantenbon' : printType === 'STORE' ? 'Winkelbon' : 'Ontvangstbewijs';
+
+        const receiptContent = `
+========================================
+           ${activeMerchant.name.toUpperCase()}
+                  ${headerLabel}
+========================================
+Order No:   ${targetOrder.order_number || targetOrder.id}
+Date:       ${new Date(targetOrder.created_at || Date.now()).toLocaleString()}
+Type:       ${(targetOrder.type || 'DINE_IN').toUpperCase()}
+Status:     ${(targetOrder.status || 'INCOMING').toUpperCase()}
+Prep Time:  ${targetOrder.preparation_time || 20} minutes
+----------------------------------------
+ITEMS:
+${itemsListText}
+----------------------------------------
+Subtotal:                    €${Number(targetOrder.subtotal || 0).toFixed(2)}
+Tax:                         €${Number(targetOrder.tax || 0).toFixed(2)}
+Delivery Fee:                €${Number(targetOrder.delivery_fee || 0).toFixed(2)}
+Discount:                    €${Number(targetOrder.discount || 0).toFixed(2)}
+TOTAL:                       €${Number(targetOrder.total || 0).toFixed(2)}
+----------------------------------------
+Payment Method:              ${(targetOrder.payment_method || 'Online').toUpperCase()}
+Payment Status:              ${(targetOrder.payment_status || 'Pending').toUpperCase()}
+Notes:                       ${formattedNotes}
+${deliveryQRSection}========================================
+         THANK YOU FOR YOUR ORDER
+========================================
+`;
+        
+        let printDiv = document.getElementById('thermal-print-section');
+        if (!printDiv) {
+          printDiv = document.createElement('pre');
+          printDiv.id = 'thermal-print-section';
+          printDiv.className = 'font-mono text-[10px] leading-tight text-black whitespace-pre-wrap p-2';
+          document.body.appendChild(printDiv);
+        }
+        printDiv.innerText = receiptContent;
+
+        console.log(`[Web Printer] Triggering browser print dialog:\n${receiptContent}`);
+        window.print();
+        return { success: true, remote: true };
+      } catch (e) {
+        console.warn("Browser window.print failed or was ignored:", e);
+        return { success: true, remote: true };
       }
     }
     return { success: false, error: "No valid order found to print" };
