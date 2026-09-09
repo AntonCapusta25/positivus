@@ -306,7 +306,7 @@ class MainActivity : AppCompatActivity() {
                                         false
                                     }
 
-                                    val isExplicitRemotePrint = printTs.startsWith("BOTH:") || printTs.startsWith("CUSTOMER:") || printTs.startsWith("STORE:")
+                                    val isExplicitRemotePrint = printTs.startsWith("BOTH:") || printTs.startsWith("CUSTOMER:") || printTs.startsWith("STORE:") || printTs.startsWith("STORE2:") || printTs.startsWith("STORE3:")
                                     val shouldPrint = isExplicitRemotePrint || isAutoPrintEnabled || !isAutoTriggerOnCreation
                                     if (shouldPrint) {
                                         printedOrderIds.add(printTs)
@@ -333,7 +333,7 @@ class MainActivity : AppCompatActivity() {
                                         false
                                     }
 
-                                    val isExplicitRemotePrint = printTs.startsWith("BOTH:") || printTs.startsWith("CUSTOMER:") || printTs.startsWith("STORE:")
+                                    val isExplicitRemotePrint = printTs.startsWith("BOTH:") || printTs.startsWith("CUSTOMER:") || printTs.startsWith("STORE:") || printTs.startsWith("STORE2:") || printTs.startsWith("STORE3:")
                                     val shouldPrint = isExplicitRemotePrint || isAutoPrintEnabled || !isAutoTriggerOnCreation
                                     if (shouldPrint) {
                                         printedOrderIds.add(printTs)
@@ -355,6 +355,32 @@ class MainActivity : AppCompatActivity() {
             } else if (printTs.startsWith("STORE:")) {
                 printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { success ->
                     if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                }
+            } else if (printTs.startsWith("STORE2:")) {
+                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
+                    if (s1) {
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { _ ->
+                                supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                            }
+                        }, 1200)
+                    }
+                }
+            } else if (printTs.startsWith("STORE3:")) {
+                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
+                    if (s1) {
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s2 ->
+                                if (s2) {
+                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                        printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { _ ->
+                                            supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                                        }
+                                    }, 1200)
+                                }
+                            }
+                        }, 1200)
+                    }
                 }
             } else {
                 // Default (BOTH): 1 Store Copy + 1 Customer Copy

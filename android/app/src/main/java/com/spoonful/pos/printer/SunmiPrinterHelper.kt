@@ -480,20 +480,23 @@ class SunmiPrinterHelper(private val context: Context) {
             footerBuilder.append("================================\n")
             footerBuilder.append(merchantName).append(" Online\n")
             footerBuilder.append("================================\n")
+            sendText(service, footerBuilder.toString())
+
+            service.setFontSize(28f, printCallback)
+            sendText(service, "GEEN COMMISSIE\nGEEN BEZORGKOSTEN!\n")
+            service.setFontSize(24f, printCallback)
             
             val isDelivery = order.type.lowercase(Locale.getDefault()) == "delivery"
             if (isDelivery && !isCustomerCopy) {
                 // Store Copy for Delivery order -> Driver Claim QR Code
-                footerBuilder.append("Bezorging Claim QR Code\n")
-                sendText(service, footerBuilder.toString())
+                sendText(service, "Bezorging Claim QR Code\n")
 
                 val driverParam = if (!order.driverName.isNullOrEmpty()) "&driver=" + java.net.URLEncoder.encode(order.driverName, "UTF-8") else ""
                 val driverUrl = "https://positivus-two-iota.vercel.app/driver?order_id=${order.id}$driverParam"
                 service.printQRCode(driverUrl, 6, 1, printCallback)
             } else {
                 // Customer Copy OR Pickup Order -> Webshop QR Code (NO Driver Claim QR!)
-                footerBuilder.append("Bestel via onze eigen webshop\n")
-                sendText(service, footerBuilder.toString())
+                sendText(service, "Bestel via onze eigen webshop\n")
 
                 val shopUrl = if (isRajCurry) "https://rajcurryhouse.nl" else "https://spoonful.nl"
                 service.printQRCode(shopUrl, 6, 1, printCallback)
