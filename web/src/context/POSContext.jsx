@@ -1793,7 +1793,7 @@ export const POSProvider = ({ children }) => {
     if (targetOrder && (targetOrder.id || targetOrder.order_number)) {
       try {
         const typePrefix = printType || 'BOTH';
-        const ts = `${typePrefix}:${new Date().toISOString()}`;
+        const ts = `${typePrefix}:${Date.now()}`;
         console.log(`Sending remote print command (${typePrefix}) to Sunmi device via Supabase for order ${targetOrder.order_number || targetOrder.id} (ts: ${ts})`);
 
         const isUuid = targetOrder.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetOrder.id));

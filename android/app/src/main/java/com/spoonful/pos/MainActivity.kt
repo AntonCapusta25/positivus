@@ -300,8 +300,12 @@ class MainActivity : AppCompatActivity() {
                                     val isAutoTriggerOnCreation = try {
                                         if (order.createdAt.isNullOrEmpty()) false else {
                                             val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
+                                            val printTime = if (rawTs.toLongOrNull() != null) {
+                                                rawTs.toLong()
+                                            } else {
+                                                java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
+                                            }
                                             val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
-                                            val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
                                             Math.abs(printTime - createdTime) < 5000
                                         }
                                     } catch (e: Exception) {
@@ -329,8 +333,12 @@ class MainActivity : AppCompatActivity() {
                                     val isAutoTriggerOnCreation = try {
                                         if (order.createdAt.isNullOrEmpty()) false else {
                                             val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
+                                            val printTime = if (rawTs.toLongOrNull() != null) {
+                                                rawTs.toLong()
+                                            } else {
+                                                java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
+                                            }
                                             val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
-                                            val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
                                             Math.abs(printTime - createdTime) < 5000
                                         }
                                     } catch (e: Exception) {
