@@ -168,20 +168,24 @@ function MainLayout() {
       
       {/* ── Mobile Full-Screen Nav Overlay ── */}
       {mobileNavOpen && (
-        <div className="md:hidden fixed inset-0 z-[200] bg-slate-950 flex flex-col pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
-          {/* Overlay header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0">
+        <div className="md:hidden fixed inset-0 z-[200] bg-slate-900 flex flex-col pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
+          {/* Overlay header — matching base header layout exactly to prevent layout shift */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 shrink-0">
             <div className="flex items-center space-x-3">
-              <img src="/favicon.png" alt="Spoonfull Logo" className="w-8 h-8 rounded-lg object-cover" />
+              <img src="/favicon.png" alt="Spoonfull Logo" className="w-8 h-8 md:w-9 md:h-9 rounded-xl object-cover" />
               <div>
-                <p className="font-extrabold text-sm tracking-wide text-brand-orange leading-tight">
+                <h1 className="font-extrabold text-sm md:text-base tracking-wide text-brand-orange leading-tight font-sans my-0">
                   {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFULL'}
-                </p>
-                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Kitchen Orderpad</span>
+                </h1>
+                <span className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Kitchen Orderpad</span>
+                {userRole === 'superadmin' && (
+                  <span className="text-[9px] text-yellow-400 font-bold block animate-pulse">👑 {superadminName}</span>
+                )}
               </div>
             </div>
             <button
               onClick={() => setMobileNavOpen(false)}
+              aria-label="Close navigation menu"
               className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 active:scale-90 transition-all"
             >
               <X size={20} />

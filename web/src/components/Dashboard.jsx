@@ -589,60 +589,78 @@ export default function Dashboard() {
             </div>
 
             {/* Bottom button bar controls */}
-            <div className="p-4 bg-white border-t border-slate-200 flex items-center space-x-3 shrink-0 shadow-lg shadow-slate-100">
-              {/* Split Print Button with type selector */}
-              <div className="relative shrink-0" id="print-split-btn">
-                <div className="flex rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                  {/* Main print button — always BOTH */}
-                  <button
-                    type="button"
-                    onClick={(e) => { setShowPrintMenu(false); handlePrint(e, selectedOrder, 'BOTH'); }}
-                    className="px-4 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-bold transition-all flex items-center space-x-2 active:scale-95 border-r border-slate-200"
-                  >
-                    <Printer size={18} />
-                    <span>Print</span>
-                  </button>
-                  {/* Arrow — opens type menu */}
-                  <button
-                    type="button"
-                    id="print-menu-toggle"
-                    onClick={(e) => { e.stopPropagation(); setShowPrintMenu(v => !v); }}
-                    className="px-2.5 py-3.5 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all active:scale-95"
-                    title="Choose print type"
-                  >
-                    <ChevronRight size={15} className={`transition-transform duration-200 ${showPrintMenu ? 'rotate-90' : 'rotate-0'}`} />
-                  </button>
+            <div className="p-3.5 sm:p-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row gap-2.5 sm:gap-3 shrink-0 shadow-lg shadow-slate-100">
+              
+              {/* Primary Action Button (Mobile: top order-1, Desktop: right flex-1 order-3) */}
+              {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
+                <button
+                  type="button"
+                  onClick={() => handleNextStatus(selectedOrder)}
+                  className="w-full sm:flex-1 order-1 sm:order-3 py-3.5 px-4 bg-brand-orange hover:bg-opacity-95 text-white font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md shadow-brand-orange/15 uppercase tracking-wide text-center active:scale-98"
+                >
+                  {selectedOrder.status === 'incoming' 
+                    ? 'Accept Order' 
+                    : selectedOrder.status === 'preparing' 
+                      ? 'Order is Ready' 
+                      : 'Mark as Handed Over'
+                  }
+                </button>
+              )}
+
+              {/* Secondary Actions Row (Mobile: bottom order-2, Desktop: inline order-1 & order-2) */}
+              <div className={`flex items-center gap-2.5 w-full sm:w-auto order-2 sm:order-1 ${selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled' ? 'w-full' : ''}`}>
+                {/* Split Print Button with type selector */}
+                <div className={`relative shrink-0 ${selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled' ? 'w-full sm:w-auto' : 'flex-1 sm:flex-initial'}`} id="print-split-btn">
+                  <div className="flex rounded-xl overflow-hidden border border-slate-200 shadow-sm w-full">
+                    {/* Main print button — always BOTH */}
+                    <button
+                      type="button"
+                      onClick={(e) => { setShowPrintMenu(false); handlePrint(e, selectedOrder, 'BOTH'); }}
+                      className="flex-1 sm:flex-initial px-3.5 sm:px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 font-bold transition-all flex items-center justify-center space-x-2 active:scale-95 border-r border-slate-200 text-xs sm:text-sm"
+                    >
+                      <Printer size={16} />
+                      <span>Print</span>
+                    </button>
+                    {/* Arrow — opens type menu */}
+                    <button
+                      type="button"
+                      id="print-menu-toggle"
+                      onClick={(e) => { e.stopPropagation(); setShowPrintMenu(v => !v); }}
+                      className="px-2.5 py-3 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all active:scale-95"
+                      title="Choose print type"
+                    >
+                      <ChevronRight size={15} className={`transition-transform duration-200 ${showPrintMenu ? 'rotate-90' : 'rotate-0'}`} />
+                    </button>
+                  </div>
+
+                  {/* Dropdown menu */}
+                  {showPrintMenu && (
+                    <div
+                      className="absolute bottom-full mb-2 left-0 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden min-w-[170px]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {[
+                        { label: '🖨️ Both (Store + Customer)', type: 'BOTH' },
+                        { label: '🏪 Store Copy Only', type: 'STORE' },
+                        { label: '👤 Customer Copy Only', type: 'CUSTOMER' },
+                        { label: '🖨️🖨️ 2× Store Copies', type: 'STORE2' },
+                        { label: '🖨️🖨️🖨️ 3× Store Copies', type: 'STORE3' },
+                      ].map(({ label, type }) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={(e) => { setShowPrintMenu(false); handlePrint(e, selectedOrder, type); }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 font-medium transition-colors flex items-center space-x-2"
+                        >
+                          <span>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Dropdown menu */}
-                {showPrintMenu && (
-                  <div
-                    className="absolute bottom-full mb-2 left-0 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden min-w-[170px]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {[
-                      { label: '🖨️ Both (Store + Customer)', type: 'BOTH' },
-                      { label: '🏪 Store Copy Only', type: 'STORE' },
-                      { label: '👤 Customer Copy Only', type: 'CUSTOMER' },
-                      { label: '🖨️🖨️ 2× Store Copies', type: 'STORE2' },
-                      { label: '🖨️🖨️🖨️ 3× Store Copies', type: 'STORE3' },
-                    ].map(({ label, type }) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={(e) => { setShowPrintMenu(false); handlePrint(e, selectedOrder, type); }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 font-medium transition-colors flex items-center space-x-2"
-                      >
-                        <span>{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Order Status Shift Transition Button */}
-              {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
-                <>
+                {/* Cancel button */}
+                {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
                   <button
                     type="button"
                     onClick={async () => {
@@ -658,25 +676,13 @@ export default function Dashboard() {
                         }
                       }
                     }}
-                    className="px-3.5 py-3.5 border border-rose-200 hover:bg-rose-50 text-rose-600 font-bold rounded-xl text-xs transition-all uppercase tracking-wider whitespace-nowrap"
+                    className="flex-1 sm:flex-initial px-3.5 py-3 border border-rose-200 hover:bg-rose-50 text-rose-600 font-bold rounded-xl text-xs transition-all uppercase tracking-wider whitespace-nowrap text-center"
                   >
                     {selectedOrder.payment_method === 'online' ? 'Cancel & Refund' : 'Cancel Order'}
                   </button>
+                )}
+              </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleNextStatus(selectedOrder)}
-                    className="flex-1 py-3.5 bg-brand-orange hover:bg-opacity-95 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-brand-orange/10 uppercase tracking-wide"
-                  >
-                    {selectedOrder.status === 'incoming' 
-                      ? 'Accept Order' 
-                      : selectedOrder.status === 'preparing' 
-                        ? 'Order is Ready' 
-                        : 'Mark as Handed Over'
-                    }
-                  </button>
-                </>
-              )}
             </div>
 
           </div>
