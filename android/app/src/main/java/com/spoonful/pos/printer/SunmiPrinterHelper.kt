@@ -331,7 +331,7 @@ class SunmiPrinterHelper(private val context: Context) {
                 metaBuilder.append(scheduledTime).append("\n")
             }
             
-            val typeStr = when (order.type.lowercase(Locale.getDefault())) {
+            val typeStr = when ((order.type ?: "delivery").lowercase(Locale.getDefault())) {
                 "pickup" -> "Afhalen"
                 "delivery" -> "Bezorgen"
                 else -> "Dine In"
@@ -389,18 +389,18 @@ class SunmiPrinterHelper(private val context: Context) {
             
             bodyBuilder.append("--------------------------------\n")
             
-            val courierText = if (order.type.lowercase(Locale.getDefault()) == "delivery") {
+            val courierText = if ((order.type ?: "delivery").lowercase(Locale.getDefault()) == "delivery") {
                 val driver = if (!order.driverName.isNullOrEmpty()) order.driverName else "Spoonfull"
-                "Courier: $driver ${order.orderNumber}"
+                "Courier: $driver ${order.orderNumber ?: ""}"
             } else {
-                "Order: ${order.orderNumber}"
+                "Order: ${order.orderNumber ?: ""}"
             }
             bodyBuilder.append(courierText).append("\n")
             bodyBuilder.append("--------------------------------\n")
 
             // Items Table
             bodyBuilder.append("Artikel             Stuk  Totaal\n")
-            for (item in order.items) {
+            for (item in (order.items ?: emptyList())) {
                 val qtyStr = "${item.quantity} " // 2 chars wide: "1 " or "10"
                 val unitPriceStr = String.format(Locale.US, "%.2f", item.price).replace(".", ",")
                 val totalPriceStr = String.format(Locale.US, "%.2f", item.price * item.quantity).replace(".", ",")
@@ -410,7 +410,7 @@ class SunmiPrinterHelper(private val context: Context) {
                 val formattedTotal = totalPriceStr.padStart(6)
                 
                 // Max length for item name on the first line is 18 characters
-                val name = item.name
+                val name = item.name ?: ""
                 if (name.length <= 18) {
                     val spaces = " ".repeat(18 - name.length)
                     bodyBuilder.append(qtyStr).append(name).append(spaces).append(formattedUnit).append(formattedTotal).append("\n")
@@ -468,7 +468,7 @@ class SunmiPrinterHelper(private val context: Context) {
             }
 
             // Payment Info
-            val paymentSource = if (order.paymentMethod.lowercase(Locale.getDefault()) == "online") "Online" else "Cash"
+            val paymentSource = if ((order.paymentMethod ?: "online").lowercase(Locale.getDefault()) == "online") "Online" else "Cash"
             bodyBuilder.append("Betaling Spoonfull ").append(paymentSource).append("\n")
             
             // Flush Body block to printer in one AIDL IPC call
@@ -486,7 +486,7 @@ class SunmiPrinterHelper(private val context: Context) {
             sendText(service, "GEEN COMMISSIE\nGEEN BEZORGKOSTEN!\n")
             service.setFontSize(24f, printCallback)
             
-            val isDelivery = order.type.lowercase(Locale.getDefault()) == "delivery"
+            val isDelivery = (order.type ?: "delivery").lowercase(Locale.getDefault()) == "delivery"
             if (isDelivery && !isCustomerCopy) {
                 // Store Copy for Delivery order -> Driver Claim QR Code
                 sendText(service, "Bezorging Claim QR Code\n")
