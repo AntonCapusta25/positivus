@@ -95,9 +95,21 @@ export default function Dashboard() {
     updateOrderStatus(order.id, next);
   };
 
-  const handlePrint = (order) => {
-    triggerTestPrint(order, 'BOTH');
-    setPrintToast(`✓ Print request sent for #${order.order_number || order.id.slice(0, 8)}`);
+  const handlePrint = async (e, order, printType = 'BOTH') => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!order) return;
+    const label = order.order_number || (order.id ? String(order.id).slice(0, 6) : '');
+    setPrintToast(`Sending print request for #${label}...`);
+    try {
+      const res = await triggerTestPrint(order, printType);
+      if (res && res.success) {
+        setPrintToast(`✓ Receipt #${label} sent to POS printer!`);
+      } else {
+        setPrintToast(`✓ Print request sent for #${label}`);
+      }
+    } catch (err) {
+      setPrintToast(`⚠ Print request sent for #${label}`);
+    }
     setTimeout(() => setPrintToast(null), 3000);
   };
 
@@ -228,87 +240,17 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Right printer state indicators & Quick Print Dropdown */}
-                  <div className="flex flex-col items-end space-y-2 shrink-0 relative">
+                  {/* Right printer state indicators & Quick Print Button */}
+                  <div className="flex flex-col items-end space-y-2 shrink-0">
                     <div className={`w-2.5 h-2.5 rounded-full ${order.printed ? 'bg-emerald-500' : 'bg-slate-200'}`} />
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActivePrintMenuOrderId(activePrintMenuOrderId === order.id ? null : order.id);
-                      }}
-                      title="Print Options"
-                      className="p-1.5 border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition-all shadow-sm"
+                      onClick={(e) => handlePrint(e, order, 'BOTH')}
+                      title="Print Receipt"
+                      className="p-2 border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-600 hover:text-slate-900 transition-all shadow-sm flex items-center justify-center active:scale-95"
                     >
-                      <Printer size={14} />
+                      <Printer size={16} />
                     </button>
-
-                    {activePrintMenuOrderId === order.id && (
-                      <div 
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute right-0 top-full mt-1 z-50 w-52 bg-slate-900 border border-slate-700 rounded-2xl shadow-xl p-1.5 space-y-1 animate-fade-in text-white text-xs"
-                      >
-                        <div className="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1">
-                          Print Options
-                        </div>
-                        <button
-                          onClick={() => {
-                            triggerTestPrint(order, 'BOTH');
-                            setPrintToast(`✓ Print requested (1 Store + 1 Customer)`);
-                            setTimeout(() => setPrintToast(null), 3000);
-                            setActivePrintMenuOrderId(null);
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-xl font-bold flex items-center justify-between text-slate-200 hover:text-white transition-all"
-                        >
-                          <span>1 Store + 1 Customer</span>
-                          <span className="text-[9px] text-slate-400">Default</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            triggerTestPrint(order, 'STORE');
-                            setPrintToast(`✓ Print requested (Store Copy Only)`);
-                            setTimeout(() => setPrintToast(null), 3000);
-                            setActivePrintMenuOrderId(null);
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-xl font-medium text-slate-300 hover:text-white transition-all"
-                        >
-                          Store Copy Only
-                        </button>
-                        <button
-                          onClick={() => {
-                            triggerTestPrint(order, 'CUSTOMER');
-                            setPrintToast(`✓ Print requested (Customer Copy Only)`);
-                            setTimeout(() => setPrintToast(null), 3000);
-                            setActivePrintMenuOrderId(null);
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-xl font-medium text-slate-300 hover:text-white transition-all"
-                        >
-                          Customer Copy Only
-                        </button>
-                        <button
-                          onClick={() => {
-                            triggerTestPrint(order, 'STORE2');
-                            setPrintToast(`✓ Print requested (2 Store Copies)`);
-                            setTimeout(() => setPrintToast(null), 3000);
-                            setActivePrintMenuOrderId(null);
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-xl font-medium text-slate-300 hover:text-white transition-all border-t border-slate-800"
-                        >
-                          2 Store Copies
-                        </button>
-                        <button
-                          onClick={() => {
-                            triggerTestPrint(order, 'STORE3');
-                            setPrintToast(`✓ Print requested (3 Store Copies)`);
-                            setTimeout(() => setPrintToast(null), 3000);
-                            setActivePrintMenuOrderId(null);
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-xl font-medium text-slate-300 hover:text-white transition-all"
-                        >
-                          3 Store Copies
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
               );
@@ -647,87 +589,16 @@ export default function Dashboard() {
 
             {/* Bottom button bar controls */}
             <div className="p-4 bg-white border-t border-slate-200 flex items-center space-x-3 shrink-0 shadow-lg shadow-slate-100">
-              {/* Print Receipt Trigger Dropdown */}
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActivePrintMenuOrderId(activePrintMenuOrderId === selectedOrder.id ? null : selectedOrder.id);
-                  }}
-                  title="Print Options"
-                  className="p-3.5 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl transition-all flex items-center justify-center"
-                >
-                  <Printer size={20} />
-                </button>
-
-                {activePrintMenuOrderId === selectedOrder.id && (
-                  <div 
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 bottom-full mb-2 z-50 w-56 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-1.5 space-y-1 animate-fade-in text-white text-xs"
-                  >
-                    <div className="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1">
-                      Receipt Print Options
-                    </div>
-                    <button
-                      onClick={() => {
-                        triggerTestPrint(selectedOrder, 'BOTH');
-                        setPrintToast(`✓ Print requested (1 Store + 1 Customer)`);
-                        setTimeout(() => setPrintToast(null), 3000);
-                        setActivePrintMenuOrderId(null);
-                      }}
-                      className="w-full text-left px-2.5 py-2 hover:bg-slate-800 rounded-xl font-bold flex items-center justify-between text-slate-200 hover:text-white transition-all"
-                    >
-                      <span>1 Store + 1 Customer</span>
-                      <span className="text-[9px] text-slate-400">Default</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        triggerTestPrint(selectedOrder, 'STORE');
-                        setPrintToast(`✓ Print requested (Store Copy Only)`);
-                        setTimeout(() => setPrintToast(null), 3000);
-                        setActivePrintMenuOrderId(null);
-                      }}
-                      className="w-full text-left px-2.5 py-2 hover:bg-slate-800 rounded-xl font-medium text-slate-300 hover:text-white transition-all"
-                    >
-                      Store Copy Only
-                    </button>
-                    <button
-                      onClick={() => {
-                        triggerTestPrint(selectedOrder, 'CUSTOMER');
-                        setPrintToast(`✓ Print requested (Customer Copy Only)`);
-                        setTimeout(() => setPrintToast(null), 3000);
-                        setActivePrintMenuOrderId(null);
-                      }}
-                      className="w-full text-left px-2.5 py-2 hover:bg-slate-800 rounded-xl font-medium text-slate-300 hover:text-white transition-all"
-                    >
-                      Customer Copy Only
-                    </button>
-                    <button
-                      onClick={() => {
-                        triggerTestPrint(selectedOrder, 'STORE2');
-                        setPrintToast(`✓ Print requested (2 Store Copies)`);
-                        setTimeout(() => setPrintToast(null), 3000);
-                        setActivePrintMenuOrderId(null);
-                      }}
-                      className="w-full text-left px-2.5 py-2 hover:bg-slate-800 rounded-xl font-medium text-slate-300 hover:text-white transition-all border-t border-slate-800"
-                    >
-                      2 Store Copies
-                    </button>
-                    <button
-                      onClick={() => {
-                        triggerTestPrint(selectedOrder, 'STORE3');
-                        setPrintToast(`✓ Print requested (3 Store Copies)`);
-                        setTimeout(() => setPrintToast(null), 3000);
-                        setActivePrintMenuOrderId(null);
-                      }}
-                      className="w-full text-left px-2.5 py-2 hover:bg-slate-800 rounded-xl font-medium text-slate-300 hover:text-white transition-all"
-                    >
-                      3 Store Copies
-                    </button>
-                  </div>
-                )}
-              </div>
+              {/* Direct Print Receipt Button */}
+              <button
+                type="button"
+                onClick={(e) => handlePrint(e, selectedOrder, 'BOTH')}
+                title="Print Receipt"
+                className="px-4 py-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all flex items-center justify-center shrink-0 space-x-2 active:scale-95 shadow-sm"
+              >
+                <Printer size={18} />
+                <span>Print Receipt</span>
+              </button>
 
               {/* Order Status Shift Transition Button */}
               {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
