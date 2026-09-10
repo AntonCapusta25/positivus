@@ -1793,8 +1793,8 @@ export const POSProvider = ({ children }) => {
     if (targetOrder && (targetOrder.id || targetOrder.order_number)) {
       try {
         const typePrefix = printType || 'BOTH';
-        const ts = `${typePrefix}:${Date.now()}`;
-        console.log(`Sending remote print command (${typePrefix}) to Sunmi device via Supabase for order ${targetOrder.order_number || targetOrder.id} (ts: ${ts})`);
+        const isoNow = new Date().toISOString();
+        console.log(`Sending remote print command (${typePrefix}) to Sunmi device via Supabase for order ${targetOrder.order_number || targetOrder.id}`);
 
         const isUuid = targetOrder.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetOrder.id));
         let updateErr = null;
@@ -1803,7 +1803,8 @@ export const POSProvider = ({ children }) => {
           const { error } = await supabase
             .from('orders')
             .update({ 
-              print_requested_at: ts,
+              print_requested_at: isoNow,
+              print_type: typePrefix,
               printed: false 
             })
             .eq('id', targetOrder.id);
@@ -1816,7 +1817,8 @@ export const POSProvider = ({ children }) => {
           const { error } = await supabase
             .from('orders')
             .update({ 
-              print_requested_at: ts,
+              print_requested_at: isoNow,
+              print_type: typePrefix,
               printed: false 
             })
             .eq('order_number', orderNum);

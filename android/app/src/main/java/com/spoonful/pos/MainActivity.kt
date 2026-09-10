@@ -299,12 +299,7 @@ class MainActivity : AppCompatActivity() {
                                 if (printTs != null && !printedOrderIds.contains(printTs)) {
                                     val isAutoTriggerOnCreation = try {
                                         if (order.createdAt.isNullOrEmpty()) false else {
-                                            val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
-                                            val printTime = if (rawTs.toLongOrNull() != null) {
-                                                rawTs.toLong()
-                                            } else {
-                                                java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
-                                            }
+                                            val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(printTs, java.time.Instant::from).toEpochMilli()
                                             val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
                                             Math.abs(printTime - createdTime) < 5000
                                         }
@@ -312,12 +307,12 @@ class MainActivity : AppCompatActivity() {
                                         false
                                     }
 
-                                    val isExplicitRemotePrint = printTs.startsWith("BOTH:") || printTs.startsWith("CUSTOMER:") || printTs.startsWith("STORE:") || printTs.startsWith("STORE2:") || printTs.startsWith("STORE3:")
+                                    val isExplicitRemotePrint = !order.printType.isNullOrEmpty()
                                     val shouldPrint = isExplicitRemotePrint || isAutoPrintEnabled || !isAutoTriggerOnCreation
                                     if (shouldPrint) {
                                         printedOrderIds.add(printTs)
-                                        android.util.Log.d("MainActivity", "Remote print request executed for order: ${order.orderNumber} (ts: $printTs)")
-                                        executeRemotePrint(mergedOrder, printTs)
+                                        android.util.Log.d("MainActivity", "Remote print request executed for order: ${order.orderNumber} type=${order.printType}")
+                                        executeRemotePrint(mergedOrder)
                                     }
                                 }
                             } else {
@@ -332,12 +327,7 @@ class MainActivity : AppCompatActivity() {
                                 if (printTs != null && !printedOrderIds.contains(printTs)) {
                                     val isAutoTriggerOnCreation = try {
                                         if (order.createdAt.isNullOrEmpty()) false else {
-                                            val rawTs = if (printTs.contains(":")) printTs.substringAfter(":") else printTs
-                                            val printTime = if (rawTs.toLongOrNull() != null) {
-                                                rawTs.toLong()
-                                            } else {
-                                                java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(rawTs, java.time.Instant::from).toEpochMilli()
-                                            }
+                                            val printTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(printTs, java.time.Instant::from).toEpochMilli()
                                             val createdTime = java.time.format.DateTimeFormatter.ISO_DATE_TIME.parse(order.createdAt, java.time.Instant::from).toEpochMilli()
                                             Math.abs(printTime - createdTime) < 5000
                                         }
@@ -345,11 +335,11 @@ class MainActivity : AppCompatActivity() {
                                         false
                                     }
 
-                                    val isExplicitRemotePrint = printTs.startsWith("BOTH:") || printTs.startsWith("CUSTOMER:") || printTs.startsWith("STORE:") || printTs.startsWith("STORE2:") || printTs.startsWith("STORE3:")
+                                    val isExplicitRemotePrint = !order.printType.isNullOrEmpty()
                                     val shouldPrint = isExplicitRemotePrint || isAutoPrintEnabled || !isAutoTriggerOnCreation
                                     if (shouldPrint) {
                                         printedOrderIds.add(printTs)
-                                        executeRemotePrint(order, printTs)
+                                        executeRemotePrint(order)
                                     }
                                 }
                             }
@@ -357,52 +347,59 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-    private fun executeRemotePrint(targetOrder: Order, printTs: String) {
+    private fun executeRemotePrint(targetOrder: Order) {
+        val printType = (targetOrder.printType ?: "BOTH").uppercase(java.util.Locale.ROOT)
         fun doPrint(finalOrder: Order) {
             val storeName = txtDrawerActiveRestaurant.text.toString()
-            if (printTs.startsWith("CUSTOMER:")) {
-                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { success ->
-                    if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
-                }
-            } else if (printTs.startsWith("STORE:")) {
-                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { success ->
-                    if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
-                }
-            } else if (printTs.startsWith("STORE2:")) {
-                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
-                    if (s1) {
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                            printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { _ ->
-                                supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
-                            }
-                        }, 1200)
+            when (printType) {
+                "CUSTOMER" -> {
+                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { success ->
+                        if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
                     }
                 }
-            } else if (printTs.startsWith("STORE3:")) {
-                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
-                    if (s1) {
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                            printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s2 ->
-                                if (s2) {
-                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                        printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { _ ->
-                                            supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
-                                        }
-                                    }, 1200)
+                "STORE" -> {
+                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { success ->
+                        if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                    }
+                }
+                "STORE2" -> {
+                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
+                        if (s1) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { _ ->
+                                    supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
                                 }
-                            }
-                        }, 1200)
+                            }, 1200)
+                        }
                     }
                 }
-            } else {
-                // Default (BOTH): 1 Store Copy + 1 Customer Copy
-                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
-                    if (s1) {
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                            printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { _ ->
-                                supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
-                            }
-                        }, 1200)
+                "STORE3" -> {
+                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
+                        if (s1) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s2 ->
+                                    if (s2) {
+                                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                            printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { _ ->
+                                                supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                                            }
+                                        }, 1200)
+                                    }
+                                }
+                            }, 1200)
+                        }
+                    }
+                }
+                else -> {
+                    // Default BOTH: 1 Store Copy + 1 Customer Copy
+                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
+                        if (s1) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { _ ->
+                                    supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                                }
+                            }, 1200)
+                        }
                     }
                 }
             }
@@ -847,8 +844,8 @@ class MainActivity : AppCompatActivity() {
             }
             val count = todayOrders.size
             val revenue = todayOrders.sumOf { it.total }
-            val onlineCount = todayOrders.count { it.paymentMethod.lowercase() == "online" }
-            val cashCount = todayOrders.count { it.paymentMethod.lowercase() == "cash" || it.paymentMethod.lowercase() == "card" }
+            val onlineCount = todayOrders.count { (it.paymentMethod ?: "").lowercase(Locale.ROOT) == "online" }
+            val cashCount = todayOrders.count { (it.paymentMethod ?: "").lowercase(Locale.ROOT) == "cash" || (it.paymentMethod ?: "").lowercase(Locale.ROOT) == "card" }
 
             androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Today's Sales Report")
@@ -1348,7 +1345,7 @@ class MainActivity : AppCompatActivity() {
         val card = androidx.cardview.widget.CardView(this).apply {
             radius = dp(12).toFloat()
             cardElevation = dp(1).toFloat()
-            if (order.status.lowercase() == "cancelled") {
+            if (order.status.lowercase(Locale.ROOT) == "cancelled") {
                 setCardBackgroundColor(Color.parseColor("#FEF2F2"))
             } else {
                 setCardBackgroundColor(Color.WHITE)
@@ -1401,7 +1398,7 @@ class MainActivity : AppCompatActivity() {
         infoLayout.addView(customerTxt)
 
         // Order number short + type icon
-        val typeIcon = when (order.type.lowercase()) {
+        val typeIcon = when ((order.type ?: "delivery").lowercase(Locale.ROOT)) {
             "delivery" -> "🛵"
             "pickup" -> "🏃"
             else -> "🍽️"
@@ -1481,7 +1478,7 @@ class MainActivity : AppCompatActivity() {
         rightCol.addView(printDot)
 
         // Payment status badge (PAID vs NOT PAID)
-        val isPaid = order.paymentStatus.lowercase() == "paid" || order.paymentMethod.lowercase() == "online"
+        val isPaid = (order.paymentStatus ?: "").lowercase(Locale.ROOT) == "paid" || (order.paymentMethod ?: "").lowercase(Locale.ROOT) == "online"
         val paidBadge = TextView(this).apply {
             text = if (isPaid) "PAID" else "NOT PAID"
             setTextColor(Color.parseColor(if (isPaid) "#00A389" else "#EF4444"))
@@ -1592,7 +1589,7 @@ class MainActivity : AppCompatActivity() {
 
         btnDetailCancel.setOnClickListener {
             val order = selectedOrder ?: return@setOnClickListener
-            val isOnline = order.paymentMethod.lowercase() == "online"
+            val isOnline = (order.paymentMethod ?: "").lowercase(Locale.ROOT) == "online"
             val msg = if (isOnline) 
                 "Are you sure you want to cancel and refund this online order?" 
             else 
@@ -1878,7 +1875,7 @@ class MainActivity : AppCompatActivity() {
         txtDetailAddress.text = address
         val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonfull"
         txtDetailOrderCode.text = "$resolvedName • #${order.orderNumber.takeLast(6)}"
-        val typeIcon = when (order.type.lowercase()) {
+        val typeIcon = when ((order.type ?: "delivery").lowercase(Locale.ROOT)) {
             "delivery" -> "🛵 Delivery"
             "pickup" -> "🏃 Pickup"
             else -> "🍽️ Dine In"
@@ -1889,7 +1886,7 @@ class MainActivity : AppCompatActivity() {
         val firstName = order.customerName?.split(" ")?.firstOrNull() ?: "Customer"
         txtDetailCustomerName.text = firstName
 
-        val isPaid = order.paymentStatus.lowercase() == "paid" || order.paymentMethod.lowercase() == "online"
+        val isPaid = (order.paymentStatus ?: "").lowercase(Locale.ROOT) == "paid" || (order.paymentMethod ?: "").lowercase(Locale.ROOT) == "online"
         txtDetailPaidBadge.text = if (isPaid) "PAID" else "NOT PAID"
         txtDetailPaidBadge.setTextColor(Color.parseColor(if (isPaid) "#00A389" else "#EF4444"))
         txtDetailPaidBadge.background = GradientDrawable().apply {
@@ -1990,13 +1987,13 @@ class MainActivity : AppCompatActivity() {
         val canCancel = order.status.lowercase() != "completed" && order.status.lowercase() != "cancelled"
         if (canCancel) {
             btnDetailCancel.visibility = View.VISIBLE
-            btnDetailCancel.text = if (order.paymentMethod.lowercase() == "online") "CANCEL & REFUND" else "CANCEL ORDER"
+            btnDetailCancel.text = if ((order.paymentMethod ?: "").lowercase(Locale.ROOT) == "online") "CANCEL & REFUND" else "CANCEL ORDER"
         } else {
             btnDetailCancel.visibility = View.GONE
         }
 
         // Driver assignment visibility
-        val isDelivery = order.type.lowercase() == "delivery"
+        val isDelivery = (order.type ?: "delivery").lowercase(Locale.ROOT) == "delivery"
         val canAssignDriver = isDelivery && (order.status.lowercase() == "preparing" || order.status.lowercase() == "ready")
         btnDetailAssignDriver.visibility = if (canAssignDriver) View.VISIBLE else View.GONE
 
@@ -2950,7 +2947,7 @@ class MainActivity : AppCompatActivity() {
 
             val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonfull"
             txtOrderNo.text = "$resolvedName • #${order.orderNumber}"
-            txtCustomerName.text = "${order.customerName ?: "Customer"} (${order.type.uppercase()})"
+            txtCustomerName.text = "${order.customerName ?: "Customer"} (${(order.type ?: "delivery").uppercase(Locale.ROOT)})"
             
             val orderCount = order.customerOrderCount ?: 1
             if (orderCount > 1) {
@@ -3039,7 +3036,7 @@ class MainActivity : AppCompatActivity() {
             val layoutDialogDriver = dialogView.findViewById<LinearLayout>(R.id.layoutDialogDriver)
             val spinnerDialogDriver = dialogView.findViewById<Spinner>(R.id.spinnerDialogDriver)
 
-            val isDelivery = order.type.lowercase(Locale.getDefault()) == "delivery"
+            val isDelivery = (order.type ?: "delivery").lowercase(Locale.getDefault()) == "delivery"
             var driverNamesList = listOf("Unassigned (Claim via QR)")
             if (isDelivery) {
                 layoutDialogDriver.visibility = View.VISIBLE
@@ -3197,7 +3194,7 @@ class MainActivity : AppCompatActivity() {
                 showingDialogOrderIds.remove(order.id)
                 stopIncomingOrderSound()
                 dialog.dismiss()
-                val isOnline = order.paymentMethod.lowercase() == "online"
+                val isOnline = (order.paymentMethod ?: "").lowercase(Locale.ROOT) == "online"
                 if (isOnline) {
                     Toast.makeText(this@MainActivity, "Cancelling and refunding online payment...", Toast.LENGTH_LONG).show()
                     supabaseManager.triggerStripeRefund(order.id) { success ->

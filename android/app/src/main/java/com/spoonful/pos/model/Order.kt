@@ -14,13 +14,14 @@ data class Order(
     @SerializedName("delivery_fee") val deliveryFee: Double,
     @SerializedName("discount") val discount: Double,
     @SerializedName("total") val total: Double,
-    @SerializedName("status") var status: String, // incoming, preparing, ready, completed, cancelled
-    @SerializedName("type") val type: String, // delivery, pickup, dine_in
-    @SerializedName("payment_method") val paymentMethod: String, // cash, card, online
-    @SerializedName("payment_status") var paymentStatus: String, // pending, paid, unpaid, refunded
-    @SerializedName("notes") val notes: String?,
-    @SerializedName("printed") var printed: Boolean,
+    @SerializedName("status") var status: String = "incoming", // incoming, preparing, ready, completed, cancelled
+    @SerializedName("type") val type: String? = null, // delivery, pickup, dine_in
+    @SerializedName("payment_method") val paymentMethod: String? = null, // cash, card, online
+    @SerializedName("payment_status") var paymentStatus: String? = null, // pending, paid, unpaid, refunded
+    @SerializedName("notes") val notes: String? = null,
+    @SerializedName("printed") var printed: Boolean = false,
     @SerializedName("print_requested_at") var printRequestedAt: String? = null,
+    @SerializedName("print_type") var printType: String? = null,
     @SerializedName("merchant_id") val merchantId: String? = null,
     @SerializedName("customer_address") val customerAddress: String? = null,
     @SerializedName("driver_name") var driverName: String? = null,
