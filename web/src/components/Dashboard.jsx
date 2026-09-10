@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [itemChecklist, setItemChecklist] = useState({});
   const [isSavingDriver, setIsSavingDriver] = useState(false);
   const [printToast, setPrintToast] = useState(null);
+  const [showPrintMenu, setShowPrintMenu] = useState(false);
   const [activePrintMenuOrderId, setActivePrintMenuOrderId] = useState(null);
 
   useEffect(() => {
@@ -589,16 +590,55 @@ export default function Dashboard() {
 
             {/* Bottom button bar controls */}
             <div className="p-4 bg-white border-t border-slate-200 flex items-center space-x-3 shrink-0 shadow-lg shadow-slate-100">
-              {/* Direct Print Receipt Button */}
-              <button
-                type="button"
-                onClick={(e) => handlePrint(e, selectedOrder, 'BOTH')}
-                title="Print Receipt"
-                className="px-4 py-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all flex items-center justify-center shrink-0 space-x-2 active:scale-95 shadow-sm"
-              >
-                <Printer size={18} />
-                <span>Print Receipt</span>
-              </button>
+              {/* Split Print Button with type selector */}
+              <div className="relative shrink-0" id="print-split-btn">
+                <div className="flex rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                  {/* Main print button — always BOTH */}
+                  <button
+                    type="button"
+                    onClick={(e) => { setShowPrintMenu(false); handlePrint(e, selectedOrder, 'BOTH'); }}
+                    className="px-4 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-bold transition-all flex items-center space-x-2 active:scale-95 border-r border-slate-200"
+                  >
+                    <Printer size={18} />
+                    <span>Print</span>
+                  </button>
+                  {/* Arrow — opens type menu */}
+                  <button
+                    type="button"
+                    id="print-menu-toggle"
+                    onClick={(e) => { e.stopPropagation(); setShowPrintMenu(v => !v); }}
+                    className="px-2.5 py-3.5 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all active:scale-95"
+                    title="Choose print type"
+                  >
+                    <ChevronRight size={15} className={`transition-transform duration-200 ${showPrintMenu ? 'rotate-90' : 'rotate-0'}`} />
+                  </button>
+                </div>
+
+                {/* Dropdown menu */}
+                {showPrintMenu && (
+                  <div
+                    className="absolute bottom-full mb-2 left-0 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden min-w-[170px]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {[
+                      { label: '🖨️ Both (Store + Customer)', type: 'BOTH' },
+                      { label: '🏪 Store Copy Only', type: 'STORE' },
+                      { label: '👤 Customer Copy Only', type: 'CUSTOMER' },
+                      { label: '🖨️🖨️ 2× Store Copies', type: 'STORE2' },
+                      { label: '🖨️🖨️🖨️ 3× Store Copies', type: 'STORE3' },
+                    ].map(({ label, type }) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={(e) => { setShowPrintMenu(false); handlePrint(e, selectedOrder, type); }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 font-medium transition-colors flex items-center space-x-2"
+                      >
+                        <span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Order Status Shift Transition Button */}
               {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
