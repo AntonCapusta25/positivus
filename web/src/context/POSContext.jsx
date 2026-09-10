@@ -1790,19 +1790,39 @@ export const POSProvider = ({ children }) => {
       }
     }
 
-    if (targetOrder && targetOrder.id) {
+    if (targetOrder && (targetOrder.id || targetOrder.order_number)) {
       try {
         const typePrefix = printType || 'BOTH';
         const ts = `${typePrefix}:${new Date().toISOString()}`;
         console.log(`Sending remote print command (${typePrefix}) to Sunmi device via Supabase for order ${targetOrder.order_number || targetOrder.id} (ts: ${ts})`);
-        const { error } = await supabase
-          .from('orders')
-          .update({ 
-            print_requested_at: ts,
-            printed: false 
-          })
-          .eq('id', targetOrder.id);
-        if (error) throw error;
+
+        const isUuid = targetOrder.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetOrder.id));
+        let updateErr = null;
+
+        if (isUuid) {
+          const { error } = await supabase
+            .from('orders')
+            .update({ 
+              print_requested_at: ts,
+              printed: false 
+            })
+            .eq('id', targetOrder.id);
+          updateErr = error;
+        }
+
+        if (!isUuid || updateErr) {
+          const orderNum = String(targetOrder.order_number || targetOrder.id);
+          console.log(`Retrying remote print update by order_number: ${orderNum}`);
+          const { error } = await supabase
+            .from('orders')
+            .update({ 
+              print_requested_at: ts,
+              printed: false 
+            })
+            .eq('order_number', orderNum);
+          if (error) throw error;
+        }
+
         console.log("Remote print request successfully sent to Sunmi device via Supabase DB.");
         return { success: true, remote: true };
       } catch (err) {
