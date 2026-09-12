@@ -480,6 +480,11 @@ export const POSProvider = ({ children }) => {
             });
           } else if (payload.eventType === 'UPDATE') {
             const updatedOrder = payload.new;
+            if (updatedOrder.status !== 'incoming' && updatedOrder.status !== 'pending') {
+              setActiveIncomingOrder(prev => (prev?.id === updatedOrder.id ? null : prev));
+              stopSirenAlert();
+            }
+
             setOrders((prev) => {
               const matchedPrev = prev.find(o => o.id === updatedOrder.id);
               const isDelivery = (updatedOrder.type || '').toLowerCase() === 'delivery';
@@ -1176,6 +1181,7 @@ export const POSProvider = ({ children }) => {
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
+    stopSirenAlert();
     try {
       const { error } = await supabase
         .from('orders')
@@ -1468,6 +1474,7 @@ export const POSProvider = ({ children }) => {
   };
 
   const acceptOrder = async (orderId, prepTime) => {
+    stopSirenAlert();
     // Check if the order was already accepted or completed on another device
     try {
       const { data: dbOrder, error: dbError } = await supabase

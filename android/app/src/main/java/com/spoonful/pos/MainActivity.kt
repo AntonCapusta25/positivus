@@ -250,7 +250,7 @@ class MainActivity : AppCompatActivity() {
                             if (isAutoPrintEnabled && !printedOrderIds.contains(order.id)) {
                                 printedOrderIds.add(order.id)
                                 order.printed = true
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString()) { success ->
+                                printerHelper.printReceipt(order, getStoreNameForOrder(order)) { success ->
                                     if (success && isCurrentMerchant) {
                                         runOnUiThread { refreshOrderList() }
                                     }
@@ -262,6 +262,16 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onOrderUpdated(order: Order) {
                     runOnUiThread {
+                        val status = (order.status ?: "").lowercase()
+                        if (status != "incoming" && status != "pending") {
+                            if (showingDialogOrderIds.contains(order.id)) {
+                                showingDialogOrderIds.remove(order.id)
+                                if (showingDialogOrderIds.isEmpty()) {
+                                    stopIncomingOrderSound(force = true)
+                                }
+                            }
+                        }
+
                         val isCurrentMerchant = order.merchantId == merchantId ||
                                 (merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
                                  order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1")) ||
@@ -347,10 +357,57 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+    private fun getStoreNameForOrder(order: Order?): String {
+        if (order == null) return txtDrawerActiveRestaurant.text.toString().ifEmpty { "Spoonfull" }
+
+        // 1. Try resolving store name from order notes JSON if available
+        if (!order.notes.isNullOrEmpty()) {
+            try {
+                var obj = com.google.gson.JsonParser.parseString(order.notes).asJsonObject
+                if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                    obj = obj.getAsJsonObject("payload")
+                }
+                if (obj.has("merchant") && obj.get("merchant").isJsonObject) {
+                    val merchant = obj.getAsJsonObject("merchant")
+                    val name = if (merchant.has("name") && !merchant.get("name").isJsonNull) merchant.get("name").asString else ""
+                    if (name.isNotEmpty()) return name
+                }
+                if (obj.has("pickup_address") && obj.get("pickup_address").isJsonObject) {
+                    val addr = obj.getAsJsonObject("pickup_address")
+                    val name = if (addr.has("name") && !addr.get("name").isJsonNull) addr.get("name").asString else ""
+                    if (name.isNotEmpty()) return name
+                }
+                if (obj.has("store_name") && !obj.get("store_name").isJsonNull) {
+                    val name = obj.get("store_name").asString
+                    if (name.isNotEmpty()) return name
+                }
+                if (obj.has("merchant_name") && !obj.get("merchant_name").isJsonNull) {
+                    val name = obj.get("merchant_name").asString
+                    if (name.isNotEmpty()) return name
+                }
+            } catch (e: Exception) {}
+        }
+
+        // 2. Try lookup in merchantNamesMap by merchantId
+        val mId = order.merchantId
+        if (!mId.isNullOrEmpty()) {
+            merchantNamesMap[mId]?.let { if (it.isNotEmpty()) return it }
+            merchantNamesMap[mId.lowercase(Locale.getDefault())]?.let { if (it.isNotEmpty()) return it }
+        }
+
+        // 3. If order matches active store context, return drawer text
+        if (mId == merchantId || (merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && mId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1"))) {
+            val currentDrawerText = txtDrawerActiveRestaurant.text.toString()
+            if (currentDrawerText.isNotEmpty()) return currentDrawerText
+        }
+
+        return txtDrawerActiveRestaurant.text.toString().ifEmpty { "Spoonfull" }
+    }
+
     private fun executeRemotePrint(targetOrder: Order) {
         val printType = (targetOrder.printType ?: "BOTH").uppercase(java.util.Locale.ROOT)
         fun doPrint(finalOrder: Order) {
-            val storeName = txtDrawerActiveRestaurant.text.toString()
+            val storeName = getStoreNameForOrder(finalOrder)
             when (printType) {
                 "CUSTOMER" -> {
                     printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { success ->
@@ -1687,16 +1744,17 @@ class MainActivity : AppCompatActivity() {
                     "3 Store Copies"
                 )
 
+                val sName = getStoreNameForOrder(order)
                 androidx.appcompat.app.AlertDialog.Builder(this)
                     .setTitle("Print Receipt")
                     .setItems(options) { _, which ->
                         when (which) {
                             0 -> {
                                 // 1 Store + 1 Customer
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
+                                printerHelper.printReceipt(order, sName, isCustomerCopy = false) { s1 ->
                                     if (s1) {
                                         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s2 ->
+                                            printerHelper.printReceipt(order, sName, isCustomerCopy = true) { s2 ->
                                                 runOnUiThread {
                                                     Toast.makeText(this@MainActivity, "2 Receipts printed (1 Store + 1 Customer)!", Toast.LENGTH_SHORT).show()
                                                     if (!order.printed) {
@@ -1716,7 +1774,7 @@ class MainActivity : AppCompatActivity() {
                             }
                             1 -> {
                                 // 1 Store Copy Only
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s ->
+                                printerHelper.printReceipt(order, sName, isCustomerCopy = false) { s ->
                                     runOnUiThread {
                                         if (s) {
                                             Toast.makeText(this@MainActivity, "Store receipt printed!", Toast.LENGTH_SHORT).show()
@@ -1733,7 +1791,7 @@ class MainActivity : AppCompatActivity() {
                             }
                             2 -> {
                                 // 1 Customer Copy Only
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { s ->
+                                printerHelper.printReceipt(order, sName, isCustomerCopy = true) { s ->
                                     runOnUiThread {
                                         if (s) {
                                             Toast.makeText(this@MainActivity, "Customer receipt printed!", Toast.LENGTH_SHORT).show()
@@ -1750,10 +1808,10 @@ class MainActivity : AppCompatActivity() {
                             }
                             3 -> {
                                 // 2 Store Copies
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
+                                printerHelper.printReceipt(order, sName, isCustomerCopy = false) { s1 ->
                                     if (s1) {
                                         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s2 ->
+                                            printerHelper.printReceipt(order, sName, isCustomerCopy = false) { s2 ->
                                                 runOnUiThread {
                                                     Toast.makeText(this@MainActivity, "2 Store receipts printed!", Toast.LENGTH_SHORT).show()
                                                     if (!order.printed) {
@@ -1769,13 +1827,13 @@ class MainActivity : AppCompatActivity() {
                             }
                             4 -> {
                                 // 3 Store Copies
-                                printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s1 ->
+                                printerHelper.printReceipt(order, sName, isCustomerCopy = false) { s1 ->
                                     if (s1) {
                                         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s2 ->
+                                            printerHelper.printReceipt(order, sName, isCustomerCopy = false) { s2 ->
                                                 if (s2) {
                                                     android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { s3 ->
+                                                        printerHelper.printReceipt(order, sName, isCustomerCopy = false) { s3 ->
                                                             runOnUiThread {
                                                                 Toast.makeText(this@MainActivity, "3 Store receipts printed!", Toast.LENGTH_SHORT).show()
                                                                 if (!order.printed) {
@@ -3129,12 +3187,13 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     // 2. Print receipt if selected quantity is greater than 0
+                    val sName = getStoreNameForOrder(order)
                     if (selectedQty == 1) {
                         // 1 Store Copy + 1 Customer Copy (No Driver QR)
-                        printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { success1 ->
+                        printerHelper.printReceipt(order, sName, isCustomerCopy = false) { success1 ->
                             if (success1) {
                                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                    printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = true) { success2 ->
+                                    printerHelper.printReceipt(order, sName, isCustomerCopy = true) { success2 ->
                                         runOnUiThread {
                                             Toast.makeText(context, "2 Receipts printed (1 Store + 1 Customer)!", Toast.LENGTH_SHORT).show()
                                             if (!order.printed) {
@@ -3168,7 +3227,7 @@ class MainActivity : AppCompatActivity() {
                                 return
                             }
                             copiesLeft--
-                            printerHelper.printReceipt(order, txtDrawerActiveRestaurant.text.toString(), isCustomerCopy = false) { success ->
+                            printerHelper.printReceipt(order, sName, isCustomerCopy = false) { success ->
                                 if (success) {
                                     android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                                         printNext()
@@ -3236,6 +3295,11 @@ class MainActivity : AppCompatActivity() {
                 return
             }
             isSoundAlertPlaying = true
+
+            // Safety auto-stop guard after 45 seconds to prevent infinite beeping
+            handler.postDelayed({
+                stopIncomingOrderSound(force = false)
+            }, 45000)
 
             val newThread = Thread {
                 var localToneGenerator: android.media.ToneGenerator? = null

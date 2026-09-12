@@ -83,6 +83,7 @@ export default function Dashboard() {
   };
 
   const handleNextStatus = (order) => {
+    stopSirenAlert();
     const status = (order.status || 'incoming').toLowerCase();
     if (status === 'incoming') {
       setActiveIncomingOrder(order);
