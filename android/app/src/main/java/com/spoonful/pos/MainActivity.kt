@@ -232,9 +232,12 @@ class MainActivity : AppCompatActivity() {
                             )
 
                         if (isOurMerchant || isCurrentMerchant) {
-                            // 1. If it belongs to currently active context, add it to the screen list
+                            // 1. If it belongs to currently active context, add it to the screen list (deduped by ID and orderNumber)
                             if (isCurrentMerchant) {
-                                if (ordersList.none { it.id == order.id }) {
+                                val alreadyExists = ordersList.any { 
+                                    it.id == order.id || (order.orderNumber.isNotEmpty() && it.orderNumber == order.orderNumber) 
+                                }
+                                if (!alreadyExists) {
                                     ordersList.add(0, order)
                                     refreshOrderList()
                                 }
@@ -246,9 +249,12 @@ class MainActivity : AppCompatActivity() {
                                 showIncomingOrderDialog(order)
                             }
 
-                            // 3. Auto-print if enabled (only once per order ID)
-                            if (isAutoPrintEnabled && !printedOrderIds.contains(order.id)) {
-                                printedOrderIds.add(order.id)
+                            // 3. Auto-print if enabled (only once per order ID/number)
+                            val printKey = order.id.ifEmpty { order.orderNumber }
+                            if (isAutoPrintEnabled && !printedOrderIds.contains(printKey)) {
+                                printedOrderIds.add(printKey)
+                                if (order.id.isNotEmpty()) printedOrderIds.add(order.id)
+                                if (order.orderNumber.isNotEmpty()) printedOrderIds.add(order.orderNumber)
                                 order.printed = true
                                 printerHelper.printReceipt(order, getStoreNameForOrder(order)) { success ->
                                     if (success && isCurrentMerchant) {
@@ -264,8 +270,10 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread {
                         val status = (order.status ?: "").lowercase()
                         if (status != "incoming" && status != "pending") {
-                            if (showingDialogOrderIds.contains(order.id)) {
+                            val isMatched = showingDialogOrderIds.contains(order.id) || (order.orderNumber.isNotEmpty() && showingDialogOrderIds.contains(order.orderNumber))
+                            if (isMatched) {
                                 showingDialogOrderIds.remove(order.id)
+                                if (order.orderNumber.isNotEmpty()) showingDialogOrderIds.remove(order.orderNumber)
                                 if (showingDialogOrderIds.isEmpty()) {
                                     stopIncomingOrderSound(force = true)
                                 }
@@ -285,11 +293,12 @@ class MainActivity : AppCompatActivity() {
                             )
 
                         if (isOurMerchant || isCurrentMerchant) {
-                            val index = ordersList.indexOfFirst { it.id == order.id }
+                            val index = ordersList.indexOfFirst { 
+                                it.id == order.id || (order.orderNumber.isNotEmpty() && it.orderNumber == order.orderNumber) 
+                            }
                             if (index != -1) {
                                 val existingOrder = ordersList[index]
                                 val printTs = order.printRequestedAt
-                                val isNewPrintRequest = printTs != null && printTs != existingOrder.printRequestedAt
 
                                 val mergedOrder = order.copy(
                                     notes = if (order.notes.isNullOrEmpty()) existingOrder.notes else order.notes,
@@ -301,7 +310,7 @@ class MainActivity : AppCompatActivity() {
                                 ordersList[index] = mergedOrder
                                 refreshOrderList()
                                 
-                                if (selectedOrder?.id == order.id) {
+                                if (selectedOrder?.id == order.id || (order.orderNumber.isNotEmpty() && selectedOrder?.orderNumber == order.orderNumber)) {
                                     openOrderDetail(mergedOrder)
                                 }
                                 
@@ -326,10 +335,15 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 }
                             } else {
-                                // If it matches the current active screen but wasn't in the list, add it
+                                // If it matches the current active screen but wasn't in the list, add it (deduped by ID and orderNumber)
                                 if (isCurrentMerchant) {
-                                    ordersList.add(0, order)
-                                    refreshOrderList()
+                                    val alreadyExists = ordersList.any { 
+                                        it.id == order.id || (order.orderNumber.isNotEmpty() && it.orderNumber == order.orderNumber) 
+                                    }
+                                    if (!alreadyExists) {
+                                        ordersList.add(0, order)
+                                        refreshOrderList()
+                                    }
                                 }
                                 
                                 // Remote print request for our stores even if not currently listed on screen
@@ -357,128 +371,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-    private fun getStoreNameForOrder(order: Order?): String {
-        if (order == null) return txtDrawerActiveRestaurant.text.toString().ifEmpty { "Spoonfull" }
-
-        // 1. Try resolving store name from order notes JSON if available
-        if (!order.notes.isNullOrEmpty()) {
-            try {
-                var obj = com.google.gson.JsonParser.parseString(order.notes).asJsonObject
-                if (obj.has("payload") && obj.get("payload").isJsonObject) {
-                    obj = obj.getAsJsonObject("payload")
-                }
-                if (obj.has("merchant") && obj.get("merchant").isJsonObject) {
-                    val merchant = obj.getAsJsonObject("merchant")
-                    val name = if (merchant.has("name") && !merchant.get("name").isJsonNull) merchant.get("name").asString else ""
-                    if (name.isNotEmpty()) return name
-                }
-                if (obj.has("pickup_address") && obj.get("pickup_address").isJsonObject) {
-                    val addr = obj.getAsJsonObject("pickup_address")
-                    val name = if (addr.has("name") && !addr.get("name").isJsonNull) addr.get("name").asString else ""
-                    if (name.isNotEmpty()) return name
-                }
-                if (obj.has("store_name") && !obj.get("store_name").isJsonNull) {
-                    val name = obj.get("store_name").asString
-                    if (name.isNotEmpty()) return name
-                }
-                if (obj.has("merchant_name") && !obj.get("merchant_name").isJsonNull) {
-                    val name = obj.get("merchant_name").asString
-                    if (name.isNotEmpty()) return name
-                }
-            } catch (e: Exception) {}
-        }
-
-        // 2. Try lookup in merchantNamesMap by merchantId
-        val mId = order.merchantId
-        if (!mId.isNullOrEmpty()) {
-            merchantNamesMap[mId]?.let { if (it.isNotEmpty()) return it }
-            merchantNamesMap[mId.lowercase(Locale.getDefault())]?.let { if (it.isNotEmpty()) return it }
-        }
-
-        // 3. If order matches active store context, return drawer text
-        if (mId == merchantId || (merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && mId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1"))) {
-            val currentDrawerText = txtDrawerActiveRestaurant.text.toString()
-            if (currentDrawerText.isNotEmpty()) return currentDrawerText
-        }
-
-        return txtDrawerActiveRestaurant.text.toString().ifEmpty { "Spoonfull" }
-    }
-
-    private fun executeRemotePrint(targetOrder: Order) {
-        val printType = (targetOrder.printType ?: "BOTH").uppercase(java.util.Locale.ROOT)
-        fun doPrint(finalOrder: Order) {
-            val storeName = getStoreNameForOrder(finalOrder)
-            when (printType) {
-                "CUSTOMER" -> {
-                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { success ->
-                        if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
-                    }
-                }
-                "STORE" -> {
-                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { success ->
-                        if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
-                    }
-                }
-                "STORE2" -> {
-                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
-                        if (s1) {
-                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { _ ->
-                                    supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
-                                }
-                            }, 1200)
-                        }
-                    }
-                }
-                "STORE3" -> {
-                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
-                        if (s1) {
-                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s2 ->
-                                    if (s2) {
-                                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                            printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { _ ->
-                                                supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
-                                            }
-                                        }, 1200)
-                                    }
-                                }
-                            }, 1200)
-                        }
-                    }
-                }
-                else -> {
-                    // Default BOTH: 1 Store Copy + 1 Customer Copy
-                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
-                        if (s1) {
-                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { _ ->
-                                    supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
-                                }
-                            }, 1200)
-                        }
-                    }
-                }
-            }
-        }
-
-        if (targetOrder.items.isEmpty()) {
-            supabaseManager.fetchOrderById(targetOrder.id) { fetched ->
-                if (fetched != null && fetched.items.isNotEmpty()) {
-                    doPrint(fetched)
-                } else {
-                    doPrint(targetOrder)
-                }
-            }
-        } else {
-            doPrint(targetOrder)
-        }
-    }
-
                 override fun onOrdersLoaded(orders: List<Order>) {
                     runOnUiThread {
+                        val unique = orders.distinctBy { if (it.orderNumber.isNotEmpty()) it.orderNumber else it.id }
                         ordersList.clear()
-                        ordersList.addAll(orders)
+                        ordersList.addAll(unique)
                         refreshOrderList()
                     }
                 }
@@ -666,6 +563,124 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    }
+
+    private fun getStoreNameForOrder(order: Order?): String {
+        if (order == null) return txtDrawerActiveRestaurant.text.toString().ifEmpty { "Spoonfull" }
+
+        // 1. Try resolving store name from order notes JSON if available
+        if (!order.notes.isNullOrEmpty()) {
+            try {
+                var obj = com.google.gson.JsonParser.parseString(order.notes).asJsonObject
+                if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                    obj = obj.getAsJsonObject("payload")
+                }
+                if (obj.has("merchant") && obj.get("merchant").isJsonObject) {
+                    val merchant = obj.getAsJsonObject("merchant")
+                    val name = if (merchant.has("name") && !merchant.get("name").isJsonNull) merchant.get("name").asString else ""
+                    if (name.isNotEmpty()) return name
+                }
+                if (obj.has("pickup_address") && obj.get("pickup_address").isJsonObject) {
+                    val addr = obj.getAsJsonObject("pickup_address")
+                    val name = if (addr.has("name") && !addr.get("name").isJsonNull) addr.get("name").asString else ""
+                    if (name.isNotEmpty()) return name
+                }
+                if (obj.has("store_name") && !obj.get("store_name").isJsonNull) {
+                    val name = obj.get("store_name").asString
+                    if (name.isNotEmpty()) return name
+                }
+                if (obj.has("merchant_name") && !obj.get("merchant_name").isJsonNull) {
+                    val name = obj.get("merchant_name").asString
+                    if (name.isNotEmpty()) return name
+                }
+            } catch (e: Exception) {}
+        }
+
+        // 2. Try lookup in merchantNamesMap by merchantId
+        val mId = order.merchantId
+        if (!mId.isNullOrEmpty()) {
+            merchantNamesMap[mId]?.let { if (it.isNotEmpty()) return it }
+            merchantNamesMap[mId.lowercase(Locale.getDefault())]?.let { if (it.isNotEmpty()) return it }
+        }
+
+        // 3. If order matches active store context, return drawer text
+        if (mId == merchantId || (merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && mId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1"))) {
+            val currentDrawerText = txtDrawerActiveRestaurant.text.toString()
+            if (currentDrawerText.isNotEmpty()) return currentDrawerText
+        }
+
+        return txtDrawerActiveRestaurant.text.toString().ifEmpty { "Spoonfull" }
+    }
+
+    private fun executeRemotePrint(targetOrder: Order) {
+        val printType = (targetOrder.printType ?: "BOTH").uppercase(java.util.Locale.ROOT)
+        fun doPrint(finalOrder: Order) {
+            val storeName = getStoreNameForOrder(finalOrder)
+            when (printType) {
+                "CUSTOMER" -> {
+                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { success ->
+                        if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                    }
+                }
+                "STORE" -> {
+                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { success ->
+                        if (success) supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                    }
+                }
+                "STORE2" -> {
+                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
+                        if (s1) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { _ ->
+                                    supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                                }
+                            }, 1200)
+                        }
+                    }
+                }
+                "STORE3" -> {
+                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
+                        if (s1) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s2 ->
+                                    if (s2) {
+                                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                            printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { _ ->
+                                                supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                                            }
+                                        }, 1200)
+                                    }
+                                }
+                            }, 1200)
+                        }
+                    }
+                }
+                else -> {
+                    // Default BOTH: 1 Store Copy + 1 Customer Copy
+                    printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = false) { s1 ->
+                        if (s1) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                printerHelper.printReceipt(finalOrder, storeName, isCustomerCopy = true) { _ ->
+                                    supabaseManager.updateOrderPrintedAndStatus(finalOrder.id, true, finalOrder.status)
+                                }
+                            }, 1200)
+                        }
+                    }
+                }
+            }
+        }
+
+        if (targetOrder.items.isEmpty()) {
+            supabaseManager.fetchOrderById(targetOrder.id) { fetched ->
+                if (fetched != null && fetched.items.isNotEmpty()) {
+                    doPrint(fetched)
+                } else {
+                    doPrint(targetOrder)
+                }
+            }
+        } else {
+            doPrint(targetOrder)
+        }
     }
 
     override fun onDestroy() {
@@ -1373,7 +1388,7 @@ class MainActivity : AppCompatActivity() {
     // ORDER LIST RENDERING
     // ─────────────────────────────────────────────
     private fun refreshOrderList() {
-        val uniqueOrders = ordersList.distinctBy { it.id }
+        val uniqueOrders = ordersList.distinctBy { if (it.orderNumber.isNotEmpty()) it.orderNumber else it.id }
         if (uniqueOrders.size != ordersList.size) {
             ordersList.clear()
             ordersList.addAll(uniqueOrders)
@@ -2943,11 +2958,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun showIncomingOrderDialog(order: Order) {
         try {
+            val status = (order.status ?: "").lowercase()
+            if (status != "incoming" && status != "pending") {
+                return
+            }
             wakeUpDeviceScreen()
-            if (showingDialogOrderIds.contains(order.id)) {
+            if (showingDialogOrderIds.contains(order.id) || (order.orderNumber.isNotEmpty() && showingDialogOrderIds.contains(order.orderNumber))) {
                 return // Already showing popup for this order
             }
             showingDialogOrderIds.add(order.id)
+            if (order.orderNumber.isNotEmpty()) showingDialogOrderIds.add(order.orderNumber)
             playIncomingOrderSound()
 
             val dialogView = layoutInflater.inflate(R.layout.dialog_incoming_order, null, false)

@@ -400,8 +400,8 @@ export const POSProvider = ({ children }) => {
           }
 
           setOrders((prev) => {
-            const existingIds = new Set(prev.map(o => o.id));
-            const newOrders = data.filter(o => !existingIds.has(o.id));
+            const existingKeys = new Set(prev.flatMap(o => [o.id, o.order_number].filter(Boolean)));
+            const newOrders = data.filter(o => !existingKeys.has(o.id) && (!o.order_number || !existingKeys.has(o.order_number)));
             
             // Auto-show popup if there is any pending incoming order on load
             const pendingIncoming = newOrders.find(o => {
@@ -452,7 +452,8 @@ export const POSProvider = ({ children }) => {
           if (payload.eventType === 'INSERT') {
             const newOrder = payload.new;
             setOrders((prev) => {
-              if (prev.some(o => o.id === newOrder.id)) return prev;
+              const alreadyExists = prev.some(o => o.id === newOrder.id || (newOrder.order_number && o.order_number === newOrder.order_number));
+              if (alreadyExists) return prev;
               
               if (settingsRef.current.soundAlert !== false) {
                 startSirenAlert();
@@ -481,12 +482,12 @@ export const POSProvider = ({ children }) => {
           } else if (payload.eventType === 'UPDATE') {
             const updatedOrder = payload.new;
             if (updatedOrder.status !== 'incoming' && updatedOrder.status !== 'pending') {
-              setActiveIncomingOrder(prev => (prev?.id === updatedOrder.id ? null : prev));
+              setActiveIncomingOrder(prev => (prev?.id === updatedOrder.id || (updatedOrder.order_number && prev?.order_number === updatedOrder.order_number) ? null : prev));
               stopSirenAlert();
             }
 
             setOrders((prev) => {
-              const matchedPrev = prev.find(o => o.id === updatedOrder.id);
+              const matchedPrev = prev.find(o => o.id === updatedOrder.id || (updatedOrder.order_number && o.order_number === updatedOrder.order_number));
               const isDelivery = (updatedOrder.type || '').toLowerCase() === 'delivery';
               const isUnassigned = !updatedOrder.driver_name || updatedOrder.driver_name === '';
               const statusChanged = matchedPrev && matchedPrev.status !== updatedOrder.status;
@@ -498,7 +499,7 @@ export const POSProvider = ({ children }) => {
               }
 
               return prev.map(o => {
-                if (o.id === updatedOrder.id) {
+                if (o.id === updatedOrder.id || (updatedOrder.order_number && o.order_number === updatedOrder.order_number)) {
                   return {
                     ...o,
                     ...updatedOrder,
@@ -511,7 +512,7 @@ export const POSProvider = ({ children }) => {
               });
             });
           } else if (payload.eventType === 'DELETE') {
-            setOrders((prev) => prev.filter(o => o.id !== payload.old.id));
+            setOrders((prev) => prev.filter(o => o.id !== payload.old.id && (!payload.old.order_number || o.order_number !== payload.old.order_number)));
           }
         }
       )
