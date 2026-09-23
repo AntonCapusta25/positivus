@@ -316,7 +316,13 @@ serve(async (req) => {
         paymentMethod = data.payment_method.toLowerCase();
       }
     }
-    const paymentStatus = (data.payment_status === "Success" || data.payment_status === "Paid" || data.payment_status === "paid") ? "paid" : "pending";
+
+    const isOfflinePayment = ["cash", "cod", "cash_on_delivery", "pay_at_store", "pay_on_delivery", "pin", "pin_at_door"].includes(paymentMethod.trim().toLowerCase());
+    const rawStatus = String(data.payment_status || data.cart?.payment_status || "").toLowerCase().trim();
+    const isExplicitlyPaid = rawStatus === "success" || rawStatus === "paid" || rawStatus === "completed" || rawStatus === "succeeded" || rawStatus === "captured" || rawStatus === "1" || data.is_paid === true || data.cart?.is_paid === true;
+    
+    // Online payments (iDEAL, Stripe, etc.) are prepaid upon order creation
+    const paymentStatus = (!isOfflinePayment || isExplicitlyPaid) ? "paid" : "pending";
     const notes = data.notes || data.order_instruction || "";
 
     // Format full address from delivery_address object

@@ -468,7 +468,17 @@ class SunmiPrinterHelper(private val context: Context) {
             }
 
             // Payment Info
-            val paymentSource = if ((order.paymentMethod ?: "online").lowercase(Locale.getDefault()) == "online") "Online" else "Cash"
+            val pmRaw = (order.paymentMethod ?: "").lowercase(Locale.getDefault()).trim()
+            val isOffline = listOf("cash", "cod", "cash_on_delivery", "pay_at_store", "pay_on_delivery", "pin", "pin_at_door").contains(pmRaw)
+            val paymentSource = if (!isOffline) {
+                if (pmRaw.isNotEmpty() && pmRaw != "online") {
+                    "Online (${pmRaw.uppercase(Locale.getDefault())})"
+                } else {
+                    "Online"
+                }
+            } else {
+                "Cash"
+            }
             bodyBuilder.append("Betaling Spoonfull ").append(paymentSource).append("\n")
             
             // Flush Body block to printer in one AIDL IPC call

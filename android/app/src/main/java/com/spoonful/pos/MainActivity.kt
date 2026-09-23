@@ -1550,7 +1550,7 @@ class MainActivity : AppCompatActivity() {
         rightCol.addView(printDot)
 
         // Payment status badge (PAID vs NOT PAID)
-        val isPaid = (order.paymentStatus ?: "").lowercase(Locale.ROOT) == "paid" || (order.paymentMethod ?: "").lowercase(Locale.ROOT) == "online"
+        val isPaid = isOrderPaid(order)
         val paidBadge = TextView(this).apply {
             text = if (isPaid) "PAID" else "NOT PAID"
             setTextColor(Color.parseColor(if (isPaid) "#00A389" else "#EF4444"))
@@ -1907,10 +1907,21 @@ class MainActivity : AppCompatActivity() {
                             }
                             .show()
                     }
-                    .setNegativeButton("Cancel", null)
-                    .show()
             }
         }
+    }
+
+    private fun isOnlinePayment(method: String?): Boolean {
+        if (method.isNullOrEmpty()) return true
+        val m = method.lowercase(Locale.ROOT).trim()
+        return m != "cash" && m != "cod" && m != "cash_on_delivery" && m != "pay_at_store" && m != "pay_on_delivery" && m != "pin" && m != "pin_at_door"
+    }
+
+    private fun isOrderPaid(order: Order): Boolean {
+        val status = (order.paymentStatus ?: "").lowercase(Locale.ROOT)
+        if (status == "paid") return true
+        if (status == "unpaid" || status == "refunded") return false
+        return isOnlinePayment(order.paymentMethod)
     }
 
     private fun openOrderDetail(order: Order) {
@@ -1959,7 +1970,7 @@ class MainActivity : AppCompatActivity() {
         val firstName = order.customerName?.split(" ")?.firstOrNull() ?: "Customer"
         txtDetailCustomerName.text = firstName
 
-        val isPaid = (order.paymentStatus ?: "").lowercase(Locale.ROOT) == "paid" || (order.paymentMethod ?: "").lowercase(Locale.ROOT) == "online"
+        val isPaid = isOrderPaid(order)
         txtDetailPaidBadge.text = if (isPaid) "PAID" else "NOT PAID"
         txtDetailPaidBadge.setTextColor(Color.parseColor(if (isPaid) "#00A389" else "#EF4444"))
         txtDetailPaidBadge.background = GradientDrawable().apply {
@@ -2043,10 +2054,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Action button
+        val isPickupOrDineIn = (order.type ?: "").lowercase(Locale.ROOT) in listOf("pickup", "takeaway", "dine_in")
         val actionLabel = when (order.status.lowercase()) {
             "incoming" -> "ACCEPT ORDER"
             "preparing" -> "ORDER IS READY"
-            "ready" -> "MARK AS DELIVERED"
+            "ready" -> if (isPickupOrDineIn) "HANDED OVER" else "MARK AS DELIVERED"
             else -> null
         }
         if (actionLabel != null) {
@@ -2060,7 +2072,7 @@ class MainActivity : AppCompatActivity() {
         val canCancel = order.status.lowercase() != "completed" && order.status.lowercase() != "cancelled"
         if (canCancel) {
             btnDetailCancel.visibility = View.VISIBLE
-            btnDetailCancel.text = if ((order.paymentMethod ?: "").lowercase(Locale.ROOT) == "online") "CANCEL & REFUND" else "CANCEL ORDER"
+            btnDetailCancel.text = if (isOnlinePayment(order.paymentMethod)) "CANCEL & REFUND" else "CANCEL ORDER"
         } else {
             btnDetailCancel.visibility = View.GONE
         }

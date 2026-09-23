@@ -336,7 +336,9 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h4 className="font-bold text-slate-800 text-sm">Customer contact details</h4>
                   {(() => {
-                    const isPaid = selectedOrder.payment_status?.toLowerCase() === 'paid' || selectedOrder.payment_method?.toLowerCase() === 'online';
+                    const pm = selectedOrder.payment_method?.toLowerCase()?.trim() || '';
+                    const isOnline = !['cash', 'cod', 'cash_on_delivery', 'pay_at_store', 'pay_on_delivery', 'pin'].includes(pm);
+                    const isPaid = selectedOrder.payment_status?.toLowerCase() === 'paid' || isOnline;
                     return (
                       <button
                         onClick={async () => {
@@ -603,7 +605,7 @@ export default function Dashboard() {
                     ? 'Accept Order' 
                     : selectedOrder.status === 'preparing' 
                       ? 'Order is Ready' 
-                      : 'Mark as Handed Over'
+                      : (selectedOrder.type === 'delivery' ? 'Mark as Delivered' : 'Mark as Handed Over')
                   }
                 </button>
               )}
