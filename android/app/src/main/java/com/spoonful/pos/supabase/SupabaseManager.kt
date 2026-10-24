@@ -551,7 +551,7 @@ class SupabaseManager(
             mainHandler.post { onComplete(emptyList()) }
             return
         }
-        val url = "$supabaseUrl/rest/v1/merchants?or=(owner_id.eq.$ownerId,owner_id.is.null)&select=merchant_id,name,admin_pin"
+        val url = "$supabaseUrl/rest/v1/merchants?owner_id=eq.$ownerId&select=merchant_id,name,admin_pin"
         val request = Request.Builder()
             .url(url)
             .addHeader("apikey", supabaseKey)
@@ -582,6 +582,43 @@ class SupabaseManager(
                     } catch (e: Exception) {
                         Log.e(TAG, "fetchOwnerMerchants parse fail", e)
                         mainHandler.post { onComplete(emptyList()) }
+                    }
+                }
+            }
+        })
+    }
+
+    fun lookupOwnerId(merchantId: String, onResult: (String?) -> Unit) {
+        val url = "$supabaseUrl/rest/v1/merchants?merchant_id=eq.$merchantId&select=owner_id"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .get()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                mainHandler.post { onResult(null) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        mainHandler.post { onResult(null) }
+                        return
+                    }
+                    try {
+                        val body = response.body?.string() ?: "[]"
+                        val array = JsonParser.parseString(body).asJsonArray
+                        if (array.size() > 0 && !array[0].asJsonObject.get("owner_id").isJsonNull) {
+                            val ownerId = array[0].asJsonObject.get("owner_id")?.asString
+                            mainHandler.post { onResult(ownerId) }
+                        } else {
+                            mainHandler.post { onResult(null) }
+                        }
+                    } catch (e: Exception) {
+                        mainHandler.post { onResult(null) }
                     }
                 }
             }

@@ -174,14 +174,56 @@ class MainActivity : AppCompatActivity() {
     private lateinit var timerRunnable: Runnable
     private var merchantId = "6a0f03b4500ed5db150be1a1"
     private val merchantNamesMap = HashMap<String, String>()
+    private val ownerMerchantIds = HashSet<String>()
 
     private fun fetchAndCacheMerchants() {
-        supabaseManager.fetchMerchants { list ->
-            runOnUiThread {
-                for (pair in list) {
-                    merchantNamesMap[pair.first] = pair.second
+        ownerMerchantIds.add(merchantId)
+        if (posOwnerId.isNotEmpty()) {
+            supabaseManager.fetchOwnerMerchants(posOwnerId) { list ->
+                runOnUiThread {
+                    ownerMerchantIds.clear()
+                    ownerMerchantIds.add(merchantId)
+                    for (obj in list) {
+                        val mId = obj.get("merchant_id")?.asString ?: ""
+                        val mName = obj.get("name")?.asString ?: ""
+                        if (mId.isNotEmpty()) {
+                            ownerMerchantIds.add(mId)
+                            merchantNamesMap[mId] = mName
+                        }
+                    }
+                    // Fetch all merchant names for display labels without adding them to ownerMerchantIds
+                    supabaseManager.fetchMerchants { allList ->
+                        runOnUiThread {
+                            for (pair in allList) {
+                                merchantNamesMap[pair.first] = pair.second
+                            }
+                            refreshOrderList()
+                        }
+                    }
                 }
-                refreshOrderList()
+            }
+        } else {
+            // Auto-resolve posOwnerId from DB if missing in local preferences
+            if (merchantId.isNotEmpty()) {
+                supabaseManager.lookupOwnerId(merchantId) { resolvedOwnerId ->
+                    runOnUiThread {
+                        if (!resolvedOwnerId.isNullOrEmpty()) {
+                            posOwnerId = resolvedOwnerId
+                            getSharedPreferences("spoonful_prefs", MODE_PRIVATE).edit()
+                                .putString("pos_owner_id", resolvedOwnerId)
+                                .apply()
+                            fetchAndCacheMerchants()
+                        }
+                    }
+                }
+            }
+            supabaseManager.fetchMerchants { allList ->
+                runOnUiThread {
+                    for (pair in allList) {
+                        merchantNamesMap[pair.first] = pair.second
+                    }
+                    refreshOrderList()
+                }
             }
         }
     }
@@ -210,6 +252,7 @@ class MainActivity : AppCompatActivity() {
 
         // Seed initial saved name in cache
         merchantNamesMap[merchantId] = savedMerchantName
+        ownerMerchantIds.add(merchantId)
 
         printerHelper = SunmiPrinterHelper(this)
         supabaseManager = SupabaseManager(
@@ -221,15 +264,14 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread {
                         val isCurrentMerchant = order.merchantId == merchantId ||
                                 (merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
-                                 order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1")) ||
-                                order.merchantId.isNullOrEmpty()
+                                 (order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") || order.merchantId.isNullOrEmpty()))
 
-                        val isOurMerchant = order.merchantId != null && (
-                                merchantNamesMap.containsKey(order.merchantId) || 
-                                merchantNamesMap.containsKey(order.merchantId.lowercase(Locale.getDefault())) ||
+                        val isOurMerchant = isCurrentMerchant || (order.merchantId != null && (
+                                ownerMerchantIds.contains(order.merchantId) || 
+                                ownerMerchantIds.contains(order.merchantId.lowercase(Locale.getDefault())) ||
                                 (order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
-                                 (merchantNamesMap.containsKey("restaurant_1") || merchantNamesMap.containsKey("6a0f03b4500ed5db150be1a1")))
-                            )
+                                 (ownerMerchantIds.contains("restaurant_1") || ownerMerchantIds.contains("6a0f03b4500ed5db150be1a1")))
+                            ))
 
                         if (isOurMerchant || isCurrentMerchant) {
                             // 1. If it belongs to currently active context, add it to the screen list (deduped by ID and orderNumber)
@@ -282,15 +324,14 @@ class MainActivity : AppCompatActivity() {
 
                         val isCurrentMerchant = order.merchantId == merchantId ||
                                 (merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
-                                 order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1")) ||
-                                order.merchantId.isNullOrEmpty()
+                                 (order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") || order.merchantId.isNullOrEmpty()))
 
-                        val isOurMerchant = order.merchantId != null && (
-                                merchantNamesMap.containsKey(order.merchantId) || 
-                                merchantNamesMap.containsKey(order.merchantId.lowercase(Locale.getDefault())) ||
+                        val isOurMerchant = isCurrentMerchant || (order.merchantId != null && (
+                                ownerMerchantIds.contains(order.merchantId) || 
+                                ownerMerchantIds.contains(order.merchantId.lowercase(Locale.getDefault())) ||
                                 (order.merchantId in listOf("restaurant_1", "6a0f03b4500ed5db150be1a1") && 
-                                 (merchantNamesMap.containsKey("restaurant_1") || merchantNamesMap.containsKey("6a0f03b4500ed5db150be1a1")))
-                            )
+                                 (ownerMerchantIds.contains("restaurant_1") || ownerMerchantIds.contains("6a0f03b4500ed5db150be1a1")))
+                            ))
 
                         if (isOurMerchant || isCurrentMerchant) {
                             val index = ordersList.indexOfFirst { 
