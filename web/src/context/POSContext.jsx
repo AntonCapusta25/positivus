@@ -68,6 +68,11 @@ export const POSProvider = ({ children }) => {
         const role = session.user.user_metadata?.role || 'admin';
         setUserRole(role);
         localStorage.setItem('pos_user_role', role);
+        if (role !== 'superadmin') {
+          setSuperadminName(null);
+          localStorage.removeItem('pos_superadmin_name');
+        }
+        syncCatalogAndStorefront(session.user, role);
       }
       setAuthLoading(false);
     });
@@ -78,9 +83,17 @@ export const POSProvider = ({ children }) => {
         const role = session.user.user_metadata?.role || 'admin';
         setUserRole(role);
         localStorage.setItem('pos_user_role', role);
+        if (role !== 'superadmin') {
+          setSuperadminName(null);
+          localStorage.removeItem('pos_superadmin_name');
+        }
+        syncCatalogAndStorefront(session.user, role);
       } else {
         setUserRole('admin');
+        setSuperadminName(null);
         localStorage.removeItem('pos_user_role');
+        localStorage.removeItem('pos_superadmin_name');
+        syncCatalogAndStorefront(null, 'admin');
       }
       setAuthLoading(false);
     });
@@ -182,8 +195,12 @@ export const POSProvider = ({ children }) => {
       const mListRes = await fetch(`${HYPERZOD_BASE_URL}/admin/v1/merchant/list`, { headers });
       const mListData = await mListRes.json();
       
-      const userObj = overrideUser || authUser;
-      const resolvedRole = overrideRole || userRole;
+      let userObj = overrideUser || authUser;
+      if (!userObj) {
+        const { data: { session } } = await supabase.auth.getSession();
+        userObj = session?.user || null;
+      }
+      const resolvedRole = overrideRole || (userObj?.user_metadata?.role) || userRole;
       let activeId = settings.merchantId || HYPERZOD_MERCHANT_ID;
 
       if (mListData.success && mListData.data && mListData.data.data) {
@@ -208,15 +225,20 @@ export const POSProvider = ({ children }) => {
         }
       }
 
-      // Fetch all merchants owned by this user or unowned legacy ones
+      // Fetch merchants strictly scoped to this user
       let query = supabase.from('merchants').select('*');
       if (userObj) {
-        if (resolvedRole === 'superadmin') {
-          // Superadmin manages all merchants
+        if (resolvedRole === 'superadmin' && userObj.user_metadata?.role === 'superadmin') {
+          // Only true corporate superadmins manage all platform merchants
         } else {
-          // Admin / Driver only manages their owned merchant or unclaimed ones
-          query = query.or(`owner_id.eq.${userObj.id},owner_id.is.null`);
+          // Standard admin / restaurant owner: strictly isolate to stores matching their owner_id
+          query = query.eq('owner_id', userObj.id);
         }
+      } else if (resolvedRole === 'superadmin' && superadminName) {
+        // Logged in with Superadmin PIN (7777 / 9999)
+      } else {
+        // Unauthenticated fallback: strictly restrict to currently configured merchant
+        query = query.eq('merchant_id', activeId);
       }
       const { data: dbMerchants, error: dbErr } = await query.order('name', { ascending: true });
 
@@ -235,8 +257,9 @@ export const POSProvider = ({ children }) => {
         setAvailableMerchants(finalMerchants);
       }
 
-      // Only redirect on explicit forceRedirect (like login) or if no merchant is selected
-      if ((forceRedirect || !activeId) && finalMerchants.length > 0) {
+      // Only redirect on explicit forceRedirect, if no merchant is selected, or if current active merchant does not belong to this user
+      const isCurrentActiveValid = finalMerchants.some(m => m.id === activeId);
+      if ((forceRedirect || !activeId || !isCurrentActiveValid) && finalMerchants.length > 0) {
         activeId = finalMerchants[0].id;
         setSettings(prev => ({ ...prev, merchantId: activeId }));
         setAuthenticatedMerchantId(activeId);
@@ -904,6 +927,10 @@ export const POSProvider = ({ children }) => {
       } else {
         setUserRole(role);
         localStorage.setItem('pos_user_role', role);
+        if (role !== 'superadmin') {
+          setSuperadminName(null);
+          localStorage.removeItem('pos_superadmin_name');
+        }
       }
 
       await syncCatalogAndStorefront(data.user, role, true);
@@ -919,6 +946,7 @@ export const POSProvider = ({ children }) => {
       await supabase.auth.signOut();
       logoutMerchant();
       setAuthUser(null);
+      setAvailableMerchants([]);
     } catch (e) {
       console.error("Sign out failed:", e);
     }
