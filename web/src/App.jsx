@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { POSProvider, usePOS } from './context/POSContext';
 import Dashboard from './components/Dashboard';
 import MenuManagement from './components/MenuManagement';
@@ -34,6 +34,24 @@ function MainLayout() {
   const [currentPage, setCurrentPage] = useState('orders');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { orders, supabaseConnected, restaurantOpen, settings, setSettings, availableMerchants, logoutMerchant, userRole, superadminName, setActiveIncomingOrder, pwaInstallPrompt, triggerPwaInstall } = usePOS();
+  const headerRef = useRef(null);
+  const [headerBottom, setHeaderBottom] = useState(0);
+
+  const updateHeaderPos = () => {
+    if (headerRef.current) {
+      setHeaderBottom(headerRef.current.getBoundingClientRect().bottom);
+    }
+  };
+
+  useEffect(() => {
+    updateHeaderPos();
+    window.addEventListener('resize', updateHeaderPos);
+    window.addEventListener('orientationchange', updateHeaderPos);
+    return () => {
+      window.removeEventListener('resize', updateHeaderPos);
+      window.removeEventListener('orientationchange', updateHeaderPos);
+    };
+  }, []);
 
   // Handle order query parameter from notifications
   useEffect(() => {
@@ -166,137 +184,135 @@ function MainLayout() {
   return (
     <div className="flex flex-col md:flex-row h-dvh w-screen overflow-hidden bg-slate-50">
       
-      {/* ── Mobile Full-Screen Nav Overlay ── */}
-      {mobileNavOpen && (
-        <div className="md:hidden fixed inset-0 z-[200] bg-slate-900 flex flex-col pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
-          {/* Overlay header — matching base header layout exactly to prevent layout shift */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 shrink-0">
-            <div className="flex items-center space-x-3">
-              <img src="/favicon.png" alt="Spoonfull Logo" className="w-8 h-8 md:w-9 md:h-9 rounded-xl object-cover" />
-              <div>
-                <h1 className="font-extrabold text-sm md:text-base tracking-wide text-brand-orange leading-tight font-sans my-0">
-                  {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFULL'}
-                </h1>
-                <span className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Kitchen Orderpad</span>
-                {userRole === 'superadmin' && (
-                  <span className="text-[9px] text-yellow-400 font-bold block animate-pulse">👑 {superadminName}</span>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => setMobileNavOpen(false)}
-              aria-label="Close navigation menu"
-              className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 active:scale-90 transition-all"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          {(userRole === 'admin' || userRole === 'superadmin') && (
-            <div className="px-5 py-3.5 bg-slate-900/50 border-b border-slate-800 shrink-0">
-              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
-                Switch Restaurant Context
-              </label>
-              <select
-                value={settings.merchantId}
-                onChange={(e) => setSettings(prev => ({ ...prev, merchantId: e.target.value }))}
-                className="bg-slate-800 text-white text-xs font-bold rounded-xl border border-slate-700 p-2.5 w-full focus:outline-none"
-              >
-                {availableMerchants.map(m => (
-                  <option key={m.id} value={m.id}>{m.name || m.id}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Nav items */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {navItems.map(({ id, icon: Icon, label, badge }) => (
-              <button
-                key={id}
-                onClick={() => navigateTo(id)}
-                className={`flex items-center space-x-4 w-full px-5 py-4 rounded-2xl font-bold text-base transition-all active:scale-98 ${
-                  currentPage === id
-                    ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/20'
-                    : 'text-slate-300 bg-slate-900 hover:bg-slate-800'
-                }`}
-              >
-                <Icon size={22} />
-                <span className="flex-1 text-left">{label}</span>
-                {badge > 0 && (
-                  <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${
-                    currentPage === id ? 'bg-white text-brand-orange' : 'bg-brand-orange text-white'
-                  }`}>{badge}</span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Overlay footer */}
-          <div className="p-4 border-t border-slate-800 flex flex-col space-y-3 shrink-0">
-            {notifPermission !== 'granted' && (
-              <button
-                onClick={enablePushNotifications}
-                className="w-full py-3 px-4 bg-brand-orange text-white font-extrabold rounded-2xl text-sm flex items-center justify-center space-x-2 active:scale-95 transition-all shadow-md shadow-brand-orange/25"
-              >
-                <span>🔔 Enable Push Notifications</span>
-              </button>
-            )}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                {supabaseConnected
-                  ? <Wifi size={14} className="text-emerald-500" />
-                  : <WifiOff size={14} className="text-red-500" />}
-                <span className={`text-xs font-semibold ${supabaseConnected ? 'text-slate-400' : 'text-red-400'}`}>
-                  {supabaseConnected ? 'Live Connection' : 'Offline'}
-                </span>
-                <span className="text-slate-700 text-xs">•</span>
-                <div className={`w-2 h-2 rounded-full ${restaurantOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                <span className="text-slate-400 text-xs capitalize">{restaurantOpen ? 'Store Open' : 'Closed'}</span>
-              </div>
-              <button
-                onClick={logoutMerchant}
-                className="text-xs font-extrabold text-rose-500 border border-rose-500/30 px-3 py-2 rounded-xl active:scale-95 transition-all"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── Sidebar / Top Bar ── */}
-      <aside className="w-full md:w-64 bg-slate-900 text-white flex flex-col justify-between shrink-0 border-b border-slate-800 md:border-b-0 pt-[env(safe-area-inset-top,0px)]">
+      <aside className="w-full md:w-64 bg-slate-900 text-white flex flex-col justify-between shrink-0 border-b border-slate-800 md:border-b-0 pt-[env(safe-area-inset-top,0px)] relative z-[100]">
         <div className="flex flex-col">
-          {/* Header row */}
-          <div className="flex items-center justify-between px-4 py-3 md:p-6 border-b border-slate-800">
-            <div className="flex items-center space-x-3">
-              <img src="/favicon.png" alt="Spoonfull Logo" className="w-8 h-8 md:w-9 md:h-9 rounded-xl object-cover" />
-              <div>
-                <h1 className="font-extrabold text-sm md:text-base tracking-wide text-brand-orange leading-tight font-sans my-0">
+          {/* Header row — unified single header for both mobile and desktop (prevents any jump or resize) */}
+          <div 
+            ref={headerRef}
+            className="flex items-center justify-between px-4 py-3 md:p-6 border-b border-slate-800 relative z-[110] bg-slate-900 min-h-[56px] md:min-h-[64px]"
+          >
+            <div className="flex items-center space-x-3 min-w-0 mr-2">
+              <img 
+                src="/favicon.png" 
+                alt="Spoonfull Logo" 
+                className="w-8 h-8 md:w-9 md:h-9 rounded-xl object-cover shrink-0 select-none" 
+                width="32" 
+                height="32" 
+              />
+              <div className="min-w-0">
+                <h1 className="font-extrabold text-sm md:text-base tracking-wide text-brand-orange leading-tight font-sans my-0 truncate">
                   {activeMerchant.name ? activeMerchant.name.toUpperCase() : 'SPOONFULL'}
                 </h1>
-                <span className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Kitchen Orderpad</span>
+                <span className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider block truncate">Kitchen Orderpad</span>
                 {userRole === 'superadmin' && (
-                  <span className="text-[9px] text-yellow-400 font-bold block animate-pulse">👑 {superadminName}</span>
+                  <span className="text-[9px] text-yellow-400 font-bold block animate-pulse truncate">👑 {superadminName}</span>
                 )}
               </div>
             </div>
 
-            {/* Hamburger button — mobile only */}
+            {/* Mobile Hamburger / Close button */}
             <button
-              onClick={() => setMobileNavOpen(true)}
-              aria-label="Open navigation menu"
-              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 active:scale-90 transition-all relative"
+              onClick={() => {
+                updateHeaderPos();
+                setMobileNavOpen(prev => !prev);
+              }}
+              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 active:scale-90 transition-all relative shrink-0"
             >
-              <Menu size={20} />
-              {activeOrdersCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-brand-orange rounded-full text-[9px] font-extrabold text-white flex items-center justify-center">
-                  {activeOrdersCount}
-                </span>
+              {mobileNavOpen ? (
+                <X size={20} className="text-slate-200" />
+              ) : (
+                <>
+                  <Menu size={20} />
+                  {activeOrdersCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-brand-orange rounded-full text-[9px] font-extrabold text-white flex items-center justify-center">
+                      {activeOrdersCount}
+                    </span>
+                  )}
+                </>
               )}
             </button>
           </div>
+
+          {/* ── Mobile Full-Screen Nav Drawer (attaches directly under unified header, no layout shift) ── */}
+          {mobileNavOpen && (
+            <div 
+              style={{ top: headerBottom ? `${headerBottom}px` : 'calc(3.5rem + env(safe-area-inset-top, 0px))' }}
+              className="md:hidden fixed inset-x-0 bottom-0 z-[105] bg-slate-900 flex flex-col pb-[env(safe-area-inset-bottom,0px)] shadow-2xl border-t border-slate-800/80 animate-fade-in"
+            >
+              {(userRole === 'admin' || userRole === 'superadmin') && (
+                <div className="px-5 py-3.5 bg-slate-900/50 border-b border-slate-800 shrink-0">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                    Switch Restaurant Context
+                  </label>
+                  <select
+                    value={settings.merchantId}
+                    onChange={(e) => setSettings(prev => ({ ...prev, merchantId: e.target.value }))}
+                    className="bg-slate-800 text-white text-xs font-bold rounded-xl border border-slate-700 p-2.5 w-full focus:outline-none"
+                  >
+                    {availableMerchants.map(m => (
+                      <option key={m.id} value={m.id}>{m.name || m.id}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Nav items */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                {navItems.map(({ id, icon: Icon, label, badge }) => (
+                  <button
+                    key={id}
+                    onClick={() => navigateTo(id)}
+                    className={`flex items-center space-x-4 w-full px-5 py-4 rounded-2xl font-bold text-base transition-all active:scale-98 ${
+                      currentPage === id
+                        ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/20'
+                        : 'text-slate-300 bg-slate-900 hover:bg-slate-800'
+                    }`}
+                  >
+                    <Icon size={22} />
+                    <span className="flex-1 text-left">{label}</span>
+                    {badge > 0 && (
+                      <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${
+                        currentPage === id ? 'bg-white text-brand-orange' : 'bg-brand-orange text-white'
+                      }`}>{badge}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Overlay footer */}
+              <div className="p-4 border-t border-slate-800 flex flex-col space-y-3 shrink-0">
+                {notifPermission !== 'granted' && (
+                  <button
+                    onClick={enablePushNotifications}
+                    className="w-full py-3 px-4 bg-brand-orange text-white font-extrabold rounded-2xl text-sm flex items-center justify-center space-x-2 active:scale-95 transition-all shadow-md shadow-brand-orange/25"
+                  >
+                    <span>🔔 Enable Push Notifications</span>
+                  </button>
+                )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    {supabaseConnected
+                      ? <Wifi size={14} className="text-emerald-500" />
+                      : <WifiOff size={14} className="text-red-500" />}
+                    <span className={`text-xs font-semibold ${supabaseConnected ? 'text-slate-400' : 'text-red-400'}`}>
+                      {supabaseConnected ? 'Live Connection' : 'Offline'}
+                    </span>
+                    <span className="text-slate-700 text-xs">•</span>
+                    <div className={`w-2 h-2 rounded-full ${restaurantOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                    <span className="text-slate-400 text-xs capitalize">{restaurantOpen ? 'Store Open' : 'Closed'}</span>
+                  </div>
+                  <button
+                    onClick={logoutMerchant}
+                    className="text-xs font-extrabold text-rose-500 border border-rose-500/30 px-3 py-2 rounded-xl active:scale-95 transition-all"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Active Store Display — desktop only */}
           <div className="hidden md:flex px-6 py-3.5 border-b border-slate-800/80 bg-slate-950/20 items-center justify-between">
