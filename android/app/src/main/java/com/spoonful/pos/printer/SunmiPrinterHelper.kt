@@ -89,6 +89,20 @@ class SunmiPrinterHelper(private val context: Context) {
         return woyouService != null
     }
 
+    fun ensurePrinterBound(onReady: (IWoyouService?) -> Unit) {
+        val currentService = woyouService
+        if (currentService != null) {
+            onReady(currentService)
+            return
+        }
+        Log.d(TAG, "Printer not bound. Triggering bindPrinterService...")
+        bindPrinterService(object : PrinterBindListener {
+            override fun onPrinterBound(bound: Boolean) {
+                onReady(if (bound) woyouService else null)
+            }
+        })
+    }
+
     private val printCallback = object : ICallback.Stub() {
         override fun onRunResult(isSuccess: Boolean) {
             Log.d(TAG, "Print result success: $isSuccess")
@@ -275,8 +289,15 @@ class SunmiPrinterHelper(private val context: Context) {
     ) {
         val service = woyouService
         if (service == null) {
-            Log.e(TAG, "Printer service is not bound.")
-            onComplete(false)
+            Log.w(TAG, "Printer service is not bound yet. Attempting auto-bind and retry...")
+            ensurePrinterBound { boundService ->
+                if (boundService != null) {
+                    printReceipt(order, merchantName, isCustomerCopy, onComplete)
+                } else {
+                    Log.e(TAG, "Failed to bind printer service for printReceipt.")
+                    onComplete(false)
+                }
+            }
             return
         }
 

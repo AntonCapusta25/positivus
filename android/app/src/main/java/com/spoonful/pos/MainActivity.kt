@@ -880,7 +880,13 @@ class MainActivity : AppCompatActivity() {
     // DRAWER SETUP
     // ─────────────────────────────────────────────
     private fun setupDrawer() {
-        btnHamburger.setOnClickListener { drawerLayout.openDrawer(GravityCompat.START) }
+        btnHamburger.setOnClickListener {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START)
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START)
+            }
+        }
         btnDrawerClose.setOnClickListener { drawerLayout.closeDrawer(GravityCompat.START) }
         btnNotificationBell.setOnClickListener {
             showScreen(Screen.SETTINGS_SOUNDS)
@@ -1724,6 +1730,8 @@ class MainActivity : AppCompatActivity() {
                             refreshOrderList()
                         }
                     } else {
+                        handledOrderIds.add(order.id)
+                        if (order.orderNumber.isNotEmpty()) handledOrderIds.add(order.orderNumber)
                         supabaseManager.updateOrderPrintedAndStatus(order.id, order.printed, "cancelled") { success ->
                             supabaseManager.notifyHyperzodStatusUpdate(order.orderNumber, order.hyperzodOrderId, "cancelled")
                             Toast.makeText(this@MainActivity, "Order cancelled", Toast.LENGTH_SHORT).show()
@@ -1746,6 +1754,8 @@ class MainActivity : AppCompatActivity() {
 
             // Optimistic UI update
             order.status = targetStatus
+            handledOrderIds.add(order.id)
+            if (order.orderNumber.isNotEmpty()) handledOrderIds.add(order.orderNumber)
             showScreen(Screen.ORDER_LIST)
             refreshOrderList()
 
@@ -2098,7 +2108,7 @@ class MainActivity : AppCompatActivity() {
         val isPickupOrDineIn = (order.type ?: "").lowercase(Locale.ROOT) in listOf("pickup", "takeaway", "dine_in")
         val actionLabel = when (order.status.lowercase()) {
             "incoming" -> "ACCEPT ORDER"
-            "preparing" -> "ORDER IS READY"
+            "preparing" -> "MARK AS READY"
             "ready" -> if (isPickupOrDineIn) "HANDED OVER" else "MARK AS DELIVERED"
             else -> null
         }
@@ -2122,6 +2132,51 @@ class MainActivity : AppCompatActivity() {
         val isDelivery = (order.type ?: "delivery").lowercase(Locale.ROOT) == "delivery"
         val canAssignDriver = isDelivery && (order.status.lowercase() == "preparing" || order.status.lowercase() == "ready")
         btnDetailAssignDriver.visibility = if (canAssignDriver) View.VISIBLE else View.GONE
+
+        // Dynamic spacing and widths for action buttons
+        val layoutDetailSecondaryActions = findViewById<LinearLayout>(R.id.layoutDetailSecondaryActions)
+        if (canCancel || canAssignDriver) {
+            layoutDetailSecondaryActions?.visibility = View.VISIBLE
+            (btnDetailAction.layoutParams as? LinearLayout.LayoutParams)?.let { lp ->
+                lp.bottomMargin = dp(8)
+                btnDetailAction.layoutParams = lp
+            }
+            if (canCancel && canAssignDriver) {
+                (btnDetailCancel.layoutParams as? LinearLayout.LayoutParams)?.let { lp ->
+                    lp.width = 0
+                    lp.weight = 1f
+                    lp.marginEnd = dp(4)
+                    btnDetailCancel.layoutParams = lp
+                }
+                (btnDetailAssignDriver.layoutParams as? LinearLayout.LayoutParams)?.let { lp ->
+                    lp.width = 0
+                    lp.weight = 1f
+                    lp.marginStart = dp(4)
+                    btnDetailAssignDriver.layoutParams = lp
+                }
+            } else if (canCancel) {
+                (btnDetailCancel.layoutParams as? LinearLayout.LayoutParams)?.let { lp ->
+                    lp.width = ViewGroup.LayoutParams.WRAP_CONTENT
+                    lp.weight = 0f
+                    lp.marginEnd = 0
+                    btnDetailCancel.layoutParams = lp
+                }
+                btnDetailCancel.minWidth = dp(140)
+            } else if (canAssignDriver) {
+                (btnDetailAssignDriver.layoutParams as? LinearLayout.LayoutParams)?.let { lp ->
+                    lp.width = ViewGroup.LayoutParams.MATCH_PARENT
+                    lp.weight = 0f
+                    lp.marginStart = 0
+                    btnDetailAssignDriver.layoutParams = lp
+                }
+            }
+        } else {
+            layoutDetailSecondaryActions?.visibility = View.GONE
+            (btnDetailAction.layoutParams as? LinearLayout.LayoutParams)?.let { lp ->
+                lp.bottomMargin = 0
+                btnDetailAction.layoutParams = lp
+            }
+        }
 
         showScreen(Screen.ORDER_DETAIL)
     }
@@ -3015,6 +3070,9 @@ class MainActivity : AppCompatActivity() {
             if (status != "incoming" && status != "pending") {
                 return
             }
+            if (handledOrderIds.contains(order.id) || (order.orderNumber.isNotEmpty() && handledOrderIds.contains(order.orderNumber))) {
+                return // Order already accepted/declined/handled by staff
+            }
             wakeUpDeviceScreen()
             if (showingDialogOrderIds.contains(order.id) || (order.orderNumber.isNotEmpty() && showingDialogOrderIds.contains(order.orderNumber))) {
                 return // Already showing popup for this order
@@ -3160,6 +3218,7 @@ class MainActivity : AppCompatActivity() {
 
             dialog.setOnDismissListener {
                 showingDialogOrderIds.remove(order.id)
+                if (order.orderNumber.isNotEmpty()) showingDialogOrderIds.remove(order.orderNumber)
                 stopIncomingOrderSound()
                 timerHandler.removeCallbacks(timerRunnable)
             }
@@ -3241,6 +3300,11 @@ class MainActivity : AppCompatActivity() {
                     printDialog.dismiss()
                     dialog.dismiss() // Dismiss incoming order dialog
                     
+                    // Mark as handled so it never pops up again
+                    handledOrderIds.add(order.id)
+                    if (order.orderNumber.isNotEmpty()) handledOrderIds.add(order.orderNumber)
+                    order.status = "preparing"
+
                     val selectedQty = spinner.selectedItemPosition // 0 = Do Not Print, 1 = 1 Store + 1 Customer, 2 = 1 Copy, 3 = 2 Copies...
                     
                     // Check driver selection
@@ -3324,6 +3388,9 @@ class MainActivity : AppCompatActivity() {
             // Decline Order
             btnDecline.setOnClickListener {
                 showingDialogOrderIds.remove(order.id)
+                handledOrderIds.add(order.id)
+                if (order.orderNumber.isNotEmpty()) handledOrderIds.add(order.orderNumber)
+                order.status = "cancelled"
                 stopIncomingOrderSound()
                 dialog.dismiss()
                 val isOnline = (order.paymentMethod ?: "").lowercase(Locale.ROOT) == "online"
@@ -3356,6 +3423,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val showingDialogOrderIds = HashSet<String>()
+    private val handledOrderIds = java.util.Collections.synchronizedSet(mutableSetOf<String>())
 
     private var soundThread: Thread? = null
     private var currentRingtone: android.media.Ringtone? = null

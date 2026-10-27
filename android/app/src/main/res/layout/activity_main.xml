@@ -684,65 +684,76 @@
                     </androidx.core.widget.NestedScrollView>
                 </FrameLayout>
 
-                <!-- Bottom sticky action button -->
+                <!-- Bottom sticky action buttons -->
                 <LinearLayout
+                    android:id="@+id/layoutDetailBottomBar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:baselineAligned="false"
-                    android:gravity="center_vertical"
+                    android:orientation="vertical"
                     android:background="#FFFFFF"
-                    android:padding="16dp"
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="16dp"
                     android:elevation="4dp">
 
-                    <Button
-                        android:id="@+id/btnDetailCancel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="52dp"
-                        android:text="CANCEL"
-                        android:textColor="#EF4444"
-                        android:backgroundTint="#FEE2E2"
-                        android:textStyle="bold"
-                        android:textSize="12sp"
-                        app:strokeColor="#EF4444"
-                        app:strokeWidth="1dp"
-                        app:cornerRadius="26dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:layout_marginEnd="8dp"
-                        android:visibility="gone"/>
-
+                    <!-- Primary Action (MARK AS READY / HANDED OVER / ACCEPT ORDER / MARK AS DELIVERED) -->
                     <Button
                         android:id="@+id/btnDetailAction"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="52dp"
-                        android:layout_weight="1.5"
-                        android:text="READY TO DELIVER"
+                        android:text="MARK AS READY"
                         android:textColor="#FFFFFF"
                         android:backgroundTint="#D8581B"
                         android:textStyle="bold"
-                        android:textSize="14sp"
+                        android:textSize="15sp"
                         app:cornerRadius="26dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
-                        android:layout_marginEnd="8dp"/>
+                        android:layout_marginBottom="8dp"/>
 
-                    <Button
-                        android:id="@+id/btnDetailAssignDriver"
-                        android:layout_width="0dp"
-                        android:layout_height="52dp"
-                        android:layout_weight="1"
-                        android:text="ASSIGN DRIVER"
-                        android:textColor="#D8581B"
-                        android:backgroundTint="#FFF0E6"
-                        android:textStyle="bold"
-                        android:textSize="12sp"
-                        app:strokeColor="#D8581B"
-                        app:strokeWidth="1dp"
-                        app:cornerRadius="26dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:visibility="gone"/>
+                    <!-- Secondary Actions Row -->
+                    <LinearLayout
+                        android:id="@+id/layoutDetailSecondaryActions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <Button
+                            android:id="@+id/btnDetailCancel"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:text="CANCEL ORDER"
+                            android:textColor="#EF4444"
+                            android:backgroundTint="#FEE2E2"
+                            android:textStyle="bold"
+                            android:textSize="12sp"
+                            app:strokeColor="#EF4444"
+                            app:strokeWidth="1dp"
+                            app:cornerRadius="22dp"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:visibility="gone"/>
+
+                        <Button
+                            android:id="@+id/btnDetailAssignDriver"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:text="ASSIGN DRIVER"
+                            android:textColor="#D8581B"
+                            android:backgroundTint="#FFF0E6"
+                            android:textStyle="bold"
+                            android:textSize="12sp"
+                            app:strokeColor="#D8581B"
+                            app:strokeWidth="1dp"
+                            app:cornerRadius="22dp"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:layout_marginStart="8dp"
+                            android:visibility="gone"/>
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
 
@@ -1683,7 +1694,7 @@
         android:clickable="true"
         android:focusable="true">
 
-        <!-- Drawer Header -->
+        <!-- Drawer Header (Matches top header bar exactly to eliminate logo jump and size shift) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="56dp"
@@ -1691,35 +1702,46 @@
             android:gravity="center_vertical"
             android:paddingHorizontal="16dp"
             android:background="#FFFFFF"
-            android:elevation="1dp">
+            android:elevation="2dp">
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/logo"
-                android:scaleType="fitCenter"
-                android:layout_marginEnd="8dp"/>
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Orderpad"
-                android:textColor="#D8581B"
-                android:textSize="18sp"
-                android:textStyle="bold"/>
-
+            <!-- Close Button (exact same dimensions and spot as btnHamburger) -->
             <TextView
                 android:id="@+id/btnDrawerClose"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:gravity="center"
                 android:text="✕"
-                android:textColor="#64748B"
-                android:textSize="20sp"
+                android:textColor="#1E1E24"
+                android:textSize="22sp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:focusable="true" />
+
+            <!-- Title & Logo (exact same start margin, logo size 28dp x 28dp, and title text) -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginStart="12dp">
+
+                <!-- Logo Image (28dp x 28dp exact match) -->
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/logo"
+                    android:scaleType="fitCenter"
+                    android:layout_marginEnd="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Spoonfull Orderpad"
+                    android:textColor="#D8581B"
+                    android:textSize="18sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Drawer Menu Scroll Container -->
