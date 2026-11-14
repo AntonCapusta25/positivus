@@ -214,7 +214,15 @@ export default function Drivers() {
                         )}
 
                         <div className="flex items-center justify-between border-t border-slate-150/70 pt-2 text-xs font-bold text-slate-600">
-                          <span>Customer: {activeOrder.customer_name}</span>
+                          <div className="flex items-center space-x-2">
+                            <span>Customer: {activeOrder.customer_name || 'Guest'}</span>
+                            {activeOrder.customer_phone && (
+                              <a href={`tel:${activeOrder.customer_phone}`} className="text-brand-orange hover:underline flex items-center space-x-0.5 ml-1">
+                                <Phone className="w-3 h-3" />
+                                <span>{activeOrder.customer_phone}</span>
+                              </a>
+                            )}
+                          </div>
                           <span className="text-brand-orange font-black">€{Number(activeOrder.total).toFixed(2)}</span>
                         </div>
                       </div>

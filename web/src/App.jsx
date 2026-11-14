@@ -626,7 +626,7 @@ function AuthScreen() {
   );
 }
 
-import DriverPortal from './components/DriverPortal';
+import DriverPortal, { getCustomerInfo } from './components/DriverPortal';
 
 function AppContent() {
   const { authUser, authLoading, activeDriverOffer, setActiveDriverOffer, assignOrderDriver, pwaInstallPrompt, triggerPwaInstall } = usePOS();
@@ -727,9 +727,20 @@ function AppContent() {
                   </h4>
                 </div>
               </div>
-              <p className="text-xs text-slate-400 font-medium">
-                Deliver to: <span className="text-slate-200">{activeDriverOffer.customer_address || "Address unavailable"}</span>
-              </p>
+              {(() => {
+                const cust = getCustomerInfo(activeDriverOffer);
+                return (
+                  <div className="space-y-1 text-xs">
+                    <p className="text-slate-400 font-medium">
+                      Customer: <span className="text-white font-bold">{cust.name}</span>
+                      {cust.phone && <span className="text-emerald-400 font-bold ml-1.5">📞 {cust.phone}</span>}
+                    </p>
+                    <p className="text-slate-400 font-medium">
+                      Deliver to: <span className="text-slate-200 font-semibold">{activeDriverOffer.customer_address || "Address unavailable"}</span>
+                    </p>
+                  </div>
+                );
+              })()}
               <div className="flex space-x-2 pt-1.5">
                 <button
                   onClick={() => handleClaimOffer(activeDriverOffer)}

@@ -1,8 +1,44 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePOS } from '../context/POSContext';
 import { supabase } from '../supabaseClient';
-import { Camera, MapPin, Clock, CheckCircle2, Navigation, Shield, ArrowRight, UserCheck, Search, QrCode, MessageSquare, Coins } from 'lucide-react';
+import { Camera, MapPin, Clock, CheckCircle2, Navigation, Shield, ArrowRight, UserCheck, Search, QrCode, MessageSquare, Coins, Phone, User } from 'lucide-react';
 import { useJsApiLoader, GoogleMap, Marker, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
+
+export const getCustomerInfo = (order) => {
+  if (!order) return { name: 'Customer', phone: '' };
+
+  let name = order.customer_name || '';
+  let phone = order.customer_phone || '';
+
+  if ((!name || !phone) && order.notes) {
+    try {
+      const parsed = typeof order.notes === 'string' ? JSON.parse(order.notes) : order.notes;
+      const target = parsed.payload || parsed.data || parsed;
+      if (!name) {
+        name = target.customer_name 
+          || (target.customer ? (target.customer.name || `${target.customer.first_name || ''} ${target.customer.last_name || ''}`.trim()) : '')
+          || target.delivery_address?.name 
+          || target.address?.name 
+          || '';
+      }
+      if (!phone) {
+        phone = target.customer_phone 
+          || target.customer?.phone 
+          || target.customer?.mobile 
+          || target.delivery_address?.phone 
+          || target.delivery_address?.mobile 
+          || target.address?.phone 
+          || target.address?.mobile 
+          || '';
+      }
+    } catch (e) {}
+  }
+
+  return {
+    name: name.trim() || 'Customer',
+    phone: phone.trim() || ''
+  };
+};
 
 export default function DriverPortal() {
   const { orders, updateOrderStatus, availableMerchants, settings, setSettings, assignOrderDriver, triggerTestPrint } = usePOS();
@@ -558,7 +594,9 @@ export default function DriverPortal() {
             </div>
             <h3 className="text-lg font-black text-white">Payment Confirmation</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Order #{activeOrder.order_number || activeOrder.id.slice(0, 6)}<br/>
+              Order #{activeOrder.order_number || activeOrder.id.slice(0, 6)} • <span className="text-slate-200 font-bold">{getCustomerInfo(activeOrder).name}</span>
+              {getCustomerInfo(activeOrder).phone && <span className="text-slate-400 block text-[11px] font-semibold mt-0.5">{getCustomerInfo(activeOrder).phone}</span>}
+              <br/>
               Amount to collect: <strong className="text-emerald-400 text-sm">€{Number(activeOrder.total || 0).toFixed(2)}</strong> ({activeOrder.payment_method || 'Cash'})
             </p>
 
@@ -873,6 +911,42 @@ export default function DriverPortal() {
 
                 {/* Delivery details card */}
                 <div className="space-y-3">
+                  {/* Customer Information (Name & Phone with direct Call button) */}
+                  {(() => {
+                    const cust = getCustomerInfo(activeOrder);
+                    return (
+                      <div className="flex items-center justify-between bg-slate-950/50 p-3.5 rounded-2xl border border-slate-800/80 shadow-inner">
+                        <div className="flex items-start space-x-3 min-w-0 flex-1">
+                          <div className="w-9 h-9 rounded-xl bg-brand-orange/15 border border-brand-orange/30 flex items-center justify-center text-brand-orange shrink-0 mt-0.5">
+                            <User size={18} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Customer</span>
+                            <h4 className="text-sm font-extrabold text-white truncate">{cust.name}</h4>
+                            {cust.phone ? (
+                              <p className="text-xs text-slate-300 font-semibold mt-0.5 flex items-center space-x-1">
+                                <span>{cust.phone}</span>
+                              </p>
+                            ) : (
+                              <p className="text-[11px] text-slate-500 italic mt-0.5">No phone provided</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {cust.phone && (
+                          <a
+                            href={`tel:${cust.phone}`}
+                            className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center space-x-1.5 shadow-md shadow-emerald-600/20 transition-all shrink-0 ml-3"
+                            title="Call customer directly"
+                          >
+                            <Phone size={14} className="fill-white" />
+                            <span>Call</span>
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   <div className="flex items-start space-x-2.5">
                     <MapPin className="text-slate-500 shrink-0 mt-0.5" size={16} />
                     <div>
@@ -1124,28 +1198,41 @@ export default function DriverPortal() {
                         <p className="text-[10px] text-slate-600">Scan a receipt or claim an offer from the Available tab.</p>
                       </div>
                     ) : (
-                      assignedOrders.map(o => (
-                        <button
-                          key={o.id}
-                          onClick={() => {
-                            setActiveOrder(o);
-                            setSelectedOrderId(o.order_number || o.id);
-                          }}
-                          className="w-full text-left bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 flex items-center justify-between transition-all"
-                        >
-                          <div className="space-y-1">
-                            <h4 className="text-xs font-extrabold text-white">#{o.order_number || o.id.slice(0, 8)}</h4>
-                            <div className="flex items-center space-x-1 text-[11px] text-slate-400 font-semibold">
-                              <MapPin size={10} className="text-brand-orange" />
-                              <span className="truncate max-w-[200px]">{o.customer_address || 'No Address'}</span>
+                      assignedOrders.map(o => {
+                        const cust = getCustomerInfo(o);
+                        return (
+                          <button
+                            key={o.id}
+                            onClick={() => {
+                              setActiveOrder(o);
+                              setSelectedOrderId(o.order_number || o.id);
+                            }}
+                            className="w-full text-left bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 flex items-center justify-between transition-all"
+                          >
+                            <div className="space-y-1.5 flex-1 min-w-0 pr-3">
+                              <div className="flex items-center space-x-2">
+                                <h4 className="text-xs font-extrabold text-white">#{o.order_number || o.id.slice(0, 8)}</h4>
+                                <span className="text-slate-600 text-[10px]">•</span>
+                                <span className="text-xs font-bold text-brand-orange truncate">{cust.name}</span>
+                              </div>
+                              <div className="flex items-center space-x-1.5 text-[11px] text-slate-300 font-medium">
+                                <MapPin size={11} className="text-slate-400 shrink-0" />
+                                <span className="truncate">{o.customer_address || 'No Address'}</span>
+                              </div>
+                              {cust.phone && (
+                                <div className="flex items-center space-x-1.5 text-[11px] text-slate-400 font-semibold">
+                                  <Phone size={10} className="text-emerald-400 shrink-0" />
+                                  <span>{cust.phone}</span>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                          <div className="flex items-center space-x-2 text-xs font-bold text-brand-orange">
-                            <span>{o.status.toUpperCase()}</span>
-                            <ArrowRight size={14} />
-                          </div>
-                        </button>
-                      ))
+                            <div className="flex items-center space-x-1.5 text-xs font-bold text-brand-orange shrink-0">
+                              <span>{o.status.toUpperCase()}</span>
+                              <ArrowRight size={14} />
+                            </div>
+                          </button>
+                        );
+                      })
                     )}
                   </div>
                 ) : (
@@ -1158,28 +1245,41 @@ export default function DriverPortal() {
                         <p className="text-[10px] text-slate-600">New delivery dispatches will appear here in real-time.</p>
                       </div>
                     ) : (
-                      availableOffers.map(o => (
-                        <button
-                          key={o.id}
-                          onClick={() => {
-                            setActiveOrder(o);
-                            setSelectedOrderId(o.order_number || o.id);
-                          }}
-                          className="w-full text-left bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 flex items-center justify-between transition-all"
-                        >
-                          <div className="space-y-1">
-                            <h4 className="text-xs font-extrabold text-white">#{o.order_number || o.id.slice(0, 8)}</h4>
-                            <div className="flex items-center space-x-1 text-[11px] text-slate-400 font-semibold">
-                              <MapPin size={10} className="text-brand-orange" />
-                              <span className="truncate max-w-[200px]">{o.customer_address || 'No Address'}</span>
+                      availableOffers.map(o => {
+                        const cust = getCustomerInfo(o);
+                        return (
+                          <button
+                            key={o.id}
+                            onClick={() => {
+                              setActiveOrder(o);
+                              setSelectedOrderId(o.order_number || o.id);
+                            }}
+                            className="w-full text-left bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 flex items-center justify-between transition-all"
+                          >
+                            <div className="space-y-1.5 flex-1 min-w-0 pr-3">
+                              <div className="flex items-center space-x-2">
+                                <h4 className="text-xs font-extrabold text-white">#{o.order_number || o.id.slice(0, 8)}</h4>
+                                <span className="text-slate-600 text-[10px]">•</span>
+                                <span className="text-xs font-bold text-slate-200 truncate">{cust.name}</span>
+                              </div>
+                              <div className="flex items-center space-x-1.5 text-[11px] text-slate-300 font-medium">
+                                <MapPin size={11} className="text-brand-orange shrink-0" />
+                                <span className="truncate">{o.customer_address || 'No Address'}</span>
+                              </div>
+                              {cust.phone && (
+                                <div className="flex items-center space-x-1.5 text-[11px] text-slate-400 font-semibold">
+                                  <Phone size={10} className="text-emerald-400 shrink-0" />
+                                  <span>{cust.phone}</span>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                          <div className="flex items-center space-x-2 text-xs font-bold text-emerald-400">
-                            <span>CLAIM OFFER</span>
-                            <ArrowRight size={14} />
-                          </div>
-                        </button>
-                      ))
+                            <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-400 shrink-0">
+                              <span>CLAIM OFFER</span>
+                              <ArrowRight size={14} />
+                            </div>
+                          </button>
+                        );
+                      })
                     )}
                   </div>
                 )}
