@@ -1121,7 +1121,7 @@ export default function DriverPortal() {
                         title="Start Turn-by-Turn GPS Navigation"
                       >
                         <Navigation size={18} />
-                        <span>Start Navigation</span>
+                        <span>Start</span>
                       </a>
 
 
