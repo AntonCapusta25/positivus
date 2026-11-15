@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import woyou.aidlservice.jiuiv5.ICallback
@@ -19,8 +20,52 @@ class SunmiPrinterHelper(private val context: Context) {
         private const val TAG = "SunmiPrinterHelper"
         private const val PRINTER_SERVICE_PACKAGE = "woyou.aidlservice.jiuiv5"
         private const val PRINTER_SERVICE_ACTION = "woyou.aidlservice.jiuiv5.IWoyouService"
-        private const val MAX_LINE_CHAR_58MM = 32
+        private const val MAX_LINE_CHAR_58MM = 32   // 384 dots @ font 24
+        private const val MAX_LINE_CHAR_80MM = 34   // 544 dots @ font 32 (extra large high-visibility typography for 80mm)
+        private const val PRICE_COLUMNS_WIDTH = 12  // unit(6) + total(6)
+        private const val QTY_COLUMN_WIDTH = 2
+
+        const val PREF_PAPER_WIDTH = "receipt_paper_width"
+        const val PAPER_AUTO = "auto"
+        const val PAPER_58 = "58"
+        const val PAPER_80 = "80"
     }
+
+    /** Cached result of auto-detection (null = not yet detected). */
+    private var detectedPaperMm: Int? = null
+
+    /**
+     * Best-effort detection of 80mm-capable Sunmi devices (V2s Plus, T2, T2s, K2, ...).
+     * Can be overridden from the Receipts settings screen.
+     */
+    private fun detectPaperWidthMm(): Int {
+        detectedPaperMm?.let { return it }
+        val model = (Build.MODEL ?: "").uppercase(Locale.US)
+        val printerModal = try {
+            woyouService?.printerModal?.uppercase(Locale.US) ?: ""
+        } catch (e: Exception) {
+            ""
+        }
+        Log.d(TAG, "Detecting paper width. Build.MODEL=$model, printerModal=$printerModal")
+        val is80 = model.contains("PLUS") || model.startsWith("T2") || model.startsWith("K2") ||
+                printerModal.contains("80")
+        val result = if (is80) 80 else 58
+        if (woyouService != null) detectedPaperMm = result
+        return result
+    }
+
+    /** Paper width in mm (58 or 80), honouring the user's override. */
+    fun getPaperWidthMm(): Int {
+        val pref = context.getSharedPreferences("spoonful_prefs", Context.MODE_PRIVATE)
+            .getString(PREF_PAPER_WIDTH, PAPER_AUTO)
+        return when (pref) {
+            PAPER_58 -> 58
+            PAPER_80 -> 80
+            else -> detectPaperWidthMm()
+        }
+    }
+
+    private fun lineCharsFor(paperMm: Int) = if (paperMm >= 80) MAX_LINE_CHAR_80MM else MAX_LINE_CHAR_58MM
 
     private var woyouService: IWoyouService? = null
     private var isBound = false
@@ -176,6 +221,55 @@ class SunmiPrinterHelper(private val context: Context) {
         }
     }
 
+    private fun parseDeliveryLandmark(rawNotes: String?): String? {
+        if (rawNotes.isNullOrEmpty()) return null
+        return try {
+            var obj = JsonParser.parseString(rawNotes).asJsonObject
+            if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                obj = obj.getAsJsonObject("payload")
+            }
+            val addr = if (obj.has("delivery_address") && obj.get("delivery_address").isJsonObject) {
+                obj.getAsJsonObject("delivery_address")
+            } else if (obj.has("address") && obj.get("address").isJsonObject) {
+                obj.getAsJsonObject("address")
+            } else null
+
+            val landmark = addr?.get("landmark")?.takeIf { !it.isJsonNull }?.asString?.trim()
+            if (landmark.isNullOrEmpty()) null else landmark
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun parseDeliveryAddressFallback(rawNotes: String?): String? {
+        if (rawNotes.isNullOrEmpty()) return null
+        return try {
+            var obj = JsonParser.parseString(rawNotes).asJsonObject
+            if (obj.has("payload") && obj.get("payload").isJsonObject) {
+                obj = obj.getAsJsonObject("payload")
+            }
+            val addr = if (obj.has("delivery_address") && obj.get("delivery_address").isJsonObject) {
+                obj.getAsJsonObject("delivery_address")
+            } else if (obj.has("address") && obj.get("address").isJsonObject) {
+                obj.getAsJsonObject("address")
+            } else null ?: return null
+
+            val addressVal = addr.get("address")?.takeIf { !it.isJsonNull }?.asString?.trim() ?: ""
+            val buildingVal = addr.get("building")?.takeIf { !it.isJsonNull }?.asString?.trim() ?: ""
+            val landmarkVal = addr.get("landmark")?.takeIf { !it.isJsonNull }?.asString?.trim() ?: ""
+            val cityVal = addr.get("city")?.takeIf { !it.isJsonNull }?.asString?.trim() ?: ""
+
+            val parts = listOf(
+                listOf(addressVal, buildingVal).filter { it.isNotEmpty() }.joinToString(" "),
+                landmarkVal,
+                cityVal
+            ).filter { it.isNotEmpty() }
+            if (parts.isNotEmpty()) parts.joinToString("\n") else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun parseTipAmount(rawNotes: String?): Double {
         if (rawNotes.isNullOrEmpty()) return 0.0
         return try {
@@ -310,6 +404,35 @@ class SunmiPrinterHelper(private val context: Context) {
             val enlargeAddress = prefs.getBoolean("receipt_enlarge_address", false)
             val enlargePhone = prefs.getBoolean("receipt_enlarge_phone", false)
 
+            // Paper-width dependent layout & font sizing
+            val paperMm = getPaperWidthMm()
+            val is80mm = paperMm >= 80
+            val lineChars = lineCharsFor(paperMm)
+            val divider = "-".repeat(lineChars) + "\n"
+            val doubleDivider = "=".repeat(lineChars) + "\n"
+            val nameWidth = lineChars - QTY_COLUMN_WIDTH - PRICE_COLUMNS_WIDTH // 18 on 58mm, 20 on 80mm
+            val qrModuleSize = if (is80mm) 8 else 6
+
+            // Dynamic Font Sizing: 80mm uses noticeably larger fonts for enhanced readability
+            val titleFontSize = if (is80mm) 38f else 28f
+            val headerDetailFontSize = if (is80mm) 30f else 24f
+            val orderNoFontSize = if (is80mm) {
+                if (enlargeOrderNo) 48f else 38f
+            } else {
+                if (enlargeOrderNo) 34f else 28f
+            }
+            val metaFontSize = if (is80mm) 30f else 24f
+            val custFontSize = if (is80mm) {
+                if (enlargeAddress || enlargePhone) 38f else 34f
+            } else {
+                if (enlargeAddress || enlargePhone) 30f else 28f
+            }
+            val bodyFontSize = if (is80mm) 32f else 24f
+            val footerBannerFontSize = if (is80mm) 34f else 28f
+            val footerDetailFontSize = if (is80mm) 30f else 24f
+
+            Log.d(TAG, "Printing receipt on ${paperMm}mm paper ($lineChars chars/line, baseFont=${bodyFontSize}pt)")
+
             // 1. Initialize printer
             service.printerInit(printCallback)
             
@@ -324,26 +447,25 @@ class SunmiPrinterHelper(private val context: Context) {
             
             // Header Title (Store Copy vs Customer Copy)
             val headerLabel = if (isCustomerCopy) "Klantenbon" else "Winkelbon"
-            service.setFontSize(28f, printCallback)
+            service.setFontSize(titleFontSize, printCallback)
             sendText(service, "$headerLabel\n$merchantName\n")
             
             // Header Details
-            service.setFontSize(24f, printCallback)
+            service.setFontSize(headerDetailFontSize, printCallback)
             val headerBuilder = java.lang.StringBuilder()
             if (merchantCity.isNotEmpty()) headerBuilder.append(merchantCity).append("\n")
             if (merchantStreet.isNotEmpty()) headerBuilder.append(merchantStreet).append("\n")
             if (merchantPhone.isNotEmpty()) headerBuilder.append(merchantPhone).append("\n")
-            headerBuilder.append("--------------------------------\n")
+            headerBuilder.append(divider)
             sendText(service, headerBuilder.toString())
 
             // Sequential Order Identifier (Configurable Font Size)
             val seqNo = order.orderNumber.substringAfterLast("-").substringAfterLast("_")
-            val orderNoFontSize = if (enlargeOrderNo) 34f else 28f
             service.setFontSize(orderNoFontSize, printCallback)
             sendText(service, "$seqNo\n")
 
             // Metadata & Order Type
-            service.setFontSize(24f, printCallback)
+            service.setFontSize(metaFontSize, printCallback)
             val metaBuilder = java.lang.StringBuilder()
             metaBuilder.append(formatDate(order.createdAt)).append("\n")
             val scheduledTime = parseScheduledDelivery(order.notes)
@@ -358,7 +480,7 @@ class SunmiPrinterHelper(private val context: Context) {
                 else -> "Dine In"
             }
             metaBuilder.append(typeStr).append("\n")
-            metaBuilder.append("--------------------------------\n")
+            metaBuilder.append(divider)
             sendText(service, metaBuilder.toString())
 
             // Customer Details Block (Configurable display & font size)
@@ -375,21 +497,38 @@ class SunmiPrinterHelper(private val context: Context) {
             if (!order.customerName.isNullOrEmpty()) {
                 customerBuilder.append(order.customerName).append("\n")
             }
-            if (showCustAddress && !order.customerAddress.isNullOrEmpty()) {
-                customerBuilder.append(order.customerAddress).append("\n")
+            if (showCustAddress) {
+                if (!order.customerAddress.isNullOrEmpty()) {
+                    customerBuilder.append(order.customerAddress).append("\n")
+                    // If landmark was omitted from customerAddress, append it here
+                    val landmark = parseDeliveryLandmark(order.notes)
+                    if (!landmark.isNullOrEmpty()) {
+                        val cleanAddr = order.customerAddress.replace("\\s".toRegex(), "").lowercase(Locale.getDefault())
+                        val cleanLandmark = landmark.replace("\\s".toRegex(), "").lowercase(Locale.getDefault())
+                        if (!cleanAddr.contains(cleanLandmark)) {
+                            customerBuilder.append(landmark).append("\n")
+                        }
+                    }
+                } else {
+                    // Fallback to delivery_address in notes if customerAddress was blank
+                    val fallbackAddr = parseDeliveryAddressFallback(order.notes)
+                    if (!fallbackAddr.isNullOrEmpty()) {
+                        customerBuilder.append(fallbackAddr).append("\n")
+                    }
+                }
             }
             if (showCustPhone && !order.customerPhone.isNullOrEmpty()) {
                 customerBuilder.append(order.customerPhone).append("\n")
             }
-            customerBuilder.append("--------------------------------\n")
+            customerBuilder.append(divider)
             
-            val custFontSize = if (enlargeAddress || enlargePhone) 30f else 28f
             service.setFontSize(custFontSize, printCallback)
             sendText(service, customerBuilder.toString())
-            service.setFontSize(24f, printCallback) // reset to normal size
+            service.setFontSize(bodyFontSize, printCallback) // reset to body size
 
             // --- Left Aligned Body Section ---
             service.setAlignment(0, printCallback)
+            service.setFontSize(bodyFontSize, printCallback)
             val bodyBuilder = java.lang.StringBuilder()
             
             // Customer comment / notes (parsed correctly from JSON webhook payload)
@@ -404,11 +543,11 @@ class SunmiPrinterHelper(private val context: Context) {
                     .joinToString("\n")
             }
             if (parsedNotes.isNotEmpty()) {
-                bodyBuilder.append("--------------------------------\n")
+                bodyBuilder.append(divider)
                 bodyBuilder.append("Opmerking:\n").append(parsedNotes).append("\n")
             }
             
-            bodyBuilder.append("--------------------------------\n")
+            bodyBuilder.append(divider)
             
             val courierText = if ((order.type ?: "delivery").lowercase(Locale.getDefault()) == "delivery") {
                 val driver = if (!order.driverName.isNullOrEmpty()) order.driverName else "Spoonfull"
@@ -417,10 +556,10 @@ class SunmiPrinterHelper(private val context: Context) {
                 "Order: ${order.orderNumber ?: ""}"
             }
             bodyBuilder.append(courierText).append("\n")
-            bodyBuilder.append("--------------------------------\n")
+            bodyBuilder.append(divider)
 
             // Items Table
-            bodyBuilder.append("Artikel             Stuk  Totaal\n")
+            bodyBuilder.append("Artikel".padEnd(QTY_COLUMN_WIDTH + nameWidth)).append("Stuk  Totaal\n")
             for (item in (order.items ?: emptyList())) {
                 val qtyStr = "${item.quantity} " // 2 chars wide: "1 " or "10"
                 val unitPriceStr = String.format(Locale.US, "%.2f", item.price).replace(".", ",")
@@ -430,19 +569,19 @@ class SunmiPrinterHelper(private val context: Context) {
                 val formattedUnit = unitPriceStr.padStart(6)
                 val formattedTotal = totalPriceStr.padStart(6)
                 
-                // Max length for item name on the first line is 18 characters
+                // Max length for item name on the first line is nameWidth characters
                 val name = item.name ?: ""
-                if (name.length <= 18) {
-                    val spaces = " ".repeat(18 - name.length)
+                if (name.length <= nameWidth) {
+                    val spaces = " ".repeat(nameWidth - name.length)
                     bodyBuilder.append(qtyStr).append(name).append(spaces).append(formattedUnit).append(formattedTotal).append("\n")
                 } else {
                     // Wrap the name
                     val chunks = mutableListOf<String>()
                     var current = name
-                    while (current.length > 18) {
-                        var wrapIndex = current.lastIndexOf(' ', 18)
-                        if (wrapIndex == -1 || wrapIndex < 9) {
-                            wrapIndex = 18
+                    while (current.length > nameWidth) {
+                        var wrapIndex = current.lastIndexOf(' ', nameWidth)
+                        if (wrapIndex == -1 || wrapIndex < nameWidth / 2) {
+                            wrapIndex = nameWidth
                         }
                         chunks.add(current.substring(0, wrapIndex).trimEnd())
                         current = current.substring(wrapIndex).trimStart()
@@ -453,7 +592,7 @@ class SunmiPrinterHelper(private val context: Context) {
                     
                     // First line has the quantity, first chunk of name, unit price, and total price
                     val firstChunk = chunks[0]
-                    val spaces = " ".repeat(18 - firstChunk.length)
+                    val spaces = " ".repeat(nameWidth - firstChunk.length)
                     bodyBuilder.append(qtyStr).append(firstChunk).append(spaces).append(formattedUnit).append(formattedTotal).append("\n")
                     
                     // Subsequent lines only have the wrapped name chunks, indented by 2 spaces
@@ -467,25 +606,25 @@ class SunmiPrinterHelper(private val context: Context) {
                 }
             }
             
-            bodyBuilder.append("--------------------------------\n")
+            bodyBuilder.append(divider)
 
             // Calculations
             val totalValStr = String.format(Locale.US, "%.2f", order.total).replace(".", ",") + "€"
-            val totalLine = formatLine("Totaal", totalValStr, MAX_LINE_CHAR_58MM)
+            val totalLine = formatLine("Totaal", totalValStr, lineChars)
 
             bodyBuilder.append(totalLine).append("\n")
-            bodyBuilder.append("--------------------------------\n")
+            bodyBuilder.append(divider)
             
             val tipAmount = parseTipAmount(order.notes)
             if (tipAmount > 0.0) {
                 val tipValStr = String.format(Locale.US, "%.2f", tipAmount).replace(".", ",") + "€"
-                val tipLine = formatLine("Tip/Fooi:", tipValStr, MAX_LINE_CHAR_58MM)
+                val tipLine = formatLine("Tip/Fooi:", tipValStr, lineChars)
                 bodyBuilder.append(tipLine).append("\n")
                 
                 val finalTotalValStr = String.format(Locale.US, "%.2f", order.total + tipAmount).replace(".", ",") + "€"
-                val finalTotalLine = formatLine("Totaal", finalTotalValStr, MAX_LINE_CHAR_58MM)
+                val finalTotalLine = formatLine("Totaal", finalTotalValStr, lineChars)
                 bodyBuilder.append(finalTotalLine).append("\n")
-                bodyBuilder.append("--------------------------------\n")
+                bodyBuilder.append(divider)
             }
 
             // Payment Info
@@ -508,14 +647,14 @@ class SunmiPrinterHelper(private val context: Context) {
             // --- Center Aligned Footer Section ---
             service.setAlignment(1, printCallback)
             val footerBuilder = java.lang.StringBuilder()
-            footerBuilder.append("================================\n")
+            footerBuilder.append(doubleDivider)
             footerBuilder.append(merchantName).append(" Online\n")
-            footerBuilder.append("================================\n")
+            footerBuilder.append(doubleDivider)
             sendText(service, footerBuilder.toString())
 
-            service.setFontSize(28f, printCallback)
+            service.setFontSize(footerBannerFontSize, printCallback)
             sendText(service, "GEEN COMMISSIE\nGEEN BEZORGKOSTEN!\n")
-            service.setFontSize(24f, printCallback)
+            service.setFontSize(footerDetailFontSize, printCallback)
             
             val isDelivery = (order.type ?: "delivery").lowercase(Locale.getDefault()) == "delivery"
             if (isDelivery && !isCustomerCopy) {
@@ -524,13 +663,13 @@ class SunmiPrinterHelper(private val context: Context) {
 
                 val driverParam = if (!order.driverName.isNullOrEmpty()) "&driver=" + java.net.URLEncoder.encode(order.driverName, "UTF-8") else ""
                 val driverUrl = "https://positivus-two-iota.vercel.app/driver?order_id=${order.id}$driverParam"
-                service.printQRCode(driverUrl, 6, 1, printCallback)
+                service.printQRCode(driverUrl, qrModuleSize, 1, printCallback)
             } else {
                 // Customer Copy OR Pickup Order -> Webshop QR Code (NO Driver Claim QR!)
                 sendText(service, "Bestel via onze eigen webshop\n")
 
                 val shopUrl = if (isRajCurry) "https://rajcurryhouse.nl" else "https://spoonful.nl"
-                service.printQRCode(shopUrl, 6, 1, printCallback)
+                service.printQRCode(shopUrl, qrModuleSize, 1, printCallback)
             }
             
             // Feed paper
@@ -545,18 +684,33 @@ class SunmiPrinterHelper(private val context: Context) {
     fun printTestPage() {
         val service = woyouService ?: return
         try {
+            val paperMm = getPaperWidthMm()
+            val is80mm = paperMm >= 80
+            val lineChars = lineCharsFor(paperMm)
+            val baseFontSize = if (is80mm) 32f else 24f
+            val titleFontSize = if (is80mm) 38f else 32f
+            val divider = "-".repeat(lineChars) + "\n"
+
             service.printerInit(printCallback)
             service.setAlignment(1, printCallback)
-            service.setFontSize(32f, printCallback)
+            service.setFontSize(titleFontSize, printCallback)
             sendText(service, "Spoonfull POS\n")
-            service.setFontSize(24f, printCallback)
-            sendText(service, "Sunmi V2 Pro Print Test\n")
-            sendText(service, "--------------------------------\n")
+            service.setFontSize(baseFontSize, printCallback)
+            sendText(service, "Sunmi Print Test\n")
+            sendText(service, divider)
             service.setAlignment(0, printCallback)
+            sendText(service, "Device: ${Build.MODEL}\n")
+            sendText(service, "Printer: ${try { service.printerModal } catch (e: Exception) { "?" }}\n")
+            sendText(service, "Paper: ${paperMm}mm ($lineChars chars @ ${baseFontSize.toInt()}pt)\n")
             sendText(service, "Printer Serial:\n${service.printerSerialNo}\n")
             sendText(service, "Printer Version:\n${service.printerVersion}\n")
-            sendText(service, "Printer Status: ${service.getPrinterStatus()}\n")
-            sendText(service, "--------------------------------\n")
+            sendText(service, divider)
+            // Width ruler: should fill exactly one line, edge to edge, without wrapping
+            val ruler = StringBuilder()
+            for (i in 1..lineChars) ruler.append((i % 10).toString())
+            sendText(service, "$ruler\n")
+            sendText(service, formatLine("Totaal", "12,34€", lineChars) + "\n")
+            sendText(service, divider)
             service.lineWrap(4, printCallback)
         } catch (e: Exception) {
             Log.e(TAG, "Error printing test page", e)
@@ -592,18 +746,16 @@ class SunmiPrinterHelper(private val context: Context) {
 
     private fun formatDate(dateStr: String): String {
         return try {
-            // Parse standard ISO/Supabase date "2026-06-12T10:07:32.123456+00:00"
+            // Parse standard ISO/Supabase date "2026-11-15T10:07:32.123456+00:00" or "2026-11-15T10:07:32Z"
+            val cleaned = dateStr.substringBefore(".").substringBefore("+").substringBefore("Z")
             val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
                 timeZone = java.util.TimeZone.getTimeZone("UTC")
             }
-            val date = inputFormat.parse(dateStr)
+            val date = inputFormat.parse(cleaned)
             val outputFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.US).apply {
-                timeZone = java.util.TimeZone.getDefault()
+                timeZone = java.util.TimeZone.getTimeZone("Europe/Amsterdam")
             }
-            date?.let { 
-                val adjustedTime = it.time + 3600000L
-                outputFormat.format(java.util.Date(adjustedTime))
-            } ?: dateStr
+            date?.let { outputFormat.format(it) } ?: dateStr
         } catch (e: Exception) {
             dateStr
         }

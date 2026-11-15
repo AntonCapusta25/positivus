@@ -1,6 +1,7 @@
 package com.spoonful.pos
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.content.res.ColorStateList
 import android.graphics.Typeface
@@ -8,6 +9,7 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -30,7 +32,7 @@ class MainActivity : AppCompatActivity() {
     // --- Views ---
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var btnHamburger: TextView
-    private lateinit var btnDrawerClose: TextView
+    private lateinit var btnDrawerClose: View
     private lateinit var btnNotificationBell: TextView
     private lateinit var txtHeaderTitle: TextView
     private lateinit var btnDrawerStopOrders: LinearLayout
@@ -44,11 +46,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnDrawerSettings: LinearLayout
     private lateinit var layoutDrawerManagementSub: LinearLayout
     private lateinit var layoutDrawerSettingsSub: LinearLayout
-    private lateinit var txtDrawerManagementChevron: TextView
-    private lateinit var txtDrawerSettingsChevron: TextView
+    private lateinit var imgDrawerManagementChevron: ImageView
+    private lateinit var imgDrawerSettingsChevron: ImageView
     private lateinit var btnSubSounds: TextView
     private lateinit var btnSubReceipts: TextView
-    private lateinit var btnSubTodaySales: TextView
+    private lateinit var btnSubTodaySales: View
     private lateinit var btnSubConnectivity: TextView
     private lateinit var btnSubLanguage: TextView
     private lateinit var btnSubDeviceInfo: TextView
@@ -106,8 +108,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnToggleCustomerInfo: LinearLayout
     private lateinit var btnDrawerSwitchRestaurant: LinearLayout
     private lateinit var txtDrawerActiveRestaurant: TextView
-    private lateinit var btnSubMenuManagement: TextView
-    private lateinit var btnSubDriversManagement: TextView
+    private lateinit var btnSubMenuManagement: View
+    private lateinit var btnSubDriversManagement: View
     private lateinit var layoutSettingsDrivers: LinearLayout
     private lateinit var btnDriversBack: TextView
     private lateinit var driversContainer: LinearLayout
@@ -231,7 +233,12 @@ class MainActivity : AppCompatActivity() {
     // --- Helpers ---
     private fun dp(value: Int) = (value * resources.displayMetrics.density + 0.5f).toInt()
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(com.spoonful.pos.util.LocaleHelper.onAttach(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.spoonful.pos.util.LocaleHelper.onAttach(this)
         super.onCreate(savedInstanceState)
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_main)
@@ -255,6 +262,11 @@ class MainActivity : AppCompatActivity() {
         ownerMerchantIds.add(merchantId)
 
         printerHelper = SunmiPrinterHelper(this)
+        if (intent?.action == "com.spoonful.pos.PRINT_TEST") {
+            printerHelper.ensurePrinterBound {
+                printerHelper.printTestPage()
+            }
+        }
         supabaseManager = SupabaseManager(
             supabaseUrl = SupabaseConfig.SUPABASE_URL,
             supabaseKey = SupabaseConfig.SUPABASE_KEY,
@@ -435,7 +447,7 @@ class MainActivity : AppCompatActivity() {
 
         // Sync auto-print UI
         switchDrawerAutoPrint.isChecked = isAutoPrintEnabled
-        txtDrawerAutoPrintStatus.text = if (isAutoPrintEnabled) "Enabled" else "Disabled"
+        txtDrawerAutoPrintStatus.text = if (isAutoPrintEnabled) getString(R.string.enabled) else getString(R.string.disabled)
         txtDrawerAutoPrintStatus.setTextColor(Color.parseColor(if (isAutoPrintEnabled) "#00A389" else "#EF4444"))
 
         setupSwitchColorStates(switchAutoPrint)
@@ -724,11 +736,34 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent?.action == "com.spoonful.pos.PRINT_TEST") {
+            printerHelper.ensurePrinterBound {
+                printerHelper.printTestPage()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkAutoResumeTimer()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        autoResumeHandler.removeCallbacks(autoResumeRunnable)
         handler.removeCallbacks(timerRunnable)
         printerHelper.unbindPrinterService()
         supabaseManager.stop()
+        stopIncomingOrderSound(force = true)
+        try {
+            activeIncomingDialog?.let {
+                if (it.isShowing) it.dismiss()
+            }
+        } catch (e: Exception) {}
+        activeIncomingDialog = null
     }
 
     override fun onBackPressed() {
@@ -763,8 +798,8 @@ class MainActivity : AppCompatActivity() {
         btnHelpSend = findViewById(R.id.btnHelpSend)
         layoutDrawerManagementSub = findViewById(R.id.layoutDrawerManagementSub)
         layoutDrawerSettingsSub = findViewById(R.id.layoutDrawerSettingsSub)
-        txtDrawerManagementChevron = findViewById(R.id.txtDrawerManagementChevron)
-        txtDrawerSettingsChevron = findViewById(R.id.txtDrawerSettingsChevron)
+        imgDrawerManagementChevron = findViewById(R.id.imgDrawerManagementChevron)
+        imgDrawerSettingsChevron = findViewById(R.id.imgDrawerSettingsChevron)
         btnSubSounds = findViewById(R.id.btnSubSounds)
         btnSubReceipts = findViewById(R.id.btnSubReceipts)
         btnSubTodaySales = findViewById(R.id.btnSubTodaySales)
@@ -880,10 +915,19 @@ class MainActivity : AppCompatActivity() {
     // DRAWER SETUP
     // ─────────────────────────────────────────────
     private fun setupDrawer() {
+        try {
+            val marginField = DrawerLayout::class.java.getDeclaredField("mMinDrawerMargin")
+            marginField.isAccessible = true
+            marginField.setInt(drawerLayout, 0)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to set mMinDrawerMargin", e)
+        }
+
         btnHamburger.setOnClickListener {
             if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
                 drawerLayout.closeDrawer(GravityCompat.START)
             } else {
+                updateTodaySalesDrawerCount()
                 drawerLayout.openDrawer(GravityCompat.START)
             }
         }
@@ -899,23 +943,30 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "No active store selected", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            // If currently stopped (isStopOrdersActive = true), nextAcceptState is true (resuming).
-            val nextAcceptState = isStopOrdersActive
-            Toast.makeText(this, "Updating store status...", Toast.LENGTH_SHORT).show()
-            supabaseManager.updateMerchantStatus(mId, nextAcceptState) { success ->
-                runOnUiThread {
-                    if (success) {
-                        isStopOrdersActive = !nextAcceptState
-                        refreshStopOrdersUI()
-                        Toast.makeText(
-                            this@MainActivity,
-                            if (isStopOrdersActive) "Store paused taking orders" else "Store is now taking orders",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        Toast.makeText(this@MainActivity, "Failed to update store status", Toast.LENGTH_SHORT).show()
+            if (isStopOrdersActive) {
+                // Currently paused -> Tapping resumes accepting orders immediately
+                Toast.makeText(this, "Resuming store...", Toast.LENGTH_SHORT).show()
+                val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
+                prefs.edit()
+                    .remove("paused_until_millis_$mId")
+                    .remove("paused_until_label_$mId")
+                    .apply()
+                autoResumeHandler.removeCallbacks(autoResumeRunnable)
+
+                supabaseManager.updateMerchantStatus(mId, true) { success ->
+                    runOnUiThread {
+                        if (success) {
+                            isStopOrdersActive = false
+                            refreshStopOrdersUI()
+                            Toast.makeText(this@MainActivity, "Store is now taking orders", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this@MainActivity, "Failed to update store status", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
+            } else {
+                // Currently taking orders -> Open duration selection menu
+                showPauseStoreBottomSheet()
             }
         }
 
@@ -923,14 +974,27 @@ class MainActivity : AppCompatActivity() {
         btnDrawerManagement.setOnClickListener {
             val isVisible = layoutDrawerManagementSub.visibility == View.VISIBLE
             layoutDrawerManagementSub.visibility = if (isVisible) View.GONE else View.VISIBLE
-            txtDrawerManagementChevron.text = if (isVisible) "⌵" else "⌃"
+            imgDrawerManagementChevron.setImageResource(if (isVisible) R.drawable.ic_chevron_down else R.drawable.ic_chevron_up)
         }
 
         // Settings expander
         btnDrawerSettings.setOnClickListener {
             val isVisible = layoutDrawerSettingsSub.visibility == View.VISIBLE
             layoutDrawerSettingsSub.visibility = if (isVisible) View.GONE else View.VISIBLE
-            txtDrawerSettingsChevron.text = if (isVisible) "⌵" else "⌃"
+            imgDrawerSettingsChevron.setImageResource(if (isVisible) R.drawable.ic_chevron_down else R.drawable.ic_chevron_up)
+        }
+
+        // Give feedback
+        findViewById<View>(R.id.btnDrawerFeedback)?.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            loadHelpScreen()
+        }
+
+        // Refresh
+        findViewById<View>(R.id.btnDrawerRefresh)?.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            Toast.makeText(this, getString(R.string.drawer_refresh) + "...", Toast.LENGTH_SHORT).show()
+            supabaseManager.start()
         }
 
         // Sub-items navigation
@@ -944,16 +1008,19 @@ class MainActivity : AppCompatActivity() {
         }
         btnSubTodaySales.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
-            val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val todayFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("Europe/Amsterdam")
+            }
+            val todayStr = todayFormat.format(Date())
             val todayOrders = ordersList.filter { order ->
                 try {
+                    val cleaned = order.createdAt.substringBefore(".").substringBefore("+").substringBefore("Z")
                     val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
                         timeZone = TimeZone.getTimeZone("UTC")
                     }
-                    val date = sdf.parse(order.createdAt)
+                    val date = sdf.parse(cleaned)
                     if (date != null) {
-                        val localFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        localFormat.format(date) == todayStr
+                        todayFormat.format(date) == todayStr
                     } else {
                         order.createdAt.startsWith(todayStr)
                     }
@@ -999,13 +1066,30 @@ class MainActivity : AppCompatActivity() {
         }
         btnSubLanguage.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
-            val languages = arrayOf("English", "Nederlands (Dutch)", "Deutsch (German)")
+            val languages = arrayOf("English", "Nederlands")
+            val currentLang = com.spoonful.pos.util.LocaleHelper.getLanguage(this)
+            val checkedItem = if (currentLang == "nl") 1 else 0
             androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Select Language")
-                .setItems(languages) { _, which ->
-                    Toast.makeText(this, "Language switched to ${languages[which]} (Requires restart)", Toast.LENGTH_SHORT).show()
+                .setTitle(getString(R.string.select_language))
+                .setSingleChoiceItems(languages, checkedItem) { dialog, which ->
+                    val newLang = if (which == 1) "nl" else "en"
+                    if (newLang != currentLang) {
+                        com.spoonful.pos.util.LocaleHelper.setLanguage(this@MainActivity, newLang)
+                        Toast.makeText(
+                            this@MainActivity,
+                            if (newLang == "nl") "Taal gewijzigd naar Nederlands" else "Language switched to English",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        dialog.dismiss()
+                        val refreshIntent = intent
+                        finish()
+                        startActivity(refreshIntent)
+                        overridePendingTransition(0, 0)
+                    } else {
+                        dialog.dismiss()
+                    }
                 }
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(getString(R.string.cancel), null)
                 .show()
         }
         btnSubDeviceInfo.setOnClickListener {
@@ -1378,7 +1462,7 @@ class MainActivity : AppCompatActivity() {
                 
             switchDrawerAutoPrint.isChecked = newState
             switchAutoPrint.isChecked = newState
-            txtDrawerAutoPrintStatus.text = if (newState) "Enabled" else "Disabled"
+            txtDrawerAutoPrintStatus.text = if (newState) getString(R.string.enabled) else getString(R.string.disabled)
             txtDrawerAutoPrintStatus.setTextColor(Color.parseColor(if (newState) "#00A389" else "#EF4444"))
             
             Toast.makeText(this, "Auto-print ${if (newState) "enabled" else "disabled"}", Toast.LENGTH_SHORT).show()
@@ -1428,7 +1512,7 @@ class MainActivity : AppCompatActivity() {
 
         // Update Done tab count
         val doneCount = ordersList.count { it.status.lowercase() in listOf("completed", "cancelled") }
-        txtTabDone.text = "Done ($doneCount)"
+        txtTabDone.text = "${getString(R.string.tab_done)} ($doneCount)"
     }
 
     // ─────────────────────────────────────────────
@@ -1532,7 +1616,7 @@ class MainActivity : AppCompatActivity() {
         // Items summary
         val itemCount = order.items.sumOf { it.quantity }
         val itemsSummary = TextView(this).apply {
-            text = "$itemCount item${if (itemCount != 1) "s" else ""}"
+            text = "$itemCount ${if (itemCount == 1) getString(R.string.item_single) else getString(R.string.item_plural)}"
             setTextColor(Color.parseColor("#94A3B8"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         }
@@ -1541,7 +1625,7 @@ class MainActivity : AppCompatActivity() {
         val scheduledTime = parseScheduledDelivery(order.notes)
         if (scheduledTime != null) {
             val scheduledTxt = TextView(this).apply {
-                text = "📅 Scheduled: $scheduledTime"
+                text = "📅 ${getString(R.string.scheduled_label)}: $scheduledTime"
                 setTextColor(Color.parseColor("#9F1239"))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
                 setTypeface(null, Typeface.BOLD)
@@ -1599,7 +1683,7 @@ class MainActivity : AppCompatActivity() {
         // Payment status badge (PAID vs NOT PAID)
         val isPaid = isOrderPaid(order)
         val paidBadge = TextView(this).apply {
-            text = if (isPaid) "PAID" else "NOT PAID"
+            text = if (isPaid) getString(R.string.paid) else getString(R.string.not_paid)
             setTextColor(Color.parseColor(if (isPaid) "#00A389" else "#EF4444"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 8f)
             setTypeface(null, Typeface.BOLD)
@@ -1681,7 +1765,7 @@ class MainActivity : AppCompatActivity() {
                 gravity = Gravity.CENTER
             }
             val minTxt = TextView(this).apply {
-                text = "min"
+                text = getString(R.string.min)
                 setTextColor(Color.parseColor(textColor))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 9f)
                 gravity = Gravity.CENTER
@@ -2011,9 +2095,9 @@ class MainActivity : AppCompatActivity() {
         val resolvedName = merchantNamesMap[order.merchantId] ?: merchantNamesMap[order.merchantId?.lowercase()] ?: "Spoonfull"
         txtDetailOrderCode.text = "$resolvedName • #${order.orderNumber.takeLast(6)}"
         val typeIcon = when ((order.type ?: "delivery").lowercase(Locale.ROOT)) {
-            "delivery" -> "🛵 Delivery"
-            "pickup" -> "🏃 Pickup"
-            else -> "🍽️ Dine In"
+            "delivery" -> getString(R.string.delivery)
+            "pickup" -> "🏃 " + getString(R.string.pickup)
+            else -> "🍽️ " + getString(R.string.dine_in)
         }
         txtDetailType.text = typeIcon
 
@@ -2022,7 +2106,7 @@ class MainActivity : AppCompatActivity() {
         txtDetailCustomerName.text = firstName
 
         val isPaid = isOrderPaid(order)
-        txtDetailPaidBadge.text = if (isPaid) "PAID" else "NOT PAID"
+        txtDetailPaidBadge.text = if (isPaid) getString(R.string.paid) else getString(R.string.not_paid)
         txtDetailPaidBadge.setTextColor(Color.parseColor(if (isPaid) "#00A389" else "#EF4444"))
         txtDetailPaidBadge.background = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
@@ -2053,7 +2137,7 @@ class MainActivity : AppCompatActivity() {
         // Customer loyalty badge
         val orderCount = order.customerOrderCount ?: 1
         if (orderCount > 1) {
-            txtDetailCustomerLoyalty.text = "RETURNING (${orderCount}th order)"
+            txtDetailCustomerLoyalty.text = getString(R.string.returning_order_fmt, orderCount)
             txtDetailCustomerLoyalty.setTextColor(Color.parseColor("#065F46"))
             txtDetailCustomerLoyalty.background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
@@ -2061,7 +2145,7 @@ class MainActivity : AppCompatActivity() {
                 setColor(Color.parseColor("#D1FAE5"))
             }
         } else {
-            txtDetailCustomerLoyalty.text = "NEW CUSTOMER"
+            txtDetailCustomerLoyalty.text = getString(R.string.new_customer)
             txtDetailCustomerLoyalty.setTextColor(Color.parseColor("#92400E"))
             txtDetailCustomerLoyalty.background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
@@ -2073,7 +2157,7 @@ class MainActivity : AppCompatActivity() {
 
         val scheduledTime = parseScheduledDelivery(order.notes)
         if (scheduledTime != null) {
-            txtDetailScheduledBadge.text = "📅 Scheduled: $scheduledTime"
+            txtDetailScheduledBadge.text = "📅 ${getString(R.string.scheduled_label)}: $scheduledTime"
             txtDetailScheduledBadge.visibility = View.VISIBLE
         } else {
             txtDetailScheduledBadge.visibility = View.GONE
@@ -2107,9 +2191,9 @@ class MainActivity : AppCompatActivity() {
         // Action button
         val isPickupOrDineIn = (order.type ?: "").lowercase(Locale.ROOT) in listOf("pickup", "takeaway", "dine_in")
         val actionLabel = when (order.status.lowercase()) {
-            "incoming" -> "ACCEPT ORDER"
-            "preparing" -> "MARK AS READY"
-            "ready" -> if (isPickupOrDineIn) "HANDED OVER" else "MARK AS DELIVERED"
+            "incoming" -> getString(R.string.accept_order)
+            "preparing" -> getString(R.string.mark_as_ready)
+            "ready" -> if (isPickupOrDineIn) getString(R.string.handed_over) else getString(R.string.mark_as_delivered)
             else -> null
         }
         if (actionLabel != null) {
@@ -2123,7 +2207,7 @@ class MainActivity : AppCompatActivity() {
         val canCancel = order.status.lowercase() != "completed" && order.status.lowercase() != "cancelled"
         if (canCancel) {
             btnDetailCancel.visibility = View.VISIBLE
-            btnDetailCancel.text = if (isOnlinePayment(order.paymentMethod)) "CANCEL & REFUND" else "CANCEL ORDER"
+            btnDetailCancel.text = if (isOnlinePayment(order.paymentMethod)) getString(R.string.cancel_and_refund) else getString(R.string.cancel_order)
         } else {
             btnDetailCancel.visibility = View.GONE
         }
@@ -2275,7 +2359,7 @@ class MainActivity : AppCompatActivity() {
             
             // Sync drawer switch
             switchDrawerAutoPrint.isChecked = isChecked
-            txtDrawerAutoPrintStatus.text = if (isChecked) "Enabled" else "Disabled"
+            txtDrawerAutoPrintStatus.text = if (isChecked) getString(R.string.enabled) else getString(R.string.disabled)
             txtDrawerAutoPrintStatus.setTextColor(Color.parseColor(if (isChecked) "#00A389" else "#EF4444"))
         }
 
@@ -2316,6 +2400,29 @@ class MainActivity : AppCompatActivity() {
         }
         switchEnlargePhone.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("receipt_enlarge_phone", isChecked).apply()
+        }
+
+        // Paper width (58mm / 80mm) selection
+        val radioPaperWidth = findViewById<android.widget.RadioGroup>(R.id.radioPaperWidth)
+        val txtPaperWidthDetected = findViewById<TextView>(R.id.txtPaperWidthDetected)
+        fun refreshPaperWidthLabel() {
+            val mm = printerHelper.getPaperWidthMm()
+            txtPaperWidthDetected.text = "Printing on ${mm} mm (${android.os.Build.MODEL})"
+        }
+        when (prefs.getString(SunmiPrinterHelper.PREF_PAPER_WIDTH, SunmiPrinterHelper.PAPER_AUTO)) {
+            SunmiPrinterHelper.PAPER_58 -> radioPaperWidth.check(R.id.radioPaper58)
+            SunmiPrinterHelper.PAPER_80 -> radioPaperWidth.check(R.id.radioPaper80)
+            else -> radioPaperWidth.check(R.id.radioPaperAuto)
+        }
+        refreshPaperWidthLabel()
+        radioPaperWidth.setOnCheckedChangeListener { _, checkedId ->
+            val value = when (checkedId) {
+                R.id.radioPaper58 -> SunmiPrinterHelper.PAPER_58
+                R.id.radioPaper80 -> SunmiPrinterHelper.PAPER_80
+                else -> SunmiPrinterHelper.PAPER_AUTO
+            }
+            prefs.edit().putString(SunmiPrinterHelper.PREF_PAPER_WIDTH, value).apply()
+            refreshPaperWidthLabel()
         }
     }
 
@@ -2431,7 +2538,7 @@ class MainActivity : AppCompatActivity() {
             shape = GradientDrawable.OVAL
             setColor(Color.parseColor(color))
         }
-        txtSupabaseStatus.text = if (connected) "DB: Connected" else "DB: Disconnected"
+        txtSupabaseStatus.text = if (connected) getString(R.string.db_connected) else getString(R.string.db_disconnected)
     }
 
     private fun updatePrinterStatus(connected: Boolean) {
@@ -2440,7 +2547,7 @@ class MainActivity : AppCompatActivity() {
             shape = GradientDrawable.OVAL
             setColor(Color.parseColor(color))
         }
-        txtPrinterStatus.text = if (connected) "Printer: Ready" else "Printer: Offline"
+        txtPrinterStatus.text = if (connected) getString(R.string.printer_ready) else getString(R.string.printer_offline)
     }
 
     // ─────────────────────────────────────────────
@@ -2461,10 +2568,11 @@ class MainActivity : AppCompatActivity() {
     // ─────────────────────────────────────────────
     private fun minutesSince(createdAt: String): Int {
         return try {
+            val cleaned = createdAt.substringBefore(".").substringBefore("+").substringBefore("Z")
             val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
                 timeZone = TimeZone.getTimeZone("UTC")
             }
-            val date = sdf.parse(createdAt.substringBefore("+").substringBefore("Z").let { it }) ?: return 0
+            val date = sdf.parse(cleaned) ?: return 0
             val diff = System.currentTimeMillis() - date.time
             (diff / 60_000).toInt().coerceAtLeast(0)
         } catch (e: Exception) { 0 }
@@ -2631,18 +2739,230 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateTodaySalesDrawerCount() {
+        val todayFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("Europe/Amsterdam")
+        }
+        val todayStr = todayFormat.format(Date())
+        val todayCount = ordersList.count { order ->
+            try {
+                val cleaned = order.createdAt.substringBefore(".").substringBefore("+").substringBefore("Z")
+                val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
+                val date = sdf.parse(cleaned)
+                if (date != null) {
+                    todayFormat.format(date) == todayStr
+                } else {
+                    order.createdAt.startsWith(todayStr)
+                }
+            } catch (e: Exception) {
+                order.createdAt.startsWith(todayStr)
+            }
+        }
+        val countText = "$todayCount " + if (todayCount == 1) "order" else "orders"
+        findViewById<TextView>(R.id.txtSubTodaySalesCount)?.text = countText
+    }
+
+    private val autoResumeHandler = Handler(Looper.getMainLooper())
+    private val autoResumeRunnable = object : Runnable {
+        override fun run() {
+            checkAutoResumeTimer()
+        }
+    }
+
+    private fun checkAutoResumeTimer() {
+        val mId = merchantId
+        if (mId.isEmpty()) return
+        val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
+        val resumeAt = prefs.getLong("paused_until_millis_$mId", 0L)
+        if (isStopOrdersActive && resumeAt > 0L) {
+            val now = System.currentTimeMillis()
+            if (now >= resumeAt) {
+                Log.d("MainActivity", "Auto-resume timer expired for store $mId. Resuming accepting orders...")
+                prefs.edit()
+                    .remove("paused_until_millis_$mId")
+                    .remove("paused_until_label_$mId")
+                    .apply()
+                supabaseManager.updateMerchantStatus(mId, true) { success ->
+                    runOnUiThread {
+                        if (success) {
+                            isStopOrdersActive = false
+                            refreshStopOrdersUI()
+                            Toast.makeText(this@MainActivity, "Store has automatically resumed taking orders!", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+                return
+            } else {
+                autoResumeHandler.removeCallbacks(autoResumeRunnable)
+                autoResumeHandler.postDelayed(autoResumeRunnable, 15000L)
+            }
+        }
+    }
+
+    private fun showPauseStoreBottomSheet() {
+        val mId = merchantId
+        if (mId.isEmpty()) {
+            Toast.makeText(this, "No active store selected", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_pause_store, null)
+        sheet.setContentView(view)
+
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val now = System.currentTimeMillis()
+
+        // 1. 20 minutes preview
+        val time20Min = timeFormat.format(Date(now + 20 * 60 * 1000L))
+        view.findViewById<TextView>(R.id.txtPauseSubtitle20Min)?.text = "Until $time20Min"
+
+        // 2. 1 hour preview
+        val time1Hour = timeFormat.format(Date(now + 60 * 60 * 1000L))
+        view.findViewById<TextView>(R.id.txtPauseSubtitle1Hour)?.text = "Until $time1Hour"
+
+        // 3. 7 hours preview
+        val time7Hours = timeFormat.format(Date(now + 7 * 3600 * 1000L))
+        view.findViewById<TextView>(R.id.txtPauseSubtitle7Hours)?.text = "Until $time7Hours"
+
+        // 4. 1 day preview
+        val time1Day = timeFormat.format(Date(now + 24 * 3600 * 1000L))
+        view.findViewById<TextView>(R.id.txtPauseSubtitle1Day)?.text = "Until tomorrow $time1Day"
+
+        // Click listeners
+        view.findViewById<View>(R.id.btnPauseSheetClose)?.setOnClickListener {
+            sheet.dismiss()
+        }
+
+        view.findViewById<View>(R.id.btnPauseOption20Min)?.setOnClickListener {
+            sheet.dismiss()
+            executePauseStore(20 * 60 * 1000L, "for 20 minutes")
+        }
+
+        view.findViewById<View>(R.id.btnPauseOption1Hour)?.setOnClickListener {
+            sheet.dismiss()
+            executePauseStore(60 * 60 * 1000L, "for 1 hour")
+        }
+
+        view.findViewById<View>(R.id.btnPauseOption7Hours)?.setOnClickListener {
+            sheet.dismiss()
+            executePauseStore(7 * 3600 * 1000L, "for 7 hours")
+        }
+
+        view.findViewById<View>(R.id.btnPauseOptionSelectTime)?.setOnClickListener {
+            sheet.dismiss()
+            showCustomTimePicker()
+        }
+
+        view.findViewById<View>(R.id.btnPauseOption1Day)?.setOnClickListener {
+            sheet.dismiss()
+            executePauseStore(24 * 3600 * 1000L, "for 1 day")
+        }
+
+        view.findViewById<View>(R.id.btnPauseOptionIndefinite)?.setOnClickListener {
+            sheet.dismiss()
+            executePauseStore(0L, "indefinitely")
+        }
+
+        sheet.show()
+    }
+
+    private fun showCustomTimePicker() {
+        val cal = Calendar.getInstance()
+        val currentHour = cal.get(Calendar.HOUR_OF_DAY)
+        val currentMinute = cal.get(Calendar.MINUTE)
+
+        val picker = android.app.TimePickerDialog(
+            this,
+            { _, hourOfDay, minute ->
+                val targetCal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hourOfDay)
+                    set(Calendar.MINUTE, minute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                if (targetCal.timeInMillis <= System.currentTimeMillis()) {
+                    targetCal.add(Calendar.DAY_OF_YEAR, 1)
+                }
+                val duration = targetCal.timeInMillis - System.currentTimeMillis()
+                val timeStr = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)
+                executePauseStore(duration, "until $timeStr", targetCal.timeInMillis)
+            },
+            currentHour,
+            currentMinute,
+            true
+        )
+        picker.setTitle("Select time to reopen")
+        picker.show()
+    }
+
+    private fun executePauseStore(durationMillis: Long, label: String, exactResumeMillis: Long? = null) {
+        val mId = merchantId
+        if (mId.isEmpty()) return
+
+        val resumeAt = if (durationMillis > 0L) {
+            exactResumeMillis ?: (System.currentTimeMillis() + durationMillis)
+        } else {
+            0L
+        }
+
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val endLabel = if (resumeAt > 0L) {
+            "Paused until ${timeFormat.format(Date(resumeAt))} • Tap to resume"
+        } else {
+            "Paused indefinitely • Tap to resume"
+        }
+
+        val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
+        prefs.edit()
+            .putLong("paused_until_millis_$mId", resumeAt)
+            .putString("paused_until_label_$mId", endLabel)
+            .apply()
+
+        Toast.makeText(this, "Pausing store...", Toast.LENGTH_SHORT).show()
+        supabaseManager.updateMerchantStatus(mId, false) { success ->
+            runOnUiThread {
+                if (success) {
+                    isStopOrdersActive = true
+                    refreshStopOrdersUI()
+                    if (resumeAt > 0L) {
+                        autoResumeHandler.removeCallbacks(autoResumeRunnable)
+                        autoResumeHandler.postDelayed(autoResumeRunnable, 15000L)
+                    }
+                    Toast.makeText(this@MainActivity, "Store paused $label", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@MainActivity, "Failed to update store status", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     private fun refreshStopOrdersUI() {
-        val iconView = btnDrawerStopOrders.findViewById<TextView>(R.id.txtDrawerStopOrdersIcon)
+        val iconView = btnDrawerStopOrders.findViewById<ImageView>(R.id.imgDrawerStopOrdersIcon)
         val titleView = btnDrawerStopOrders.findViewById<TextView>(R.id.txtDrawerStopOrdersTitle)
         val descView = btnDrawerStopOrders.findViewById<TextView>(R.id.txtDrawerStopOrdersDesc)
+        val mId = merchantId
+        val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
+        val resumeLabel = prefs.getString("paused_until_label_$mId", "") ?: ""
+
         if (isStopOrdersActive) {
-            iconView?.text = "▶"
-            titleView?.text = "Start taking orders"
-            descView?.text = "You're currently paused. Tap to resume."
+            iconView?.setImageResource(R.drawable.ic_play_circle)
+            iconView?.imageTintList = ColorStateList.valueOf(Color.parseColor("#D8581B"))
+            titleView?.text = getString(R.string.drawer_start_orders)
+            if (resumeLabel.isNotEmpty()) {
+                descView?.text = resumeLabel
+                descView?.visibility = View.VISIBLE
+            } else {
+                descView?.text = getString(R.string.drawer_paused_orders_desc)
+                descView?.visibility = View.VISIBLE
+            }
         } else {
-            iconView?.text = "⏸"
-            titleView?.text = "Stop taking orders"
-            descView?.text = "You're currently ready to accept new orders."
+            iconView?.setImageResource(R.drawable.ic_pause_circle)
+            iconView?.imageTintList = ColorStateList.valueOf(Color.parseColor("#475569"))
+            titleView?.text = getString(R.string.drawer_stop_orders)
+            descView?.visibility = View.GONE
         }
     }
 
@@ -3073,19 +3393,37 @@ class MainActivity : AppCompatActivity() {
             if (handledOrderIds.contains(order.id) || (order.orderNumber.isNotEmpty() && handledOrderIds.contains(order.orderNumber))) {
                 return // Order already accepted/declined/handled by staff
             }
-            wakeUpDeviceScreen()
+            if (promptedOrderIds.contains(order.id) || (order.orderNumber.isNotEmpty() && promptedOrderIds.contains(order.orderNumber))) {
+                return // Already prompted incoming dialog for this order
+            }
             if (showingDialogOrderIds.contains(order.id) || (order.orderNumber.isNotEmpty() && showingDialogOrderIds.contains(order.orderNumber))) {
                 return // Already showing popup for this order
             }
-            showingDialogOrderIds.add(order.id)
-            if (order.orderNumber.isNotEmpty()) showingDialogOrderIds.add(order.orderNumber)
+            if (order.id.isNotEmpty()) {
+                showingDialogOrderIds.add(order.id)
+                promptedOrderIds.add(order.id)
+            }
+            if (order.orderNumber.isNotEmpty()) {
+                showingDialogOrderIds.add(order.orderNumber)
+                promptedOrderIds.add(order.orderNumber)
+            }
+            wakeUpDeviceScreen()
             playIncomingOrderSound()
+
+            // Dismiss any existing/dangling dialog before showing a new one
+            try {
+                activeIncomingDialog?.let {
+                    if (it.isShowing) it.dismiss()
+                }
+            } catch (e: Exception) {}
+            activeIncomingDialog = null
 
             val dialogView = layoutInflater.inflate(R.layout.dialog_incoming_order, null, false)
             val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
                 .setView(dialogView)
                 .setCancelable(false)
                 .create()
+            activeIncomingDialog = dialog
 
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
@@ -3196,7 +3534,7 @@ class MainActivity : AppCompatActivity() {
 
             val scheduledTime = parseScheduledDelivery(order.notes)
             if (scheduledTime != null) {
-                txtDialogScheduledBadge.text = "📅 Scheduled: $scheduledTime"
+                txtDialogScheduledBadge.text = "📅 ${getString(R.string.scheduled_label)}: $scheduledTime"
                 txtDialogScheduledBadge.visibility = View.VISIBLE
             } else {
                 txtDialogScheduledBadge.visibility = View.GONE
@@ -3217,6 +3555,9 @@ class MainActivity : AppCompatActivity() {
             timerHandler.post(timerRunnable)
 
             dialog.setOnDismissListener {
+                if (activeIncomingDialog == dialog) {
+                    activeIncomingDialog = null
+                }
                 showingDialogOrderIds.remove(order.id)
                 if (order.orderNumber.isNotEmpty()) showingDialogOrderIds.remove(order.orderNumber)
                 stopIncomingOrderSound()
@@ -3422,31 +3763,43 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val showingDialogOrderIds = HashSet<String>()
-    private val handledOrderIds = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+    companion object {
+        private val soundLock = Any()
+        private var soundThread: Thread? = null
+        private var currentRingtone: android.media.Ringtone? = null
+        private var toneGenerator: android.media.ToneGenerator? = null
+        @Volatile private var isSoundAlertPlaying = false
 
-    private var soundThread: Thread? = null
-    private var currentRingtone: android.media.Ringtone? = null
-    private var toneGenerator: android.media.ToneGenerator? = null
-    @Volatile private var isSoundAlertPlaying = false
+        val showingDialogOrderIds: MutableSet<String> = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+        val handledOrderIds: MutableSet<String> = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+        val promptedOrderIds: MutableSet<String> = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+
+        @Volatile private var activeIncomingDialog: androidx.appcompat.app.AlertDialog? = null
+    }
 
     private fun playIncomingOrderSound() {
-        synchronized(this) {
+        synchronized(soundLock) {
             if (isSoundAlertPlaying) {
                 return
             }
             isSoundAlertPlaying = true
+
+            try {
+                soundThread?.interrupt()
+            } catch (e: Exception) {}
+            soundThread = null
 
             // Safety auto-stop guard after 45 seconds to prevent infinite beeping
             handler.postDelayed({
                 stopIncomingOrderSound(force = false)
             }, 45000)
 
+            val appContext = applicationContext
             val newThread = Thread {
                 var localToneGenerator: android.media.ToneGenerator? = null
                 var localRingtone: android.media.Ringtone? = null
                 try {
-                    val prefs = getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
+                    val prefs = appContext.getSharedPreferences("spoonful_prefs", MODE_PRIVATE)
                     val soundType = prefs.getString("sound_type", "siren")
                     val savedVolume = prefs.getInt("sound_volume", 100)
 
@@ -3457,21 +3810,21 @@ class MainActivity : AppCompatActivity() {
                             android.media.RingtoneManager.TYPE_NOTIFICATION
                         }
                         val notificationUri = android.media.RingtoneManager.getDefaultUri(type)
-                        val ringtone = android.media.RingtoneManager.getRingtone(applicationContext, notificationUri)
+                        val ringtone = android.media.RingtoneManager.getRingtone(appContext, notificationUri)
                         localRingtone = ringtone
-                        
+
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                             localRingtone?.volume = savedVolume / 100f
                         }
-                        
-                        synchronized(this) {
+
+                        synchronized(soundLock) {
                             if (isSoundAlertPlaying) {
                                 currentRingtone = localRingtone
                             } else {
                                 return@Thread
                             }
                         }
-                        
+
                         localRingtone?.play()
                         while (isSoundAlertPlaying) {
                             if (localRingtone?.isPlaying == false) {
@@ -3486,7 +3839,7 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         val gen = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, savedVolume)
                         localToneGenerator = gen
-                        synchronized(this) {
+                        synchronized(soundLock) {
                             if (isSoundAlertPlaying) {
                                 toneGenerator = localToneGenerator
                             } else {
@@ -3503,7 +3856,7 @@ class MainActivity : AppCompatActivity() {
                                 else -> if (high) android.media.ToneGenerator.TONE_CDMA_HIGH_L else android.media.ToneGenerator.TONE_CDMA_MED_L
                             }
                             localToneGenerator?.startTone(tone, if (soundType == "beeps" || soundType == "pulse") 150 else 300)
-                            
+
                             val sleepMs = when (soundType) {
                                 "beeps" -> 300L
                                 "pulse" -> 250L
@@ -3519,7 +3872,7 @@ class MainActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     android.util.Log.e("MainActivity", "Error in playIncomingOrderSound thread", e)
                 } finally {
-                    synchronized(this) {
+                    synchronized(soundLock) {
                         try {
                             localToneGenerator?.stopTone()
                             localToneGenerator?.release()
@@ -3542,13 +3895,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopIncomingOrderSoundInternal() {
-        isSoundAlertPlaying = false
-        soundThread?.interrupt()
-        soundThread = null
+        synchronized(soundLock) {
+            isSoundAlertPlaying = false
+            try {
+                soundThread?.interrupt()
+            } catch (e: Exception) {}
+            soundThread = null
+            try {
+                toneGenerator?.stopTone()
+                toneGenerator?.release()
+            } catch (e: Exception) {}
+            toneGenerator = null
+            try {
+                currentRingtone?.stop()
+            } catch (e: Exception) {}
+            currentRingtone = null
+        }
     }
 
     private fun stopIncomingOrderSound(force: Boolean = false) {
-        synchronized(this) {
+        synchronized(soundLock) {
             if (!force && showingDialogOrderIds.isNotEmpty()) {
                 // Keep sound playing continuously until all incoming order popups are accepted/declined!
                 return

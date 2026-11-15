@@ -169,6 +169,18 @@ class SupabaseManager(
      * Connect to the Supabase Phoenix Realtime WebSocket
      */
     private fun connectRealtime() {
+        if (isConnected && isRealtimeActive) {
+            Log.d(TAG, "Already connected to Supabase Realtime, skipping duplicate connect.")
+            return
+        }
+        mainHandler.removeCallbacks(reconnectRunnable)
+        try {
+            webSocket?.close(1000, "Reconnecting")
+        } catch (e: Exception) {}
+        webSocket = null
+        isConnected = false
+        isRealtimeActive = false
+
         val wsUrl = supabaseUrl
             .replace("https://", "wss://")
             .replace("http://", "ws://") + "/realtime/v1/websocket?apikey=$supabaseKey&vsn=1.0.0"
@@ -1210,8 +1222,53 @@ class SupabaseManager(
                     val success = response.isSuccessful
                     if (!success) {
                         Log.e(TAG, "updateMerchantStatus error code: ${response.code}")
+                    } else {
+                        triggerHyperzodMerchantSync(mId, isAccepting)
                     }
                     mainHandler.post { onComplete(success) }
+                }
+            }
+        })
+    }
+
+    private fun triggerHyperzodMerchantSync(mId: String, isAccepting: Boolean) {
+        val url = "$supabaseUrl/functions/v1/hyperzod-sync"
+        val recordJson = JsonObject().apply {
+            addProperty("merchant_id", mId)
+            addProperty("is_accepting_orders", isAccepting)
+            addProperty("is_open", isAccepting)
+        }
+        val oldRecordJson = JsonObject().apply {
+            addProperty("is_accepting_orders", !isAccepting)
+            addProperty("is_open", !isAccepting)
+        }
+        val payload = JsonObject().apply {
+            addProperty("table", "merchants")
+            addProperty("type", "UPDATE")
+            add("record", recordJson)
+            add("old_record", oldRecordJson)
+        }
+        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = gson.toJson(payload).toRequestBody(mediaType)
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", supabaseKey)
+            .addHeader("Authorization", "Bearer $supabaseKey")
+            .addHeader("Content-Type", "application/json")
+            .post(requestBody)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                Log.e(TAG, "triggerHyperzodMerchantSync error", e)
+            }
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Successfully synced merchant $mId status ($isAccepting) via hyperzod-sync")
+                    } else {
+                        Log.e(TAG, "hyperzod-sync merchant status failed: ${response.code}")
+                    }
                 }
             }
         })
